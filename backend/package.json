@@ -1,0 +1,43 @@
+{
+  "name": "ai-knowledge-assistant-backend",
+  "version": "1.0.0",
+  "description": "AI Internal Knowledge Assistant - Fastify Backend with RAG",
+  "main": "src/server.js",
+  "type": "module",
+  "scripts": {
+    "dev": "node --watch src/server.js",
+    "start": "node src/server.js",
+    "test": "node --test"
+  },
+  "keywords": [
+    "ai",
+    "rag",
+    "knowledge-base",
+    "fastify",
+    "gemini"
+  ],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "fastify": "^5.3.3",
+    "@fastify/cors": "^10.1.0",
+    "@fastify/multipart": "^9.0.3",
+    "@fastify/static": "^8.1.1",
+    "@fastify/cookie": "^11.0.2",
+    "@fastify/session": "^11.0.2",
+    "@fastify/passport": "^3.1.0",
+    "passport-local": "^1.0.0",
+    "passport-google-oauth20": "^2.0.0",
+    "mongoose": "^8.9.3",
+    "@qdrant/js-client-rest": "^1.13.0",
+    "@google/generative-ai": "^0.21.0",
+    "pdf-parse": "^1.1.1",
+    "mammoth": "^1.9.0",
+    "bcryptjs": "^3.0.2",
+    "dotenv": "^16.5.0",
+    "uuid": "^11.1.0"
+  },
+  "devDependencies": {
+    "eslint": "^9.23.0"
+  }
+}

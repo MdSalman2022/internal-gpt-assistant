@@ -1,0 +1,83 @@
+﻿@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html {
+    scroll-behavior: smooth;
+  }
+
+  body {
+    @apply text-primary bg-background antialiased;
+  }
+}
+
+@layer components {
+  .btn-primary {
+    @apply inline-flex items-center justify-center px-6 py-3 
+           bg-accent text-white font-semibold rounded-lg
+           hover:bg-accent-hover transition-colors duration-200
+           focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-2;
+  }
+
+  .btn-secondary {
+    @apply inline-flex items-center justify-center px-6 py-3
+           border border-border text-primary font-semibold rounded-lg
+           hover:bg-background-secondary transition-colors duration-200
+           focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2;
+  }
+
+  .section-container {
+    @apply max-w-7xl mx-auto px-4 sm:px-6 lg:px-8;
+  }
+
+  .section-padding {
+    @apply py-16 sm:py-20 lg:py-24;
+  }
+
+  .heading-primary {
+    @apply text-3xl sm:text-4xl lg:text-5xl font-bold text-primary;
+  }
+
+  .heading-secondary {
+    @apply text-2xl sm:text-3xl font-bold text-primary;
+  }
+
+  .text-body {
+    @apply text-secondary leading-relaxed;
+  }
+
+  .card {
+    @apply bg-white rounded-xl border border-border p-6
+           hover:shadow-lg hover:border-accent/20 
+           transition-all duration-300;
+  }
+
+  .link-accent {
+    @apply text-accent hover:text-accent-hover 
+           transition-colors duration-200;
+  }
+}
+
+@layer utilities {
+  .text-gradient {
+    @apply bg-gradient-to-r from-accent to-accent-light 
+           bg-clip-text text-transparent;
+  }
+
+  .animate-delay-100 {
+    animation-delay: 100ms;
+  }
+
+  .animate-delay-200 {
+    animation-delay: 200ms;
+  }
+
+  .animate-delay-300 {
+    animation-delay: 300ms;
+  }
+
+  .animate-delay-500 {
+    animation-delay: 500ms;
+  }
+}
