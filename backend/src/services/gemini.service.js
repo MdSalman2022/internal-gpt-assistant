@@ -3,159 +3,162 @@ import config from '../config/index.js';
 
 class GeminiService {
     constructor() {
-        this.genAI = new GoogleGenerativeAI(config.geminiApiKey);
-        this.model = this.genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
+        this.genAI = new GoogleGenerativeAI(config.gemini.apiKey);
+        this.model = this.genAI.getGenerativeModel({ model: config.gemini.model });
         this.embeddingModel = this.genAI.getGenerativeModel({ model: 'text-embedding-004' });
+        console.log(`🤖 Gemini initialized with model: ${config.gemini.model}`);
     }
 
     /**
-     * Generate embeddings for text
-     * @param {string} text - Text to embed
-     * @returns {Promise<Array<number>>} - Embedding vector
+     * Generate embedding for text
      */
     async generateEmbedding(text) {
+        const start = Date.now();
         try {
             const result = await this.embeddingModel.embedContent(text);
+            console.log(`🔢 Embedding generated (${Date.now() - start}ms) - ${text.substring(0, 50)}...`);
             return result.embedding.values;
         } catch (error) {
-            console.error('❌ Gemini embedding error:', error.message);
+            console.error('❌ Embedding error:', error.message);
             throw error;
         }
     }
 
     /**
      * Generate embeddings for multiple texts (batch)
-     * @param {Array<string>} texts - Array of texts
-     * @returns {Promise<Array<Array<number>>>} - Array of embedding vectors
      */
     async generateEmbeddings(texts) {
+        const start = Date.now();
+        console.log(`🔢 Generating ${texts.length} embeddings...`);
         try {
             const embeddings = await Promise.all(
                 texts.map(text => this.generateEmbedding(text))
             );
+            console.log(`✅ Batch embeddings complete (${Date.now() - start}ms)`);
             return embeddings;
         } catch (error) {
-            console.error('❌ Gemini batch embedding error:', error.message);
+            console.error('❌ Batch embedding error:', error.message);
             throw error;
         }
     }
 
     /**
      * Rewrite query for better retrieval
-     * @param {string} query - Original user query
-     * @returns {Promise<string>} - Rewritten query
      */
     async rewriteQuery(query) {
-        const prompt = `Rewrite the following user question to be more specific and better suited for semantic search. 
-Keep it concise but capture the key concepts. Only output the rewritten query, nothing else.
+        const start = Date.now();
+        const prompt = `Rewrite this question to be more specific for semantic search. Output ONLY the rewritten query.
 
-Original question: "${query}"
-
-Rewritten query:`;
+Question: "${query}"
+Rewritten:`;
 
         try {
             const result = await this.model.generateContent(prompt);
-            return result.response.text().trim();
+            const rewritten = result.response.text().trim();
+            console.log(`📝 Query rewritten (${Date.now() - start}ms): "${query}" → "${rewritten}"`);
+            return rewritten;
         } catch (error) {
             console.error('❌ Query rewrite error:', error.message);
-            return query; // Fallback to original
+            return query;
         }
     }
 
     /**
-     * Rerank search results using cross-encoder style approach
-     * @param {string} query - User query
-     * @param {Array} results - Search results with content
-     * @returns {Promise<Array>} - Reranked results
+     * Rerank search results
      */
     async rerankResults(query, results) {
         if (results.length <= 1) return results;
 
-        const prompt = `Rate the relevance of each document chunk to the query on a scale of 0-10.
-Return ONLY a JSON array of numbers in the same order as the chunks.
+        const start = Date.now();
+        console.log(`🔄 Reranking ${results.length} results...`);
+
+        const prompt = `Rate each chunk's relevance to the query (0-10). Return ONLY a JSON array of numbers.
 
 Query: "${query}"
 
 Chunks:
-${results.map((r, i) => `[${i}] ${r.content.substring(0, 300)}...`).join('\n\n')}
+${results.map((r, i) => `[${i}] ${r.content.substring(0, 250)}`).join('\n\n')}
 
-JSON array of relevance scores:`;
+Scores:`;
 
         try {
             const result = await this.model.generateContent(prompt);
             const text = result.response.text().trim();
 
-            // Parse scores from response
             const match = text.match(/\[[\d,.\s]+\]/);
             if (match) {
                 const scores = JSON.parse(match[0]);
-
-                // Add rerank scores and sort
                 const reranked = results.map((r, i) => ({
                     ...r,
                     rerankScore: scores[i] || r.score,
                 }));
-
                 reranked.sort((a, b) => b.rerankScore - a.rerankScore);
+                console.log(`✅ Reranking complete (${Date.now() - start}ms) - Top score: ${reranked[0]?.rerankScore}`);
                 return reranked;
             }
         } catch (error) {
             console.error('❌ Rerank error:', error.message);
         }
 
-        return results; // Fallback to original order
+        console.log(`⚠️ Reranking failed, using original order (${Date.now() - start}ms)`);
+        return results;
     }
 
     /**
-     * Generate answer with citations
-     * @param {string} query - User question
-     * @param {Array} context - Retrieved context chunks
-     * @param {Array} conversationHistory - Previous messages
-     * @returns {Promise<Object>} - { answer, citations, confidence }
+     * Generate answer with citations (optimized prompt)
      */
     async generateAnswer(query, context, conversationHistory = []) {
-        const contextText = context
-            .map((c, i) => `[Source ${i + 1}: ${c.documentTitle}]\n${c.content}`)
-            .join('\n\n---\n\n');
+        const start = Date.now();
+        console.log(`💬 Generating answer for: "${query.substring(0, 50)}..."`);
+        console.log(`   Context: ${context.length} chunks, History: ${conversationHistory.length} messages`);
+
+        const hasContext = context && context.length > 0;
+
+        const contextText = hasContext
+            ? context
+                .map((c, i) => `[Source ${i + 1}: ${c.documentTitle}]\n${c.content.substring(0, 500)}`)
+                .join('\n\n---\n\n')
+            : null;
 
         const historyText = conversationHistory
-            .slice(-6) // Last 6 messages for context
-            .map(m => `${m.role === 'user' ? 'User' : 'Assistant'}: ${m.content}`)
+            .slice(-4)
+            .map(m => `${m.role === 'user' ? 'User' : 'AI'}: ${m.content.substring(0, 200)}`)
             .join('\n');
 
-        const prompt = `You are an AI knowledge assistant helping employees find information from internal company documents.
+        // Different prompts based on whether we have document context
+        const prompt = hasContext
+            ? `You are a helpful AI knowledge assistant. Answer the question using the provided documents when relevant.
 
-CONTEXT FROM DOCUMENTS:
-${contextText || 'No relevant documents found.'}
+DOCUMENTS:
+${contextText}
 
-${historyText ? `CONVERSATION HISTORY:\n${historyText}\n` : ''}
-
-USER QUESTION: ${query}
+${historyText ? `CONVERSATION:\n${historyText}\n` : ''}
+USER: ${query}
 
 INSTRUCTIONS:
-1. Answer the question based ONLY on the provided context
-2. If the context doesn't contain enough information, say "I don't have enough information in the knowledge base to answer this question confidently."
-3. Cite sources using [Source N] format when referencing information
-4. Be concise but comprehensive
-5. Use markdown formatting for better readability
+- If the documents contain relevant info, use them and cite as [Source N]
+- If the question is general/conversational (greetings, thanks, etc), respond naturally without citations
+- Be helpful, concise, and use markdown formatting
 
-Provide your response in this JSON format:
-{
-  "answer": "Your detailed answer with [Source N] citations",
-  "citations_used": [1, 2], // Array of source numbers used
-  "confidence": 0.85 // 0-1 confidence score
-}`;
+Respond in JSON: {"answer": "...", "citations_used": [1,2], "confidence": 0.85}`
+            : `You are a helpful AI assistant. You can answer general questions and have natural conversations.
+
+${historyText ? `CONVERSATION:\n${historyText}\n` : ''}
+USER: ${query}
+
+Respond naturally and helpfully. Be concise and friendly.
+
+Respond in JSON: {"answer": "...", "citations_used": [], "confidence": 0.9}`;
 
         try {
             const result = await this.model.generateContent(prompt);
             const text = result.response.text().trim();
 
-            // Try to parse JSON response
             try {
-                // Find JSON in response
                 const jsonMatch = text.match(/\{[\s\S]*\}/);
                 if (jsonMatch) {
                     const parsed = JSON.parse(jsonMatch[0]);
+                    console.log(`✅ Answer generated (${Date.now() - start}ms) - Confidence: ${parsed.confidence}, Citations: [${parsed.citations_used?.join(', ')}]`);
                     return {
                         answer: parsed.answer || text,
                         citationsUsed: parsed.citations_used || [],
@@ -164,7 +167,7 @@ Provide your response in this JSON format:
                     };
                 }
             } catch (parseError) {
-                // If JSON parsing fails, return raw text
+                console.log(`⚠️ JSON parse failed, using raw text (${Date.now() - start}ms)`);
                 return {
                     answer: text,
                     citationsUsed: [],
@@ -173,25 +176,24 @@ Provide your response in this JSON format:
                 };
             }
         } catch (error) {
-            console.error('❌ Gemini generate error:', error.message);
+            console.error('❌ Generate answer error:', error.message);
             throw error;
         }
     }
 
     /**
-     * Generate a title for a conversation based on first message
-     * @param {string} firstMessage - First user message
-     * @returns {Promise<string>} - Generated title
+     * Generate conversation title
      */
     async generateConversationTitle(firstMessage) {
-        const prompt = `Generate a short, descriptive title (max 6 words) for a conversation that starts with:
-"${firstMessage}"
-
-Only output the title, nothing else.`;
+        const start = Date.now();
+        const prompt = `Generate a short title (max 5 words) for: "${firstMessage}"
+Output only the title.`;
 
         try {
             const result = await this.model.generateContent(prompt);
-            return result.response.text().trim().slice(0, 50);
+            const title = result.response.text().trim().slice(0, 40);
+            console.log(`📌 Title generated (${Date.now() - start}ms): "${title}"`);
+            return title;
         } catch (error) {
             console.error('❌ Title generation error:', error.message);
             return 'New Conversation';
@@ -199,16 +201,14 @@ Only output the title, nothing else.`;
     }
 
     /**
-     * Generate tags for a document
-     * @param {string} content - Document content (first few thousand chars)
-     * @returns {Promise<Array<string>>} - Generated tags
+     * Generate document tags
      */
     async generateDocumentTags(content) {
-        const prompt = `Analyze this document and generate 3-5 relevant tags/categories.
-Return ONLY a JSON array of lowercase tag strings.
+        const start = Date.now();
+        const prompt = `Extract 3-5 category tags from this document. Return ONLY a JSON array of lowercase strings.
 
-Document excerpt:
-${content.substring(0, 3000)}
+Document:
+${content.substring(0, 2000)}
 
 Tags:`;
 
@@ -217,7 +217,9 @@ Tags:`;
             const text = result.response.text().trim();
             const match = text.match(/\[[\s\S]*?\]/);
             if (match) {
-                return JSON.parse(match[0]);
+                const tags = JSON.parse(match[0]);
+                console.log(`🏷️ Tags generated (${Date.now() - start}ms): [${tags.join(', ')}]`);
+                return tags;
             }
         } catch (error) {
             console.error('❌ Tag generation error:', error.message);
@@ -227,7 +229,6 @@ Tags:`;
     }
 }
 
-// Singleton instance
 const geminiService = new GeminiService();
 
 export default geminiService;

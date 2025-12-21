@@ -5,12 +5,22 @@ import { reciprocalRankFusion } from '../utils/chunker.js';
 import config from '../config/index.js';
 
 class RAGService {
+    constructor() {
+        // Simple in-memory cache for query embeddings
+        this.embeddingCache = new Map();
+        this.cacheMaxSize = 100;
+    }
+
     /**
-     * Advanced RAG Pipeline
-     * 1. Query Rewriting
-     * 2. Hybrid Search (Semantic + Keyword)
-     * 3. Reranking
-     * 4. Answer Generation with Citations
+     * Optimized RAG Pipeline - Minimal API calls
+     * 
+     * API Calls per query:
+     * 1. generateEmbedding (embedding model - cheap)
+     * 2. generateAnswer (LLM model)
+     * 
+     * Removed to reduce costs:
+     * - rewriteQuery (not needed, user query is usually fine)
+     * - rerankResults (semantic search is usually good enough)
      */
     async query(userQuery, options = {}) {
         const {
@@ -20,47 +30,44 @@ class RAGService {
         } = options;
 
         const startTime = Date.now();
+        const timings = {};
 
         try {
-            // Step 1: Query Rewriting
-            const rewrittenQuery = await geminiService.rewriteQuery(userQuery);
-            console.log(`📝 Rewritten: "${rewrittenQuery}"`);
+            // Step 1: Get embedding for search (1 API call - embedding model)
+            const t1 = Date.now();
+            const queryEmbedding = await this._getCachedEmbedding(userQuery);
+            timings.embed = Date.now() - t1;
 
-            // Step 2: Generate query embedding
-            const queryEmbedding = await geminiService.generateEmbedding(rewrittenQuery);
+            // Step 2: Hybrid Search (no API calls - just Qdrant + MongoDB)
+            const t2 = Date.now();
+            const [semanticResults, keywordResults] = await Promise.all([
+                qdrantService.search(queryEmbedding, {
+                    limit: topK * 2,
+                    scoreThreshold: 0.3,
+                    filter: userId ? this._buildAccessFilter(userId) : null,
+                }),
+                this._keywordSearch(userQuery, topK * 2),
+            ]);
+            timings.search = Date.now() - t2;
 
-            // Step 3: Hybrid Search
-            // 3a. Semantic search via Qdrant
-            const semanticResults = await qdrantService.search(queryEmbedding, {
-                limit: topK * 2, // Get more for reranking
-                scoreThreshold: 0.3,
-                filter: userId ? this._buildAccessFilter(userId) : null,
-            });
-
-            // 3b. Keyword search via MongoDB (BM25-style)
-            const keywordResults = await this._keywordSearch(userQuery, topK * 2);
-
-            // 3c. Combine with Reciprocal Rank Fusion
+            // Combine with Reciprocal Rank Fusion (no API call)
             const fusedResults = reciprocalRankFusion(
                 [semanticResults, keywordResults],
                 60
             );
 
-            // Step 4: Reranking with Gemini
-            const rerankedResults = await geminiService.rerankResults(
-                userQuery,
-                fusedResults.slice(0, topK * 2)
-            );
+            // Take top results directly (skip expensive reranking)
+            const topResults = fusedResults.slice(0, topK);
+            console.log(`🔍 Found ${fusedResults.length} results, using top ${topResults.length}`);
 
-            // Take top K after reranking
-            const topResults = rerankedResults.slice(0, topK);
-
-            // Step 5: Generate Answer with Citations
+            // Step 3: Generate Answer (1 API call - LLM)
+            const t3 = Date.now();
             const response = await geminiService.generateAnswer(
                 userQuery,
                 topResults,
-                conversationHistory
+                conversationHistory.slice(-4)
             );
+            timings.generate = Date.now() - t3;
 
             // Build citations array
             const citations = response.citationsUsed.map((sourceNum) => {
@@ -71,19 +78,20 @@ class RAGService {
                     documentTitle: result.documentTitle,
                     chunkId: result.id,
                     content: result.content.substring(0, 200) + '...',
-                    relevanceScore: result.rerankScore || result.score,
+                    relevanceScore: result.score,
                     pageNumber: result.pageNumber,
                 };
             }).filter(Boolean);
 
             const latency = Date.now() - startTime;
 
+            console.log(`⏱️ RAG: ${latency}ms (embed: ${timings.embed}ms, search: ${timings.search}ms, generate: ${timings.generate}ms) - 2 API calls`);
+
             return {
                 answer: response.answer,
                 citations,
                 confidence: response.confidence,
                 isLowConfidence: response.isLowConfidence,
-                rewrittenQuery,
                 latency,
                 sourcesSearched: fusedResults.length,
             };
@@ -94,11 +102,33 @@ class RAGService {
     }
 
     /**
+     * Get cached embedding or generate new one
+     */
+    async _getCachedEmbedding(query) {
+        const cacheKey = query.toLowerCase().trim();
+
+        if (this.embeddingCache.has(cacheKey)) {
+            console.log('💾 Using cached embedding');
+            return this.embeddingCache.get(cacheKey);
+        }
+
+        const embedding = await geminiService.generateEmbedding(query);
+
+        // Add to cache (with size limit)
+        if (this.embeddingCache.size >= this.cacheMaxSize) {
+            const firstKey = this.embeddingCache.keys().next().value;
+            this.embeddingCache.delete(firstKey);
+        }
+        this.embeddingCache.set(cacheKey, embedding);
+
+        return embedding;
+    }
+
+    /**
      * Keyword search using MongoDB text search
      */
     async _keywordSearch(query, limit) {
         try {
-            // Search documents by title and tags
             const documents = await Document.find(
                 { $text: { $search: query } },
                 { score: { $meta: 'textScore' } }
@@ -107,7 +137,6 @@ class RAGService {
                 .limit(limit)
                 .lean();
 
-            // Convert to same format as Qdrant results
             return documents.map((doc) => ({
                 id: doc._id.toString(),
                 documentId: doc._id.toString(),
@@ -122,38 +151,14 @@ class RAGService {
     }
 
     /**
-     * Build access filter for Qdrant based on user permissions
+     * Build access filter for Qdrant
      */
     _buildAccessFilter(userId) {
-        // For now, return null (no filtering)
-        // TODO: Implement proper RBAC filtering
-        return null;
+        return null; // TODO: Implement RBAC
     }
 
     /**
-     * Get related/similar questions
-     */
-    async getSimilarQuestions(query, limit = 5) {
-        try {
-            const embedding = await geminiService.generateEmbedding(query);
-
-            // Search in message history
-            const recentMessages = await Message.find({ role: 'user' })
-                .sort({ createdAt: -1 })
-                .limit(100)
-                .lean();
-
-            // Simple similarity would need embeddings stored
-            // For now, return empty - can enhance later
-            return [];
-        } catch (error) {
-            console.error('❌ Similar questions error:', error.message);
-            return [];
-        }
-    }
-
-    /**
-     * Get analytics on knowledge gaps (unanswered/low-confidence queries)
+     * Get knowledge gaps
      */
     async getKnowledgeGaps(limit = 20) {
         try {
@@ -161,7 +166,6 @@ class RAGService {
                 role: 'assistant',
                 isLowConfidence: true,
             })
-                .populate('conversationId')
                 .sort({ createdAt: -1 })
                 .limit(limit)
                 .lean();
@@ -179,7 +183,6 @@ class RAGService {
     }
 }
 
-// Singleton instance
 const ragService = new RAGService();
 
 export default ragService;

@@ -1,4 +1,5 @@
 import { authService } from '../services/index.js';
+import config from '../config/index.js';
 
 // Auth routes
 export default async function authRoutes(fastify) {
@@ -80,5 +81,76 @@ export default async function authRoutes(fastify) {
         request.session.user = user;
 
         return { success: true, user };
+    });
+
+    // Google OAuth - Initiate
+    fastify.get('/google', async (request, reply) => {
+        const clientId = config.google.clientId;
+        const redirectUri = config.google.callbackUrl;
+        const scope = encodeURIComponent('email profile');
+
+        const authUrl = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${clientId}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=code&scope=${scope}&access_type=offline&prompt=consent`;
+
+        return reply.redirect(authUrl);
+    });
+
+    // Google OAuth - Callback
+    fastify.get('/google/callback', async (request, reply) => {
+        const { code, error } = request.query;
+
+        if (error) {
+            return reply.redirect(`${config.frontendUrl}/login?error=${error}`);
+        }
+
+        if (!code) {
+            return reply.redirect(`${config.frontendUrl}/login?error=no_code`);
+        }
+
+        try {
+            // Exchange code for tokens
+            const tokenResponse = await fetch('https://oauth2.googleapis.com/token', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                body: new URLSearchParams({
+                    code,
+                    client_id: config.google.clientId,
+                    client_secret: config.google.clientSecret,
+                    redirect_uri: config.google.callbackUrl,
+                    grant_type: 'authorization_code',
+                }),
+            });
+
+            const tokens = await tokenResponse.json();
+
+            if (!tokens.access_token) {
+                return reply.redirect(`${config.frontendUrl}/login?error=token_error`);
+            }
+
+            // Get user info
+            const userInfoResponse = await fetch('https://www.googleapis.com/oauth2/v2/userinfo', {
+                headers: { Authorization: `Bearer ${tokens.access_token}` },
+            });
+
+            const googleUser = await userInfoResponse.json();
+
+            // Find or create user
+            const user = await authService.findOrCreateOAuthUser({
+                provider: 'google',
+                providerId: googleUser.id,
+                email: googleUser.email,
+                name: googleUser.name,
+                avatar: googleUser.picture,
+            });
+
+            // Set session
+            request.session.userId = user._id;
+            request.session.user = user.toJSON ? user.toJSON() : user;
+
+            // Redirect to frontend
+            return reply.redirect(`${config.frontendUrl}/chat`);
+        } catch (err) {
+            console.error('Google OAuth error:', err);
+            return reply.redirect(`${config.frontendUrl}/login?error=oauth_failed`);
+        }
     });
 }

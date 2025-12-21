@@ -10,10 +10,6 @@ const documentSchema = new mongoose.Schema({
         type: String,
         default: '',
     },
-    filename: {
-        type: String,
-        required: true,
-    },
     originalName: {
         type: String,
         required: true,
@@ -26,14 +22,15 @@ const documentSchema = new mongoose.Schema({
         type: Number,
         required: true,
     },
+    // Source info - supports Cloudinary and other integrations
     source: {
-        type: String,
-        enum: ['upload', 'notion', 'confluence', 'gdrive', 'slack', 'url'],
-        default: 'upload',
-    },
-    sourceUrl: {
-        type: String,
-        default: null,
+        type: {
+            type: String,
+            enum: ['upload', 'notion', 'confluence', 'gdrive', 'slack', 'url'],
+            default: 'upload',
+        },
+        url: String,           // Cloudinary URL or external URL
+        cloudinaryId: String,  // Cloudinary public ID for deletion
     },
     status: {
         type: String,
@@ -58,9 +55,10 @@ const documentSchema = new mongoose.Schema({
         type: String,
         default: null,
     },
-    isPublic: {
-        type: Boolean,
-        default: false,
+    accessLevel: {
+        type: String,
+        enum: ['private', 'department', 'public'],
+        default: 'private',
     },
     allowedUsers: [{
         type: mongoose.Schema.Types.ObjectId,
@@ -76,6 +74,7 @@ const documentSchema = new mongoose.Schema({
         lastModified: Date,
         pageCount: Number,
         wordCount: Number,
+        charCount: Number,
         language: String,
     },
     tags: [{

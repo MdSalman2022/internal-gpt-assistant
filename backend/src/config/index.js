@@ -16,7 +16,10 @@ const config = {
     },
 
     // Gemini
-    geminiApiKey: process.env.GEMINI_API_KEY,
+    gemini: {
+        apiKey: process.env.GEMINI_API_KEY,
+        model: process.env.GEMINI_MODEL || 'gemini-1.5-flash',
+    },
 
     // Session
     sessionSecret: process.env.SESSION_SECRET || 'change-this-secret',
@@ -26,6 +29,13 @@ const config = {
         clientId: process.env.GOOGLE_CLIENT_ID,
         clientSecret: process.env.GOOGLE_CLIENT_SECRET,
         callbackUrl: process.env.GOOGLE_CALLBACK_URL,
+    },
+
+    // Cloudinary (supports both CLOUDINARY_CLOUD_NAME and Cloudinary_CloudName formats)
+    cloudinary: {
+        cloudName: process.env.CLOUDINARY_CLOUD_NAME || process.env.Cloudinary_CloudName,
+        apiKey: process.env.CLOUDINARY_API_KEY || process.env.Cloudinary_API_KEY,
+        apiSecret: process.env.CLOUDINARY_API_SECRET || process.env.Cloudinary_API_SECRET,
     },
 
     // Frontend

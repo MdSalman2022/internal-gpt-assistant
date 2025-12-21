@@ -1,5 +1,6 @@
 ﻿import { Inter } from 'next/font/google';
 import './globals.css';
+import { AuthProvider } from '@/lib/auth-context';
 
 const inter = Inter({
   subsets: ['latin'],
@@ -8,15 +9,17 @@ const inter = Inter({
 });
 
 export const metadata = {
-  title: 'My App',
-  description: 'Built with Next.js and TailwindCSS',
+  title: 'KnowledgeAI - Internal Knowledge Assistant',
+  description: 'AI-powered knowledge assistant for finding answers from internal documents',
 };
 
 export default function RootLayout({ children }) {
   return (
-    <html lang="en" className={inter.variable}>
-      <body className="min-h-screen flex flex-col">
-        {children}
+    <html lang="en" className={`${inter.variable} dark`}>
+      <body className={`${inter.className} min-h-screen`}>
+        <AuthProvider>
+          {children}
+        </AuthProvider>
       </body>
     </html>
   );

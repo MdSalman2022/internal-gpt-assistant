@@ -1,6 +1,3 @@
-import path from 'path';
-import fs from 'fs/promises';
-import { v4 as uuidv4 } from 'uuid';
 import { Document } from '../models/index.js';
 import { documentService } from '../services/index.js';
 
@@ -13,7 +10,7 @@ export default async function documentRoutes(fastify) {
         }
     });
 
-    // Upload document
+    // Upload document (to Cloudinary)
     fastify.post('/upload', async (request, reply) => {
         const data = await request.file();
 
@@ -28,44 +25,33 @@ export default async function documentRoutes(fastify) {
             'application/msword',
             'text/plain',
             'text/markdown',
+            'text/csv',
         ];
 
         if (!allowedTypes.includes(data.mimetype)) {
-            return reply.status(400).send({ error: 'File type not supported' });
+            return reply.status(400).send({ error: 'File type not supported. Allowed: PDF, Word, TXT, Markdown, CSV' });
         }
 
-        // Create uploads directory if needed
-        const uploadsDir = path.join(process.cwd(), 'uploads');
-        await fs.mkdir(uploadsDir, { recursive: true });
+        // Get file buffer
+        const fileBuffer = await data.toBuffer();
 
-        // Save file
-        const filename = `${uuidv4()}${path.extname(data.filename)}`;
-        const filePath = path.join(uploadsDir, filename);
-        await fs.writeFile(filePath, await data.toBuffer());
+        // Upload to Cloudinary and create document record
+        const document = await documentService.uploadAndCreateDocument(
+            fileBuffer,
+            data.filename,
+            data.mimetype,
+            request.session.userId
+        );
 
-        // Create document record
-        const document = new Document({
-            title: request.body?.title || data.filename.replace(/\.[^.]+$/, ''),
-            description: request.body?.description || '',
-            filename,
-            originalName: data.filename,
-            mimeType: data.mimetype,
-            size: (await fs.stat(filePath)).size,
-            uploadedBy: request.session.userId,
-            status: 'pending',
-        });
-
-        await document.save();
-
-        // Process document in background
-        documentService.processDocument(document._id, filePath).catch(err => {
+        // Process document in background (extract text, chunk, embed)
+        documentService.processDocument(document._id).catch(err => {
             console.error('Background processing error:', err);
         });
 
         return {
             success: true,
             document: document.toObject(),
-            message: 'Document uploaded, processing started',
+            message: 'Document uploaded to cloud, processing started',
         };
     });
 
@@ -86,9 +72,7 @@ export default async function documentRoutes(fastify) {
 
     // Get single document
     fastify.get('/:id', async (request, reply) => {
-        const document = await Document.findById(request.params.id)
-            .populate('uploadedBy', 'name email')
-            .lean();
+        const document = await documentService.getDocument(request.params.id);
 
         if (!document) {
             return reply.status(404).send({ error: 'Document not found' });
@@ -112,7 +96,7 @@ export default async function documentRoutes(fastify) {
 
         await documentService.deleteDocument(request.params.id);
 
-        return { success: true, message: 'Document deleted' };
+        return { success: true, message: 'Document deleted from cloud and knowledge base' };
     });
 
     // Update document metadata
@@ -127,15 +111,39 @@ export default async function documentRoutes(fastify) {
             return reply.status(403).send({ error: 'Not authorized' });
         }
 
-        const { title, description, tags, isPublic } = request.body;
+        const updatedDoc = await documentService.updateDocument(
+            request.params.id,
+            request.body
+        );
 
-        if (title) document.title = title;
-        if (description !== undefined) document.description = description;
-        if (tags) document.tags = tags;
-        if (isPublic !== undefined) document.isPublic = isPublic;
+        return { success: true, document: updatedDoc };
+    });
 
+    // Reprocess a failed document
+    fastify.post('/:id/reprocess', async (request, reply) => {
+        const document = await Document.findById(request.params.id);
+
+        if (!document) {
+            return reply.status(404).send({ error: 'Document not found' });
+        }
+
+        if (document.uploadedBy.toString() !== request.session.userId.toString()) {
+            return reply.status(403).send({ error: 'Not authorized' });
+        }
+
+        if (document.status !== 'failed') {
+            return reply.status(400).send({ error: 'Only failed documents can be reprocessed' });
+        }
+
+        // Reset status and reprocess
+        document.status = 'pending';
+        document.processingError = null;
         await document.save();
 
-        return { success: true, document: document.toObject() };
+        documentService.processDocument(document._id).catch(err => {
+            console.error('Reprocessing error:', err);
+        });
+
+        return { success: true, message: 'Reprocessing started' };
     });
 }
