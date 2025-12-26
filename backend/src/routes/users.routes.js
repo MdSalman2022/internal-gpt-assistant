@@ -1,10 +1,37 @@
-import { User } from '../models/index.js';
+import { User, Document } from '../models/index.js';
 import { requirePermission } from '../middleware/rbac.middleware.js';
 import { auditService } from '../services/index.js';
 
 export default async function usersRoutes(fastify) {
     // Require 'users:manage' permission for all routes (Admin, Visitor, Employee have this)
     fastify.addHook('preHandler', requirePermission('users:manage'));
+
+    // GET /structure - Get all unique departments and teams
+    fastify.get('/structure', async (request, reply) => {
+        const [userDepts, userTeams, docDepts, docTeams] = await Promise.all([
+            User.distinct('department'),
+            User.distinct('teams'),
+            Document.distinct('allowedDepartments'),
+            Document.distinct('allowedTeams')
+        ]);
+
+        // Merge and clean departments
+        const allDepartments = new Set([
+            ...userDepts.filter(Boolean),
+            ...docDepts.filter(Boolean)
+        ]);
+
+        // Merge and clean teams
+        const allTeams = new Set([
+            ...userTeams.filter(Boolean),
+            ...docTeams.filter(Boolean)
+        ]);
+
+        return {
+            departments: Array.from(allDepartments).sort(),
+            teams: Array.from(allTeams).sort()
+        };
+    });
 
     // GET / - List all users
     fastify.get('/', async (request, reply) => {

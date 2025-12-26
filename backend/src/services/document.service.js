@@ -38,6 +38,12 @@ class DocumentService {
                 // Conversation scope - if set, only visible in that conversation's context
                 conversationId: options.conversationId || null,
                 isGlobal: !options.conversationId, // Global = available to all users
+
+                // ACL
+                accessLevel: options.accessLevel || 'private',
+                allowedDepartments: options.allowedDepartments || [],
+                allowedTeams: options.allowedTeams || [],
+                allowedUsers: options.allowedUsers || [],
             });
 
             await document.save();
@@ -95,6 +101,10 @@ class DocumentService {
                 uploadedBy: document.uploadedBy.toString(),
                 conversationId: document.conversationId ? document.conversationId.toString() : null,
                 isGlobal: !!document.isGlobal,
+                accessLevel: document.accessLevel,
+                allowedUsers: document.allowedUsers?.map(id => id.toString()) || [],
+                allowedDepartments: document.allowedDepartments || [],
+                allowedTeams: document.allowedTeams || [],
                 metadata: document.metadata || {},
             }));
 
@@ -179,20 +189,68 @@ class DocumentService {
     }
 
     // Get documents with pagination and filters
-    async getDocuments({ userId, status, search, page = 1, limit = 20 }) {
+    async getDocuments({ userId, userRole, department, teams, status, search, page = 1, limit = 20 }) {
         const query = {};
 
-        // Strictly exclude conversation-scoped documents
-        // They should only be accessible within their specific chat context
+        // Strictly exclude conversation-scoped documents from general library
         query.conversationId = null;
 
-        if (userId) query.uploadedBy = userId;
-        if (status) query.status = status;
-        if (search) {
-            query.$or = [
-                { title: { $regex: search, $options: 'i' } },
-                { tags: { $in: [new RegExp(search, 'i')] } },
+        // --- ACL LOGIC ---
+        // Admin sees everything.
+        // Others see:
+        // 1. Documents they own (uploadedBy)
+        // 2. Documents that are 'public' (isGlobal: true, accessLevel: 'public')
+        // 3. Documents shared with their Department
+        // 4. Documents shared with their Team
+        // 5. Documents explicitly shared with them (allowedUsers)
+
+        if (userRole !== 'admin') {
+            const aclConditions = [
+                { uploadedBy: userId }, // Owner
+                { isGlobal: true, accessLevel: 'public' }, // Fully public
+                { allowedUsers: userId }, // Explicitly shared
             ];
+
+            if (department) {
+                aclConditions.push({
+                    accessLevel: { $in: ['department'] },
+                    allowedDepartments: department
+                });
+            }
+
+            if (teams && teams.length > 0) {
+                aclConditions.push({
+                    allowedTeams: { $in: teams }
+                });
+            }
+
+            query.$or = aclConditions;
+        }
+
+        // Additional Filters (AND logic)
+        if (status) query.status = status;
+
+        // Search Logic (AND with ACL)
+        if (search) {
+            const searchCondition = {
+                $or: [
+                    { title: { $regex: search, $options: 'i' } },
+                    { tags: { $in: [new RegExp(search, 'i')] } },
+                ]
+            };
+
+            if (query.$or) {
+                // If we already have an $or from ACL, we need to wrap it with $and to combine with search
+                // Current query: { $or: [ACL], ...other }
+                // New query: { $and: [ { $or: [ACL] }, { $or: [Search] } ], ...other }
+                query.$and = [
+                    { $or: query.$or },
+                    searchCondition
+                ];
+                delete query.$or;
+            } else {
+                query.$or = searchCondition.$or;
+            }
         }
 
         const skip = (page - 1) * limit;
@@ -228,12 +286,16 @@ class DocumentService {
 
     // Update document metadata
     async updateDocument(documentId, updates) {
-        const allowedUpdates = ['title', 'description', 'tags', 'accessLevel'];
+        const allowedUpdates = ['title', 'description', 'tags', 'accessLevel', 'allowedDepartments', 'allowedTeams', 'allowedUsers'];
         const filteredUpdates = {};
+        let aclUpdated = false;
 
         for (const key of allowedUpdates) {
             if (updates[key] !== undefined) {
                 filteredUpdates[key] = updates[key];
+                if (['accessLevel', 'allowedDepartments', 'allowedTeams', 'allowedUsers'].includes(key)) {
+                    aclUpdated = true;
+                }
             }
         }
 
@@ -242,6 +304,33 @@ class DocumentService {
             { $set: filteredUpdates },
             { new: true }
         );
+
+        // If ACL changed, sync to Qdrant
+        if (aclUpdated && document) {
+            try {
+                // We send the FULL updated ACL state to ensure consistency
+                // (Partial updates might be tricky if we don't know previous state easily)
+                const payloadUpdates = {};
+                if (filteredUpdates.accessLevel !== undefined) payloadUpdates.accessLevel = filteredUpdates.accessLevel;
+
+                // For arrays, we must send the NEW full array, which we have in filteredUpdates
+                if (filteredUpdates.allowedDepartments) payloadUpdates.allowedDepartments = filteredUpdates.allowedDepartments;
+                if (filteredUpdates.allowedTeams) payloadUpdates.allowedTeams = filteredUpdates.allowedTeams;
+                if (filteredUpdates.allowedUsers) payloadUpdates.allowedUsers = filteredUpdates.allowedUsers; // These might be ObjectIds, need to stringify?
+
+                // Qdrant expects strings/numbers usually. 
+                // Let's ensure User IDs are strings if they were passed
+                if (payloadUpdates.allowedUsers) {
+                    payloadUpdates.allowedUsers = payloadUpdates.allowedUsers.map(u => u.toString());
+                }
+
+                await qdrantService.updateDocumentPayload(documentId, payloadUpdates);
+            } catch (err) {
+                console.error(`⚠️ Failed to sync ACL updates to Qdrant for doc ${documentId}:`, err.message);
+                // We don't rollback Mongo update, but we log the inconsistency.
+                // In production, might want a job to fix inconsistencies.
+            }
+        }
 
         return document;
     }

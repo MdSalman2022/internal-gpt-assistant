@@ -99,6 +99,9 @@ const documentSchema = new mongoose.Schema({
     allowedDepartments: [{
         type: String,
     }],
+    allowedTeams: [{
+        type: String, // e.g. 'Engineering:Frontend', 'Sales:North'
+    }],
     // Metadata
     metadata: {
         author: String,

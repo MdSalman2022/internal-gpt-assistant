@@ -34,6 +34,10 @@ const userSchema = new mongoose.Schema({
         type: String,
         default: null,
     },
+    teams: [{
+        type: String,
+        trim: true,
+    }],
     googleId: {
         type: String,
         default: null,

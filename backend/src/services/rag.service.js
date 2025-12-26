@@ -51,7 +51,7 @@ class RAGService {
                 };
             } else {
                 // Otherwise use standard RBAC access filter
-                searchFilter = this._buildAccessFilter(userId, conversationId);
+                searchFilter = this._buildAccessFilter(options.user, conversationId);
             }
 
             console.log('🎯 RAG Search Filter:', JSON.stringify(searchFilter, null, 2));
@@ -370,110 +370,12 @@ class RAGService {
      * Build access filter for Qdrant
      * 
      * Users can access:
-     * 1. Global documents (isGlobal: true)
-     * 2. Documents they uploaded
+     * 1. Global documents (Public)
+     * 2. Department/Team/User-specific documents
      * 3. Documents scoped to this conversation
      */
-    _buildAccessFilter(userId, conversationId) {
-        // Strict Isolation Logic for Qdrant
-        const should = [
-            // 1. Global docs
-            { key: 'isGlobal', match: { value: true } },
-        ];
-
-        if (conversationId) {
-            // 2. Specific conversation docs
-            should.push({ key: 'conversationId', match: { value: conversationId.toString() } });
-        }
-
-        // 3. My private docs (NOT part of any conversation)
-        // Note: Qdrant filter for "is null" is tricky. 
-        // We often check "uploadedBy" AND Must Not "conversationId" exists?
-        // Simpler approach: If we want strict isolation, we rely on the fact that 
-        // chat uploads have "conversationId" set.
-        // If we want to allow "My Global Docs" vs "My Chat Docs".
-
-        // Strategy:
-        // Users can search:
-        // A. Global Docs
-        // B. Docs in THIS conversation
-        // C. Docs uploaded by ME that are NOT assigned to a conversation (personal library)
-
-        // However, complex boolean logic in Qdrant (A OR (B) OR (C AND NOT D)) needs nested filters.
-
-        // Since Qdrant "should" is OR.
-
-        // Filter: (isGlobal=true) OR (conversationId=current) OR (uploadedBy=Me AND conversationId=null)
-        // But Qdrant payloads usually don't store null fields, they are missing.
-        // We can check strict match for conversationId="null" string if we stored it that way?
-        // Or we just allow uploadedBy=Me. But that leaks chat docs.
-
-        // Workaround: We will strictly enforce that chat docs are ONLY reachable via conversationId.
-        // If I want to search my non-conversation docs, I need a 'personal' scope.
-
-        // For simplicity and user request "chat docs stay in chat":
-        // We will add (uploadedBy=Me) BUT we need to exclude other convos.
-        // Qdrant doesn't support "value is missing" easily in simple filters.
-
-        // Let's rely on the fact that general docs have conversationId = null or "global".
-
-        // If we assumed all chat docs have conversationId set to a string.
-        // And personal docs have conversationId missing.
-
-        // We can add a "must_not" clause for conversationId? 
-        // No, because we want to allow the CURRENT conversationId.
-
-        // Let's use nested filter group for the "User Personal" part.
-
-        // OR [
-        //   { isGlobal: true },
-        //   { conversationId: currentId },
-        //   { must: [ { uploadedBy: Me }, { must_not: { field: "conversationId" } } ] } -- "Field exists" check?
-        // ]
-
-        // Easier: Just index "isChat" boolean? No.
-
-        // Let's proceed with:
-        // Global OR Current Chat. 
-        // User explicitly asked: "uploaded documents inside chat wont be inside documents for any user even for admin."
-        // Meaning chat docs are Ephemeral/Context-only.
-
-        // What about "My Documents" page uploads? 
-        // They should be available everywhere? Or just in documents page?
-        // "only the documents chat will be for everyone and every chat accessible" -> Only global docs.
-
-        // So:
-        // 1. Docs uploaded in Chat -> Only that Chat.
-        // 2. Docs uploaded in /documents -> Available everywhere (Global).
-        // 3. What about "Private" docs in /documents? 
-        // If the user says "only the documents chat will be for everyone", they might mean Global.
-
-        // If we simplify:
-        // A doc is either Global (public) or Private (Chat-scoped).
-        // Is there a "Private Global" (my personal docs available in all my chats)?
-        // The user said: "in new chat it shouldnt be there".
-        // This implies files I upload in Chat A should NOT satisfy "uploadedBy: Me" in Chat B.
-
-        // SO: We REMOVE `uploadedBy` from the main OR block, unless we can ensure it's not a chat doc.
-        // However, if we assume documents created via "Upload Document" button on dashboard are "Global" (isGlobal=true).
-        // Then we are good.
-
-        // Whatever I upload in Dashboard -> isGlobal=true (Accessible by everyone as per "documents chat will be for everyone").
-        // Wait, "documents chat" might be a typo for "documents page"?
-        // "onlythe documents chat will be for everyone... accessible" -> likely "only the documents [from] chat [page]..." NO.
-        // "only the documents [uploaded in messages?]... for everyone"?
-
-        // Let's re-read: "the uploaded documents inside chat wont be inside documents for any user even for admin." -> Chat docs are hidden/private.
-        // "onlythe documents chat will be for everyone and every chat accessible." -> Typo. 
-        // Context: "Documents [section/page] will be for everyone". 
-        // Meaning: Docs in "Documents" page are Global. Docs in Chat are Local.
-
-        // So:
-        // Filter = (isGlobal=true) OR (conversationId=currentId).
-        // We REMOVE the generic (uploadedBy=Me). 
-        // This satisfies "in new chat it shouldnt be there".
-
-        return { should };
+    _buildAccessFilter(user, conversationId) {
+        return qdrantService.buildAclFilter(user, conversationId);
     }
 
     /**

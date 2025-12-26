@@ -105,11 +105,17 @@ export const documentsApi = {
         fetcher(`/api/documents/${id}`),
 
     // Upload document
-    uploadDocument: async (file, title, description) => {
+    uploadDocument: async (file, options = {}) => {
         const formData = new FormData();
         formData.append('file', file);
-        if (title) formData.append('title', title);
-        if (description) formData.append('description', description);
+        if (options.title) formData.append('title', options.title);
+        if (options.description) formData.append('description', options.description);
+
+        // ACL Fields
+        if (options.accessLevel) formData.append('accessLevel', options.accessLevel);
+        if (options.allowedDepartments?.length) formData.append('allowedDepartments', JSON.stringify(options.allowedDepartments));
+        if (options.allowedTeams?.length) formData.append('allowedTeams', JSON.stringify(options.allowedTeams));
+        if (options.allowedUsers?.length) formData.append('allowedUsers', JSON.stringify(options.allowedUsers));
 
         const res = await fetch(`${API_URL}/api/documents/upload`, {
             method: 'POST',
@@ -162,6 +168,9 @@ export const analyticsApi = {
 export const usersApi = {
     // List all users
     getUsers: () => fetcher('/api/users'),
+
+    // Get organization structure (departments, teams)
+    getStructure: () => fetcher('/api/users/structure'),
 
     // Update user
     updateUser: (id, updates) =>

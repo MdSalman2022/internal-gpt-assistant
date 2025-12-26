@@ -30,9 +30,29 @@ export default async function documentRoutes(fastify) {
     fastify.post('/upload', {
         preHandler: [requirePermission('documents:upload')]
     }, async (request, reply) => {
-        const data = await request.file();
+        const parts = request.parts();
+        let fileBuffer, filename, mimetype;
+        const fields = {};
 
-        if (!data) {
+        for await (const part of parts) {
+            if (part.file) {
+                // Determine if this is the file we want
+                // (First file encountered)
+                if (!fileBuffer) {
+                    filename = part.filename;
+                    mimetype = part.mimetype;
+                    fileBuffer = await part.toBuffer();
+                } else {
+                    // Ignore extra files
+                    part.file.resume();
+                }
+            } else {
+                // It's a field
+                fields[part.fieldname] = part.value;
+            }
+        }
+
+        if (!fileBuffer) {
             return reply.status(400).send({ error: 'No file uploaded' });
         }
 
@@ -46,19 +66,36 @@ export default async function documentRoutes(fastify) {
             'text/csv',
         ];
 
-        if (!allowedTypes.includes(data.mimetype)) {
+        if (!allowedTypes.includes(mimetype)) {
             return reply.status(400).send({ error: 'File type not supported. Allowed: PDF, Word, TXT, Markdown, CSV' });
         }
 
-        // Get file buffer
-        const fileBuffer = await data.toBuffer();
+        // Prepare ACL options
+        // fields values are strings. If JSON arrays, need parsing.
+        let allowedDepartments = [];
+        let allowedTeams = [];
+        let allowedUsers = [];
+
+        try {
+            if (fields.allowedDepartments) allowedDepartments = JSON.parse(fields.allowedDepartments);
+            if (fields.allowedTeams) allowedTeams = JSON.parse(fields.allowedTeams);
+            if (fields.allowedUsers) allowedUsers = JSON.parse(fields.allowedUsers);
+        } catch (e) {
+            console.warn('Failed to parse ACL JSON fields', e);
+        }
 
         // Upload to Cloudinary and create document record
         const document = await documentService.uploadAndCreateDocument(
             fileBuffer,
-            data.filename,
-            data.mimetype,
-            request.session.userId
+            filename,
+            mimetype,
+            request.session.userId,
+            {
+                accessLevel: fields.accessLevel || 'private',
+                allowedDepartments,
+                allowedTeams,
+                allowedUsers
+            }
         );
 
         // Process document in background (extract text, chunk, embed)
@@ -70,7 +107,8 @@ export default async function documentRoutes(fastify) {
         auditService.log(request, 'UPLOAD_DOCUMENT', { type: 'document', id: document._id.toString() }, {
             filename: document.originalName,
             size: document.size,
-            mimeType: document.mimeType
+            mimeType: document.mimeType,
+            accessLevel: document.accessLevel
         });
 
         return {
@@ -86,8 +124,15 @@ export default async function documentRoutes(fastify) {
     }, async (request, reply) => {
         const { page = 1, limit = 20, status, search } = request.query;
 
+        // Fetch full user details to get department/teams
+        // Note: request.userRole is set in preHandler but we need more
+        const user = await User.findById(request.session.userId).select('role department teams');
+
         const result = await documentService.getDocuments({
-            // userId: request.session.userId, // Don't filter by user - show all global docs
+            userId: request.session.userId,
+            userRole: user.role,
+            department: user.department,
+            teams: user.teams,
             status,
             search,
             page: parseInt(page),
@@ -124,10 +169,20 @@ export default async function documentRoutes(fastify) {
         }
 
         // Access Control Logic
+        // Access Control Logic
         const userId = request.session.userId;
-        const isAdmin = request.userRole === 'admin';
+        const user = await User.findById(userId).select('role department teams');
+
+        const isAdmin = user.role === 'admin';
         const isOwner = document.uploadedBy.toString() === userId;
-        const isGlobal = !!document.isGlobal;
+        const isPublic = document.isGlobal && document.accessLevel === 'public';
+
+        // Granular Checks
+        const isDepartmentMatch = document.accessLevel === 'department' &&
+            document.allowedDepartments?.includes(user.department);
+
+        const isTeamMatch = document.allowedTeams?.some(team => user.teams?.includes(team));
+        const isUserAllowed = document.allowedUsers?.map(u => u.toString()).includes(userId);
 
         // If it's a conversation-scoped doc, check if user is in that conversation
         let hasConvoAccess = false;
@@ -140,7 +195,7 @@ export default async function documentRoutes(fastify) {
         }
 
         // Broad access for Admin, Owner, Global docs, or Conversation members
-        if (!isAdmin && !isOwner && !isGlobal && !hasConvoAccess) {
+        if (!isAdmin && !isOwner && !isPublic && !isDepartmentMatch && !isTeamMatch && !isUserAllowed && !hasConvoAccess) {
             return reply.status(403).send({
                 error: 'Forbidden: You do not have permission to download this document'
             });

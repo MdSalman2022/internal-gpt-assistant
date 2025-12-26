@@ -1,4 +1,4 @@
-import { Conversation, Message, Document } from '../models/index.js';
+import { Conversation, Message, Document, User } from '../models/index.js';
 import { ragService, aiService, geminiService, documentService, auditService } from '../services/index.js';
 import { requirePermission } from '../middleware/rbac.middleware.js';
 
@@ -183,11 +183,15 @@ export default async function chatRoutes(fastify) {
             .limit(10)
             .lean();
 
+        // Create user context for ACL
+        const user = await User.findById(request.session.userId).select('role department teams name email');
+
         // Call RAG pipeline with selected provider
         let response;
         try {
             response = await ragService.query(content || 'Context from attachments', {
                 userId: request.session.userId,
+                user, // Pass full user object for ACL
                 conversationId: conversation._id, // Pass conversation ID for scoped RAG
                 conversationHistory: history.reverse(),
                 provider: provider || undefined,
