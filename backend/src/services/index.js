@@ -6,3 +6,5 @@ export { default as qdrantService } from './qdrant.service.js';
 export { default as ragService } from './rag.service.js';
 export { default as aiService } from './ai.service.js';
 export { default as auditService } from './audit.service.js';
+export { default as guardrailService } from './guardrail.service.js';
+

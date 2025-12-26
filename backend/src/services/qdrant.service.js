@@ -34,13 +34,22 @@ class QdrantService {
             }
 
             // These calls are idempotent or will fail benignly if index exists
-            const indexes = ['isGlobal', 'uploadedBy', 'conversationId', 'documentId', 'chunkIndex'];
+            const indexes = [
+                'isGlobal', 'uploadedBy', 'conversationId', 'documentId', 'chunkIndex',
+                // ACL fields for filtering
+                'accessLevel', 'allowedUsers', 'allowedDepartments', 'allowedTeams'
+            ];
             const schemas = {
                 isGlobal: 'bool',
                 uploadedBy: 'keyword',
                 conversationId: 'keyword',
                 documentId: 'keyword',
-                chunkIndex: 'integer'
+                chunkIndex: 'integer',
+                // ACL field schemas
+                accessLevel: 'keyword',
+                allowedUsers: 'keyword',
+                allowedDepartments: 'keyword',
+                allowedTeams: 'keyword'
             };
 
             for (const field of indexes) {
@@ -257,7 +266,8 @@ class QdrantService {
      */
     buildAclFilter(user, conversationId) {
         // Helper for "Global" docs (where conversationId is null)
-        const isGlobalDoc = { is_null: "conversationId" };
+        // Correct Qdrant syntax: { is_null: { key: "fieldName" } }
+        const isGlobalDoc = { is_null: { key: "conversationId" } };
 
         // Admin sees everything Global + Current Conversation
         if (user.role === 'admin') {

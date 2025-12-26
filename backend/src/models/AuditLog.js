@@ -21,6 +21,7 @@ const auditLogSchema = new mongoose.Schema({
             'QUERY',
             'VIEW_DOCUMENT', 'DOWNLOAD_DOCUMENT', 'UPLOAD_DOCUMENT', 'DELETE_DOCUMENT',
             'USER_UPDATE', 'USER_DELETE',
+            'GUARDRAIL_BLOCK', 'GUARDRAIL_REDACT', // Security red flags
             'SYSTEM_ERROR'
         ]
     },

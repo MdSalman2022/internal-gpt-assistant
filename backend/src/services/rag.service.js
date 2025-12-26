@@ -7,6 +7,7 @@
 
 import aiService from './ai.service.js';
 import qdrantService from './qdrant.service.js';
+import guardrailService from './guardrail.service.js';
 import { Document, Message } from '../models/index.js';
 import { reciprocalRankFusion } from '../utils/chunker.js';
 import config from '../config/index.js';
@@ -35,8 +36,35 @@ class RAGService {
         try {
             console.log('🔍 RAG Query:', { userQuery, options: { ...options, conversationHistory: 'truncated' } });
 
-            // 1. Generate embedding for user query
-            const queryEmbedding = await aiService.generateEmbedding(userQuery);
+            // 0. GUARDRAIL CHECK - PII & Prompt Injection Detection
+            const guardrailResult = guardrailService.analyze(userQuery, 'redact');
+
+            if (guardrailResult.findings.length > 0) {
+                console.log('🛡️ Guardrail Findings:', guardrailResult.findings);
+            }
+
+            // If blocked (e.g., prompt injection detected), return early
+            if (guardrailResult.blocked) {
+                console.warn('⛔ Guardrail BLOCKED request:', guardrailResult.findings);
+                return {
+                    answer: "I'm sorry, but I cannot process this request. It appears to contain content that violates our safety guidelines.",
+                    citations: [],
+                    confidence: 0,
+                    blocked: true,
+                    blockedReason: guardrailResult.hasInjection ? 'prompt_injection' : 'pii_detected',
+                    guardrailFindings: guardrailResult.findings, // For audit logging
+                    latency: Date.now() - startTime
+                };
+            }
+
+            // Store findings for later audit (even if not blocked, PII was redacted)
+            const guardrailFindings = guardrailResult.findings;
+
+            // Use redacted text for the rest of the pipeline
+            const safeQuery = guardrailResult.redactedText;
+
+            // 1. Generate embedding for user query (using safe/redacted version)
+            const queryEmbedding = await aiService.generateEmbedding(safeQuery);
 
             // 2. Build Search Filter
             let searchFilter = {};
@@ -131,6 +159,7 @@ class RAGService {
                     confidence: generalResponse.confidence,
                     sourcesSearched: 0,
                     provider: generalResponse.provider,
+                    guardrailFindings, // Include for audit logging
                     latency: Date.now() - startTime
                 };
             }
@@ -147,6 +176,7 @@ class RAGService {
                     citations: [],
                     confidence: 0,
                     sourcesSearched: uniqueResults.length,
+                    guardrailFindings, // Include for audit logging
                     latency: Date.now() - startTime
                 };
             }
@@ -176,6 +206,7 @@ class RAGService {
                 provider: response.provider,
                 latency: Date.now() - startTime,
                 sourcesSearched: uniqueResults.length,
+                guardrailFindings, // For audit logging of redactions
                 timings: {
                     total: Date.now() - startTime,
                     // Estimate timings for now as they aren't explicitly tracked per step yet

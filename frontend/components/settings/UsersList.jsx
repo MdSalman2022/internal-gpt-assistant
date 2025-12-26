@@ -3,9 +3,10 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/lib/auth-context';
 import { usersApi } from '@/lib/api';
+import UserProfileModal from './UserProfileModal';
 import {
     Users, Search, Trash2, CheckCircle, AlertCircle, X, Shield,
-    User as UserIcon, MoreVertical, LayoutGrid, Calendar, Mail
+    User as UserIcon, MoreVertical, LayoutGrid, Calendar, Mail, Eye
 } from 'lucide-react';
 
 export default function UsersList() {
@@ -17,6 +18,7 @@ export default function UsersList() {
     // UI State
     const [selectedUser, setSelectedUser] = useState(null); // For role edit modal
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+    const [profileUserId, setProfileUserId] = useState(null); // For profile modal
     const [toast, setToast] = useState(null);
     const [roleUpdating, setRoleUpdating] = useState(false);
 
@@ -167,7 +169,11 @@ export default function UsersList() {
                             </tr>
                         ) : (
                             filteredUsers.map(u => (
-                                <tr key={u._id} className="group hover:bg-slate-800/30 transition-colors">
+                                <tr
+                                    key={u._id}
+                                    className="group hover:bg-slate-800/30 transition-colors cursor-pointer"
+                                    onClick={() => setProfileUserId(u._id)}
+                                >
                                     <td className="px-6 py-4">
                                         <div className="flex items-center gap-3">
                                             <div className="w-10 h-10 rounded-full bg-gradient-to-br from-slate-700 to-slate-800 flex items-center justify-center border border-slate-700 shadow-inner">
@@ -196,7 +202,7 @@ export default function UsersList() {
                                             {new Date(u.createdAt).toLocaleDateString()}
                                         </div>
                                     </td>
-                                    <td className="px-6 py-4 text-right">
+                                    <td className="px-6 py-4 text-right" onClick={e => e.stopPropagation()}>
                                         <div className="flex items-center justify-end gap-2">
                                             <button
                                                 onClick={() => {
@@ -281,6 +287,14 @@ export default function UsersList() {
                         </div>
                     </div>
                 </div>
+            )}
+
+            {/* User Profile Modal */}
+            {profileUserId && (
+                <UserProfileModal
+                    userId={profileUserId}
+                    onClose={() => setProfileUserId(null)}
+                />
             )}
 
             {/* Toast Notification */}

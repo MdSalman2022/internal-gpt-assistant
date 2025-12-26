@@ -114,4 +114,61 @@ export default async function usersRoutes(fastify) {
 
         return { success: true, message: 'User deleted successfully' };
     });
+
+    // GET /:id/profile - Get user profile with security stats
+    fastify.get('/:id/profile', async (request, reply) => {
+        const { id } = request.params;
+
+        // Import AuditLog model
+        const AuditLog = (await import('../models/AuditLog.js')).default;
+
+        const user = await User.findById(id)
+            .select('-password -resetPasswordToken -resetPasswordExpires')
+            .lean();
+
+        if (!user) {
+            return reply.status(404).send({ error: 'User not found' });
+        }
+
+        // Aggregate security stats
+        const [redFlagStats, recentRedFlags, documentAccess, queryCount] = await Promise.all([
+            // Count of each red flag type
+            AuditLog.aggregate([
+                { $match: { userId: user._id, action: { $in: ['GUARDRAIL_BLOCK', 'GUARDRAIL_REDACT'] } } },
+                { $group: { _id: '$action', count: { $sum: 1 } } }
+            ]),
+            // Recent red flags (last 10)
+            AuditLog.find({ userId: user._id, action: { $in: ['GUARDRAIL_BLOCK', 'GUARDRAIL_REDACT'] } })
+                .sort({ timestamp: -1 })
+                .limit(10)
+                .select('action details timestamp')
+                .lean(),
+            // Recent document access (last 10)
+            AuditLog.find({ userId: user._id, action: { $in: ['VIEW_DOCUMENT', 'DOWNLOAD_DOCUMENT'] } })
+                .sort({ timestamp: -1 })
+                .limit(10)
+                .select('action resourceId details timestamp')
+                .lean(),
+            // Total query count
+            AuditLog.countDocuments({ userId: user._id, action: 'QUERY' })
+        ]);
+
+        // Format red flag counts
+        const redFlags = {
+            blocked: redFlagStats.find(r => r._id === 'GUARDRAIL_BLOCK')?.count || 0,
+            redacted: redFlagStats.find(r => r._id === 'GUARDRAIL_REDACT')?.count || 0,
+            total: redFlagStats.reduce((sum, r) => sum + r.count, 0)
+        };
+
+        return {
+            user,
+            stats: {
+                redFlags,
+                totalQueries: queryCount,
+                documentsAccessed: documentAccess.length
+            },
+            recentRedFlags,
+            recentDocumentAccess: documentAccess
+        };
+    });
 }

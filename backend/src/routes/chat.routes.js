@@ -1,5 +1,5 @@
 import { Conversation, Message, Document, User } from '../models/index.js';
-import { ragService, aiService, geminiService, documentService, auditService } from '../services/index.js';
+import { ragService, aiService, geminiService, documentService, auditService, guardrailService } from '../services/index.js';
 import { requirePermission } from '../middleware/rbac.middleware.js';
 
 // Chat routes
@@ -207,6 +207,30 @@ export default async function chatRoutes(fastify) {
             return reply.status(500).send({ error: `RAG processing failed: ${error.message}` });
         }
 
+        // Handle guardrail blocked requests
+        if (response.blocked) {
+            // Audit log for security tracking
+            auditService.log(request, 'GUARDRAIL_BLOCK', { type: 'conversation', id: conversation._id.toString() }, {
+                reason: response.blockedReason,
+                query: content?.substring(0, 100) + '...' // Truncated for privacy
+            });
+
+            // Save a system message indicating block (optional, for UI)
+            const blockedMessage = new Message({
+                conversationId: conversation._id,
+                role: 'assistant',
+                content: response.answer, // The rejection message from guardrails
+                metadata: { blocked: true, blockedReason: response.blockedReason }
+            });
+            await blockedMessage.save();
+
+            return {
+                userMessage: userMessage.toObject(),
+                assistantMessage: blockedMessage.toObject(),
+                metadata: { blocked: true, blockedReason: response.blockedReason }
+            };
+        }
+
         // Save assistant message with all tracking data
         const assistantMessage = new Message({
             conversationId: conversation._id,
@@ -243,6 +267,22 @@ export default async function chatRoutes(fastify) {
             responseLength: response.answer?.length,
             citedDocumentIds: response.citations?.map(c => c.documentId) || []
         });
+
+        // AUDIT LOG: Guardrail Redaction (if PII was redacted)
+        console.log('🔐 Guardrail Findings Check:', response.guardrailFindings);
+        if (response.guardrailFindings && response.guardrailFindings.length > 0) {
+            const piiFindings = response.guardrailFindings.filter(f => f.type === 'pii');
+            console.log('🔐 PII Findings:', piiFindings);
+            if (piiFindings.length > 0) {
+                console.log('📝 Logging GUARDRAIL_REDACT audit entry...');
+                await auditService.log(request, 'GUARDRAIL_REDACT', { type: 'conversation', id: conversation._id.toString() }, {
+                    redactedCount: piiFindings.length,
+                    types: [...new Set(piiFindings.map(f => f.category))],
+                    query: content?.substring(0, 50) + '...' // Truncated for privacy
+                });
+                console.log('✅ GUARDRAIL_REDACT audit logged');
+            }
+        }
 
         return {
             userMessage: userMessage.toObject(),

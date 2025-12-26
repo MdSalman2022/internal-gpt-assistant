@@ -172,6 +172,9 @@ export const usersApi = {
     // Get organization structure (departments, teams)
     getStructure: () => fetcher('/api/users/structure'),
 
+    // Get user profile with security stats
+    getUserProfile: (id) => fetcher(`/api/users/${id}/profile`),
+
     // Update user
     updateUser: (id, updates) =>
         fetcher(`/api/users/${id}`, {
