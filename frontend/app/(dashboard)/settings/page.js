@@ -78,8 +78,38 @@ export default function SettingsPage() {
 
     return (
         <div className="flex flex-col h-full overflow-hidden">
-            {/* Header */}
-            <header className="flex items-center justify-between px-6 py-4 border-b border-slate-800">
+            {/* Mobile Header with back button and horizontal tabs */}
+            <div className="md:hidden">
+                <header className="flex items-center gap-3 px-3 py-3 border-b border-slate-800">
+                    <button
+                        onClick={() => router.push('/chat')}
+                        className="p-2 -ml-1 hover:bg-slate-800 rounded-lg transition-colors"
+                    >
+                        <svg className="w-5 h-5 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                        </svg>
+                    </button>
+                    <h1 className="text-lg font-semibold text-white">Settings</h1>
+                </header>
+                <div className="overflow-x-auto border-b border-slate-800 scrollbar-hide">
+                    <div className="flex gap-1 p-2 min-w-max">
+                        {tabs.map(tab => (
+                            <button
+                                key={tab.id}
+                                onClick={() => setActiveTab(tab.id)}
+                                className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium whitespace-nowrap transition-colors
+                                    ${activeTab === tab.id ? 'bg-slate-800 text-white' : 'text-slate-400 hover:text-white'}`}
+                            >
+                                <tab.icon className="w-4 h-4" />
+                                {tab.label}
+                            </button>
+                        ))}
+                    </div>
+                </div>
+            </div>
+
+            {/* Desktop Header */}
+            <header className="hidden md:flex items-center justify-between px-6 py-4 border-b border-slate-800">
                 <div>
                     <h1 className="text-xl font-semibold text-white">Settings</h1>
                     <p className="text-sm text-slate-500">Manage account and system preferences</p>
@@ -87,8 +117,8 @@ export default function SettingsPage() {
             </header>
 
             <div className="flex-1 flex overflow-hidden">
-                {/* Tabs Sidebar */}
-                <nav className="w-56 border-r border-slate-800 p-3 flex-shrink-0 overflow-y-auto">
+                {/* Desktop Tabs Sidebar - Hidden on mobile */}
+                <nav className="hidden md:flex w-56 flex-col border-r border-slate-800 p-3 flex-shrink-0 overflow-y-auto">
                     {tabs.map(tab => (
                         <button
                             key={tab.id}

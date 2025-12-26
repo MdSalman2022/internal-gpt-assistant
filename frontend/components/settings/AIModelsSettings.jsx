@@ -105,7 +105,7 @@ export default function AIModelsSettings() {
     }
 
     return (
-        <div className="p-6 space-y-8 animate-in fade-in duration-500 max-w-6xl">
+        <div className="p-4 md:p-6 space-y-6 md:space-y-8 animate-in fade-in duration-500 max-w-6xl">
             {/* Header */}
             <div>
                 <h2 className="text-xl font-semibold text-white flex items-center gap-2">
@@ -122,17 +122,17 @@ export default function AIModelsSettings() {
                         <TrendingUp className="w-5 h-5 text-primary-400" />
                         Cost Summary (Last 30 Days)
                     </h3>
-                    <div className="grid grid-cols-3 gap-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 md:gap-4">
                         <div className="bg-slate-900/50 rounded-xl p-4 text-center">
-                            <p className="text-3xl font-bold text-green-400">${costSummary.totalCostUSD}</p>
+                            <p className="text-xl md:text-3xl font-bold text-green-400">${costSummary.totalCostUSD}</p>
                             <p className="text-xs text-slate-400 mt-1">Total Cost</p>
                         </div>
                         <div className="bg-slate-900/50 rounded-xl p-4 text-center">
-                            <p className="text-3xl font-bold text-white">{(costSummary.totalTokens / 1000).toFixed(1)}K</p>
+                            <p className="text-xl md:text-3xl font-bold text-white">{(costSummary.totalTokens / 1000).toFixed(1)}K</p>
                             <p className="text-xs text-slate-400 mt-1">Total Tokens</p>
                         </div>
                         <div className="bg-slate-900/50 rounded-xl p-4 text-center">
-                            <p className="text-3xl font-bold text-white">{Object.keys(costSummary.byModel).length}</p>
+                            <p className="text-xl md:text-3xl font-bold text-white">{Object.keys(costSummary.byModel).length}</p>
                             <p className="text-xs text-slate-400 mt-1">Models Used</p>
                         </div>
                     </div>

@@ -180,39 +180,32 @@ export default function ChatPage() {
         return await chatApi.uploadFileToChat(conversationId, file);
     };
 
-    // New Chat Welcome Screen
+    // New Chat Welcome Screen - Gemini-like
     if (isNewChat && messages.length === 0) {
         return (
             <div className="flex flex-col h-full">
                 {/* Centered welcome content */}
-                <div className="flex-1 flex flex-col items-center justify-center px-4 pb-32">
-                    <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-primary-400 to-primary-600 flex items-center justify-center mb-6 shadow-lg shadow-primary-500/25">
-                        <Sparkles className="w-8 h-8 text-white" />
-                    </div>
-
-                    <h1 className="text-3xl font-semibold text-white mb-2">
-                        How can I help you today?
+                <div className="flex-1 flex flex-col items-start md:items-center justify-center px-6 md:px-4 pb-32">
+                    {/* Greeting - Gemini style */}
+                    <p className="text-slate-400 text-sm md:text-base mb-1">Hi {user?.name?.split(' ')[0] || 'there'}</p>
+                    <h1 className="text-2xl md:text-3xl lg:text-4xl font-medium text-white mb-8 md:mb-10">
+                        <span className="bg-gradient-to-r from-primary-400 to-purple-400 bg-clip-text text-transparent">
+                            How can I help you today?
+                        </span>
                     </h1>
-                    <p className="text-slate-400 mb-8 text-center max-w-md">
-                        Ask me anything about your documents or get help with any topic.
-                    </p>
 
-                    {/* Quick prompts grid */}
-                    <div className="grid grid-cols-2 gap-3 w-full max-w-2xl mb-8">
+                    {/* Quick prompts - Pill style like Gemini */}
+                    <div className="flex flex-col md:flex-row flex-wrap gap-2 md:gap-3 w-full md:justify-center md:max-w-2xl">
                         {QUICK_PROMPTS.map((prompt, i) => (
                             <button
                                 key={i}
                                 onClick={() => handleQuickPrompt(prompt.text)}
-                                className="group flex items-start gap-3 p-4 bg-slate-800/50 hover:bg-slate-800 
-                                         border border-slate-700 hover:border-slate-600 rounded-xl 
-                                         text-left transition-all"
+                                className="flex items-center gap-2 px-4 py-2.5 bg-slate-800/60 hover:bg-slate-800 
+                                         border border-slate-700/50 hover:border-slate-600 rounded-full 
+                                         text-sm text-slate-300 hover:text-white transition-all"
                             >
-                                <div className={`p-2 rounded-lg bg-gradient-to-br ${prompt.color} opacity-80 group-hover:opacity-100`}>
-                                    <prompt.icon className="w-4 h-4 text-white" />
-                                </div>
-                                <span className="text-sm text-slate-300 group-hover:text-white">
-                                    {prompt.text}
-                                </span>
+                                <prompt.icon className="w-4 h-4 text-slate-400" />
+                                {prompt.text}
                             </button>
                         ))}
                     </div>

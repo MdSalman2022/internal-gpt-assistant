@@ -8,8 +8,9 @@ import { chatApi } from '@/lib/api';
 import {
     MessageSquare, FileText, BarChart3, Settings, LogOut,
     Menu, X, ChevronLeft, Sparkles, Plus, MessageCircle,
-    MoreHorizontal, Pencil, Trash2, Check, X as XIcon, Shield, Users
+    MoreHorizontal, Pencil, Trash2, Check, X as XIcon, Shield, Users, Search
 } from 'lucide-react';
+import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 
 // Nav items with required permissions
 // Nav items with required permissions
@@ -335,99 +336,126 @@ export default function DashboardLayout({ children }) {
                 </div>
             </aside>
 
-            {/* Mobile Header */}
-            <div className="md:hidden fixed top-0 left-0 right-0 z-40 h-16 bg-slate-900 border-b border-slate-800 flex items-center justify-between px-4">
-                <Link href="/chat" className="flex items-center gap-2">
-                    <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-primary-400 to-primary-600 flex items-center justify-center">
-                        <Sparkles className="w-4 h-4 text-white" />
+            {/* Mobile Slide-Out Drawer using shadcn Sheet */}
+            <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
+                <SheetContent side="left" className="w-80 p-0 bg-slate-900 border-slate-800">
+                    {/* Header */}
+                    <div className="flex items-center gap-3 h-14 px-4 border-b border-slate-800">
+                        <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-primary-400 to-primary-600 flex items-center justify-center">
+                            <Sparkles className="w-4 h-4 text-white" />
+                        </div>
+                        <span className="font-bold text-white">KnowledgeAI</span>
                     </div>
-                    <span className="font-bold text-white">KnowledgeAI</span>
-                </Link>
-                <div className="flex items-center gap-2">
-                    <button
-                        onClick={handleNewChat}
-                        className="p-2 bg-slate-800 hover:bg-slate-700 rounded-lg border border-slate-700"
-                    >
-                        <Plus className="w-5 h-5 text-white" />
-                    </button>
-                    <button
-                        onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-                        className="p-2 hover:bg-slate-800 rounded-lg"
-                    >
-                        {mobileMenuOpen ? <X className="w-6 h-6 text-white" /> : <Menu className="w-6 h-6 text-white" />}
-                    </button>
-                </div>
-            </div>
 
-            {/* Mobile Menu Overlay */}
-            {mobileMenuOpen && (
-                <div className="md:hidden fixed inset-0 z-30 bg-black/50" onClick={() => setMobileMenuOpen(false)}>
-                    <div
-                        className="absolute top-16 left-0 right-0 bg-slate-900 border-b border-slate-800 p-4 max-h-[80vh] overflow-y-auto"
-                        onClick={e => e.stopPropagation()}
-                    >
-                        {/* Recent chats in mobile */}
-                        {recentChats.length > 0 && (
-                            <div className="mb-4 pb-4 border-b border-slate-800">
-                                <p className="px-2 py-1 text-xs font-medium text-slate-500 uppercase">Recent Chats</p>
-                                {recentChats.slice(0, 5).map((chat) => (
-                                    <div key={chat._id} className="flex items-center gap-2">
-                                        <Link
-                                            href={`/chat?conversation=${chat._id}`}
-                                            onClick={() => setMobileMenuOpen(false)}
-                                            className="flex-1 flex items-center gap-2 px-3 py-2 text-slate-300 hover:bg-slate-800 rounded-lg"
-                                        >
-                                            <MessageCircle className="w-4 h-4" />
-                                            <span className="truncate">{chat.title || 'New chat'}</span>
-                                        </Link>
-                                        <button
-                                            onClick={(e) => handleDeleteChat(e, chat._id)}
-                                            className="p-2 text-slate-400 hover:text-red-400"
-                                        >
-                                            <Trash2 className="w-4 h-4" />
-                                        </button>
-                                    </div>
-                                ))}
-                            </div>
-                        )}
-
-                        <nav className="space-y-1">
-                            {visibleNavItems.map((item) => {
-                                const isActive = pathname === item.href;
-                                return (
-                                    <Link
-                                        key={item.href}
-                                        href={item.href}
-                                        onClick={() => setMobileMenuOpen(false)}
-                                        className={`
-                                            flex items-center gap-3 px-4 py-3 rounded-lg
-                                            ${isActive
-                                                ? 'bg-primary-500/10 text-primary-400'
-                                                : 'text-slate-300 hover:bg-slate-800'
-                                            }
-                                        `}
-                                    >
-                                        <item.icon className="w-5 h-5" />
-                                        <span className="font-medium">{item.label}</span>
-                                    </Link>
-                                );
-                            })}
-                        </nav>
+                    {/* New Chat */}
+                    <div className="p-3">
                         <button
-                            onClick={handleLogout}
-                            className="flex items-center gap-3 w-full px-4 py-3 mt-2 text-red-400 hover:bg-red-500/10 rounded-lg"
+                            onClick={() => { handleNewChat(); setMobileMenuOpen(false); }}
+                            className="flex items-center gap-3 w-full px-4 py-3 rounded-lg bg-slate-800 hover:bg-slate-700 text-white font-medium border border-slate-700 transition-colors"
                         >
-                            <LogOut className="w-5 h-5" />
-                            <span>Logout</span>
+                            <Plus className="w-5 h-5" />
+                            <span>New chat</span>
                         </button>
                     </div>
-                </div>
-            )}
+
+                    {/* Search Chats */}
+                    <div className="px-3 pb-2">
+                        <div className="flex items-center gap-2 px-3 py-2 bg-slate-800/50 rounded-lg border border-slate-700/50">
+                            <Search className="w-4 h-4 text-slate-500" />
+                            <span className="text-sm text-slate-500">Search chats</span>
+                        </div>
+                    </div>
+
+                    {/* Your Chats */}
+                    <div className="flex-1 overflow-y-auto px-3">
+                        {recentChats.length > 0 && (
+                            <>
+                                <p className="px-2 py-2 text-xs font-medium text-slate-500">Your chats</p>
+                                <div className="space-y-0.5">
+                                    {recentChats.map((chat) => (
+                                        <div key={chat._id} className="group flex items-center">
+                                            <Link
+                                                href={`/chat?conversation=${chat._id}`}
+                                                onClick={() => setMobileMenuOpen(false)}
+                                                className={`flex-1 flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors ${currentConversationId === chat._id
+                                                    ? 'bg-slate-800 text-white'
+                                                    : 'text-slate-300 hover:bg-slate-800/50'
+                                                    }`}
+                                            >
+                                                <MessageCircle className="w-4 h-4 flex-shrink-0 text-slate-500" />
+                                                <span className="truncate text-sm">{chat.title || 'New chat'}</span>
+                                            </Link>
+                                            <button
+                                                onClick={(e) => handleDeleteChat(e, chat._id)}
+                                                className="opacity-0 group-hover:opacity-100 p-2 text-slate-500 hover:text-red-400 transition-opacity"
+                                            >
+                                                <MoreHorizontal className="w-4 h-4" />
+                                            </button>
+                                        </div>
+                                    ))}
+                                </div>
+                            </>
+                        )}
+                    </div>
+
+                    {/* Bottom Section */}
+                    <div className="mt-auto border-t border-slate-800">
+                        {/* Menu Items */}
+                        <div className="p-2">
+                            {visibleNavItems.map((item) => (
+                                <Link
+                                    key={item.href}
+                                    href={item.href}
+                                    onClick={() => setMobileMenuOpen(false)}
+                                    className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors ${pathname === item.href
+                                        ? 'bg-slate-800 text-white'
+                                        : 'text-slate-300 hover:bg-slate-800/50'
+                                        }`}
+                                >
+                                    <item.icon className="w-5 h-5" />
+                                    <span className="text-sm font-medium">{item.label}</span>
+                                </Link>
+                            ))}
+                        </div>
+
+                        {/* User Profile */}
+                        <div className="p-2 border-t border-slate-800">
+                            <div className="flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-slate-800/50 cursor-pointer">
+                                <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-purple-500 flex items-center justify-center">
+                                    <span className="text-xs font-bold text-white">{user?.name?.slice(0, 2).toUpperCase() || 'U'}</span>
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                    <p className="text-sm font-medium text-white truncate">{user?.name}</p>
+                                    <p className="text-xs text-slate-500 truncate">{user?.email}</p>
+                                </div>
+                            </div>
+                            <button
+                                onClick={handleLogout}
+                                className="flex items-center gap-3 w-full px-3 py-2.5 text-slate-400 hover:bg-slate-800/50 rounded-lg transition-colors"
+                            >
+                                <LogOut className="w-5 h-5" />
+                                <span className="text-sm">Log out</span>
+                            </button>
+                        </div>
+                    </div>
+                </SheetContent>
+            </Sheet>
 
             {/* Main Content */}
-            <main className="flex-1 flex flex-col min-w-0 overflow-hidden md:pt-0 pt-16">
+            <main className="flex-1 flex flex-col min-w-0 overflow-hidden">
                 {children}
             </main>
+
+            {/* Mobile Hamburger Menu Toggle - only on chat page */}
+            {pathname.startsWith('/chat') && (
+                <button
+                    onClick={() => setMobileMenuOpen(true)}
+                    className="md:hidden fixed top-4 left-4 z-30 p-2.5 bg-slate-800/90 backdrop-blur-sm rounded-xl border border-slate-700 shadow-lg"
+                >
+                    <Menu className="w-5 h-5 text-white" />
+                </button>
+            )}
         </div>
     );
 }
+
