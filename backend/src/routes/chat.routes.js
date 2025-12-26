@@ -1,5 +1,5 @@
 import { Conversation, Message, Document } from '../models/index.js';
-import { ragService, aiService, geminiService, documentService } from '../services/index.js';
+import { ragService, aiService, geminiService, documentService, auditService } from '../services/index.js';
 import { requirePermission } from '../middleware/rbac.middleware.js';
 
 // Chat routes
@@ -229,6 +229,16 @@ export default async function chatRoutes(fastify) {
         }
 
         await conversation.save();
+
+        // ... existing response generation ...
+
+        // AUDIT LOG: Query
+        auditService.log(request, 'QUERY', { type: 'conversation', id: conversation._id.toString() }, {
+            query: content || 'Used Attachment',
+            model: response.provider || 'gemini',
+            responseLength: response.answer?.length,
+            citedDocumentIds: response.citations?.map(c => c.documentId) || []
+        });
 
         return {
             userMessage: userMessage.toObject(),

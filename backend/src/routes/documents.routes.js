@@ -2,6 +2,7 @@ import { Document, Conversation } from '../models/index.js';
 import User from '../models/User.js';
 import { documentService, qdrantService } from '../services/index.js';
 import { requireRole, requirePermission } from '../middleware/rbac.middleware.js';
+import { auditService } from '../services/index.js';
 
 // Document routes
 export default async function documentRoutes(fastify) {
@@ -65,6 +66,13 @@ export default async function documentRoutes(fastify) {
             console.error('Background processing error:', err);
         });
 
+        // AUDIT LOG: Upload
+        auditService.log(request, 'UPLOAD_DOCUMENT', { type: 'document', id: document._id.toString() }, {
+            filename: document.originalName,
+            size: document.size,
+            mimeType: document.mimeType
+        });
+
         return {
             success: true,
             document: document.toObject(),
@@ -98,6 +106,11 @@ export default async function documentRoutes(fastify) {
         if (!document) {
             return reply.status(404).send({ error: 'Document not found' });
         }
+
+        // AUDIT LOG: View Metadata
+        auditService.log(request, 'VIEW_DOCUMENT', { type: 'document', id: document.id }, {
+            title: document.title
+        });
 
         return { document };
     });
@@ -148,6 +161,12 @@ export default async function documentRoutes(fastify) {
 
             const fileName = document.originalName || document.title;
 
+            // AUDIT LOG: Download (Critical)
+            auditService.log(request, 'DOWNLOAD_DOCUMENT', { type: 'document', id: document._id.toString() }, {
+                filename: fileName,
+                sourceUrl: document.source.url
+            });
+
             // Set headers to force download with original filename
             return reply
                 .header('Content-Type', document.mimeType || 'application/octet-stream')
@@ -175,6 +194,11 @@ export default async function documentRoutes(fastify) {
         }
 
         await documentService.deleteDocument(request.params.id);
+
+        // AUDIT LOG: Delete
+        auditService.log(request, 'DELETE_DOCUMENT', { type: 'document', id: request.params.id }, {
+            title: document.title
+        });
 
         return { success: true, message: 'Document deleted from cloud and knowledge base' };
     });

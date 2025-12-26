@@ -5,7 +5,7 @@ import session from '@fastify/session';
 import multipart from '@fastify/multipart';
 import MongoStore from 'connect-mongo';
 import config from './config/index.js';
-import { authRoutes, documentRoutes, chatRoutes, analyticsRoutes, usersRoutes } from './routes/index.js';
+import { authRoutes, documentRoutes, chatRoutes, analyticsRoutes, usersRoutes, auditRoutes } from './routes/index.js';
 
 export async function buildApp() {
     const fastify = Fastify({
@@ -63,6 +63,7 @@ export async function buildApp() {
     fastify.register(chatRoutes, { prefix: '/api/chat' });
     fastify.register(analyticsRoutes, { prefix: '/api/analytics' });
     fastify.register(usersRoutes, { prefix: '/api/users' });
+    fastify.register(auditRoutes, { prefix: '/api/audit-logs' });
 
     // Global error handler
     fastify.setErrorHandler((error, request, reply) => {

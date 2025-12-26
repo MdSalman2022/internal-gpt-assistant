@@ -174,3 +174,16 @@ export const usersApi = {
     deleteUser: (id) =>
         fetcher(`/api/users/${id}`, { method: 'DELETE' }),
 };
+
+// Audit Logs API
+export const auditApi = {
+    // Get logs with filters
+    getLogs: (filters = {}, page = 1) => {
+        const params = new URLSearchParams({ page });
+        if (filters.action) params.append('action', filters.action);
+        if (filters.userId) params.append('userId', filters.userId);
+        if (filters.startDate) params.append('startDate', filters.startDate);
+        if (filters.endDate) params.append('endDate', filters.endDate);
+        return fetcher(`/api/audit-logs?${params.toString()}`);
+    }
+};

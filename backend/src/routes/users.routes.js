@@ -1,5 +1,6 @@
 import { User } from '../models/index.js';
 import { requirePermission } from '../middleware/rbac.middleware.js';
+import { auditService } from '../services/index.js';
 
 export default async function usersRoutes(fastify) {
     // Require 'users:manage' permission for all routes (Admin, Visitor, Employee have this)
@@ -50,6 +51,12 @@ export default async function usersRoutes(fastify) {
             success: true,
             user: { _id: user._id, name: user.name, email: user.email, role: user.role }
         };
+
+        // AUDIT LOG: User Update
+        auditService.log(request, 'USER_UPDATE', { type: 'user', id: user._id.toString() }, {
+            updatedFields: { role, name },
+            targetUserEmail: user.email
+        });
     });
 
     // DELETE /:id - Delete user
@@ -71,6 +78,12 @@ export default async function usersRoutes(fastify) {
         if (!user) {
             return reply.status(404).send({ error: 'User not found' });
         }
+
+        // AUDIT LOG: User Delete
+        auditService.log(request, 'USER_DELETE', { type: 'user', id: id }, {
+            targetUserEmail: user.email,
+            targetUserName: user.name
+        });
 
         return { success: true, message: 'User deleted successfully' };
     });

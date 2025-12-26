@@ -12,11 +12,9 @@ import {
 } from 'lucide-react';
 
 // Nav items with required permissions
+// Nav items with required permissions
 const navItems = [
     { href: '/chat', icon: MessageSquare, label: 'Chat', permission: 'chat:read' },
-    { href: '/documents', icon: FileText, label: 'Documents', permission: 'documents:read' },
-    { href: '/analytics', icon: BarChart3, label: 'Analytics', permission: 'analytics:read' },
-    { href: '/users', icon: Users, label: 'Users', permission: 'users:manage' },
     { href: '/settings', icon: Settings, label: 'Settings', permission: null }, // Everyone can access
 ];
 

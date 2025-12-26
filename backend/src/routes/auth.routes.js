@@ -1,4 +1,4 @@
-import { authService } from '../services/index.js';
+import { authService, auditService } from '../services/index.js';
 import config from '../config/index.js';
 import { User } from '../models/index.js';
 import crypto from 'crypto';
@@ -25,6 +25,12 @@ export default async function authRoutes(fastify) {
             request.session.userId = user._id;
             request.session.user = user.toJSON();
 
+            // AUDIT LOG: Register
+            auditService.log(request, 'LOGIN', { type: 'user', id: user._id.toString() }, {
+                method: 'register',
+                email: user.email
+            });
+
             return { success: true, user: user.toJSON() };
         } catch (error) {
             if (error.message === 'Email already registered') {
@@ -45,6 +51,8 @@ export default async function authRoutes(fastify) {
         const user = await authService.authenticateLocal(email, password);
 
         if (!user) {
+            // AUDIT LOG: Failed Login
+            auditService.log(request, 'LOGIN', { type: 'user' }, { email, reason: 'Invalid credentials' }, 'FAILURE');
             return reply.status(401).send({ error: 'Invalid credentials' });
         }
 
@@ -52,11 +60,17 @@ export default async function authRoutes(fastify) {
         request.session.userId = user._id;
         request.session.user = user.toJSON();
 
+        // AUDIT LOG: Login
+        auditService.log(request, 'LOGIN', { type: 'user', id: user._id.toString() }, { method: 'password' });
+
         return { success: true, user: user.toJSON() };
     });
 
     // Logout
     fastify.post('/logout', async (request, reply) => {
+        // AUDIT LOG: Logout (must be before destroy)
+        auditService.log(request, 'LOGOUT', { type: 'user', id: request.session.userId }, {});
+
         await request.session.destroy();
         return { success: true };
     });
