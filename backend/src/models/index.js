@@ -3,3 +3,6 @@ export { default as Document } from './Document.js';
 export { default as Conversation } from './Conversation.js';
 export { default as Message } from './Message.js';
 export { default as AuditLog } from './AuditLog.js';
+export { default as UsageLog } from './UsageLog.js';
+export { default as AdminSettings } from './AdminSettings.js';
+

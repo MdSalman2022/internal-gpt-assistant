@@ -159,6 +159,8 @@ class RAGService {
                     confidence: generalResponse.confidence,
                     sourcesSearched: 0,
                     provider: generalResponse.provider,
+                    model: generalResponse.model,
+                    tokens: generalResponse.tokens, // For usage tracking
                     guardrailFindings, // Include for audit logging
                     latency: Date.now() - startTime
                 };
@@ -204,6 +206,8 @@ class RAGService {
                 confidence: response.confidence,
                 isLowConfidence: response.isLowConfidence,
                 provider: response.provider,
+                model: response.model,
+                tokens: response.tokens, // For usage tracking
                 latency: Date.now() - startTime,
                 sourcesSearched: uniqueResults.length,
                 guardrailFindings, // For audit logging of redactions

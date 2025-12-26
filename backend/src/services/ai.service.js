@@ -151,9 +151,19 @@ ${contextText}`;
             result.content.toLowerCase().includes("not mentioned") ||
             result.content.toLowerCase().includes("no information");
 
+        // Estimate tokens if not provided by provider (~4 chars per token)
+        const promptText = systemPrompt + query;
+        const estimatedPromptTokens = result.tokens?.prompt || Math.ceil(promptText.length / 4);
+        const estimatedCompletionTokens = result.tokens?.completion || Math.ceil(result.content.length / 4);
+
         return {
             answer: result.content,
-            tokens: result.tokens,
+            tokens: {
+                prompt: estimatedPromptTokens,
+                completion: estimatedCompletionTokens,
+                total: estimatedPromptTokens + estimatedCompletionTokens
+            },
+            model: result.model || 'gemini-pro',
             provider: result.provider,
             confidence: hasLowConfidence ? 0.3 : 0.8,
             isLowConfidence: hasLowConfidence,

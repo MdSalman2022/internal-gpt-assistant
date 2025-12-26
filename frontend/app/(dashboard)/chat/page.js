@@ -6,7 +6,7 @@ import { useAuth } from '@/lib/auth-context';
 import { chatApi } from '@/lib/api';
 import ChatWindow from '@/components/chat/ChatWindow';
 import ChatInput from '@/components/chat/ChatInput';
-import { Sparkles, Zap, BookOpen, Code, Lightbulb } from 'lucide-react';
+import { Sparkles, Zap, BookOpen, Code, Lightbulb, AlertTriangle, X } from 'lucide-react';
 
 // Quick prompts like ChatGPT
 const QUICK_PROMPTS = [
@@ -27,6 +27,7 @@ export default function ChatPage() {
     const [messages, setMessages] = useState([]);
     const [isTyping, setIsTyping] = useState(false);
     const [isNewChat, setIsNewChat] = useState(true);
+    const [toast, setToast] = useState(null); // { type, title, message, retryAfter }
 
     // Load conversation from URL param or start fresh
     useEffect(() => {
@@ -110,7 +111,35 @@ export default function ChatPage() {
             }
         } catch (error) {
             console.error('Failed to send message:', error);
+
+            // Remove temp message on error
             setMessages(prev => prev.filter(m => m._id !== tempUserMsg._id));
+
+            // Show toast notification for errors
+            if (error.code === 'rate_limit_exceeded' || error.status === 429) {
+                if (error.isQuotaExhausted) {
+                    setToast({
+                        type: 'error',
+                        title: '⚠️ AI Quota Exhausted',
+                        message: 'Daily quota exceeded. Try again after midnight UTC or use a different API key.',
+                        persistent: true
+                    });
+                } else {
+                    const retryTime = error.retryAfter || 60;
+                    setToast({
+                        type: 'warning',
+                        title: '⏳ Rate Limited',
+                        message: `Too many requests. Please wait ${retryTime} seconds.`,
+                        retryAfter: retryTime
+                    });
+                }
+            } else {
+                setToast({
+                    type: 'error',
+                    title: '❌ Something went wrong',
+                    message: error.message || 'Please try again.'
+                });
+            }
         } finally {
             setIsTyping(false);
         }
@@ -237,6 +266,52 @@ export default function ChatPage() {
                 isTyping={isTyping}
                 centered
             />
+
+            {/* Toast Notification */}
+            {toast && (
+                <div className={`fixed bottom-6 right-6 z-50 min-w-[320px] max-w-md animate-in slide-in-from-bottom-4 fade-in duration-300
+                    bg-slate-900/95 backdrop-blur-xl rounded-2xl shadow-2xl border overflow-hidden
+                    ${toast.type === 'error' ? 'border-red-500/30' : 'border-amber-500/30'}`}>
+
+                    {/* Colored accent bar */}
+                    <div className={`h-1 ${toast.type === 'error' ? 'bg-gradient-to-r from-red-500 to-red-600' : 'bg-gradient-to-r from-amber-500 to-orange-500'}`} />
+
+                    <div className="flex items-start gap-3 p-4">
+                        <div className={`p-2 rounded-xl ${toast.type === 'error' ? 'bg-red-500/20' : 'bg-amber-500/20'}`}>
+                            <AlertTriangle className={`w-5 h-5 ${toast.type === 'error' ? 'text-red-400' : 'text-amber-400'}`} />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                            <p className="text-sm font-semibold text-white">{toast.title}</p>
+                            <p className="text-sm text-slate-400 mt-1">{toast.message}</p>
+                        </div>
+                        <button
+                            onClick={() => setToast(null)}
+                            className="text-slate-500 hover:text-white transition-colors p-1 hover:bg-slate-800 rounded-lg"
+                        >
+                            <X className="w-4 h-4" />
+                        </button>
+                    </div>
+
+                    {/* Countdown progress bar */}
+                    {!toast.persistent && (
+                        <div className="h-0.5 bg-slate-800">
+                            <div
+                                className={`h-full ${toast.type === 'error' ? 'bg-red-500' : 'bg-amber-500'}`}
+                                style={{
+                                    animation: `shrink ${toast.retryAfter || 5}s linear forwards`
+                                }}
+                            />
+                        </div>
+                    )}
+                </div>
+            )}
+
+            <style jsx>{`
+                @keyframes shrink {
+                    from { width: 100%; }
+                    to { width: 0%; }
+                }
+            `}</style>
 
         </div>
     );

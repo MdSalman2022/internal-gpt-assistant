@@ -16,7 +16,15 @@ async function fetcher(endpoint, options = {}) {
     });
 
     const data = await res.json();
-    if (!res.ok) throw new Error(data.error || 'Request failed');
+    if (!res.ok) {
+        // Create error with full response data for proper handling
+        const error = new Error(data.message || data.error || 'Request failed');
+        error.status = res.status;
+        error.code = data.error;
+        error.retryAfter = data.retryAfter;
+        error.isQuotaExhausted = data.isQuotaExhausted;
+        throw error;
+    }
     return data;
 }
 
@@ -198,4 +206,34 @@ export const auditApi = {
         if (filters.endDate) params.append('endDate', filters.endDate);
         return fetcher(`/api/audit-logs?${params.toString()}`);
     }
+};
+
+// Usage & Cost Controls API
+export const usageApi = {
+    // Get current user's usage stats
+    getMyUsage: () => fetcher('/api/usage/me'),
+
+    // Get current user's limits
+    getMyLimits: () => fetcher('/api/usage/limits'),
+
+    // Get available models for current user
+    getModels: () => fetcher('/api/usage/models'),
+
+    // Admin: Get all users' usage
+    getAllUsersUsage: () => fetcher('/api/usage/admin/users'),
+
+    // Admin: Update user limits
+    updateUserLimits: (userId, limits) =>
+        fetcher(`/api/usage/admin/users/${userId}/limits`, {
+            method: 'PATCH',
+            body: JSON.stringify(limits)
+        }),
+
+    // Admin: Reset daily usage
+    resetDailyUsage: () =>
+        fetcher('/api/usage/admin/reset-daily', { method: 'POST' }),
+
+    // Admin: Reset monthly usage
+    resetMonthlyUsage: () =>
+        fetcher('/api/usage/admin/reset-monthly', { method: 'POST' })
 };

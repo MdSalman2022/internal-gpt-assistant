@@ -59,6 +59,27 @@ const userSchema = new mongoose.Schema({
         type: Date,
         default: null,
     },
+    // Token Usage Tracking
+    usage: {
+        dailyTokens: { type: Number, default: 0 },
+        monthlyTokens: { type: Number, default: 0 },
+        totalTokens: { type: Number, default: 0 },
+        lastDailyReset: { type: Date, default: Date.now },
+        lastMonthlyReset: { type: Date, default: Date.now }
+    },
+    // Usage Limits
+    limits: {
+        dailyTokens: { type: Number, default: 50000 },    // 50K tokens/day
+        monthlyTokens: { type: Number, default: 500000 }  // 500K tokens/month
+    },
+    // Model Preferences
+    modelPreferences: {
+        defaultModel: { type: String, default: 'gemini-pro' },
+        allowedModels: {
+            type: [String],
+            default: ['gemini-pro', 'gpt-4o-mini', 'gpt-4o', 'claude-3-haiku']
+        }
+    }
 }, {
     timestamps: true,
 });

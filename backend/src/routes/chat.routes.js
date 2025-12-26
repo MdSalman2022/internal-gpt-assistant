@@ -1,6 +1,7 @@
 import { Conversation, Message, Document, User } from '../models/index.js';
-import { ragService, aiService, geminiService, documentService, auditService, guardrailService } from '../services/index.js';
+import { ragService, aiService, geminiService, documentService, auditService, guardrailService, usageService } from '../services/index.js';
 import { requirePermission } from '../middleware/rbac.middleware.js';
+import { requireUsageLimit } from '../middleware/usage-limit.middleware.js';
 
 // Chat routes
 export default async function chatRoutes(fastify) {
@@ -201,8 +202,25 @@ export default async function chatRoutes(fastify) {
         } catch (error) {
             console.error('❌ RAG Service Error:', error);
             // Handle rate limiting specifically
-            if (error.message && error.message.includes('429')) {
-                return reply.status(429).send({ error: 'AI Provider Rate Limit Exceeded. Please try again in 1 minute.' });
+            if (error.status === 429 || (error.message && error.message.includes('429'))) {
+                // Extract retry time from error message
+                let retrySeconds = 60; // Default fallback
+                const retryMatch = error.message?.match(/retry in (\d+(?:\.\d+)?)/i);
+                if (retryMatch) {
+                    retrySeconds = Math.ceil(parseFloat(retryMatch[1]));
+                }
+
+                // Check for quota type
+                const isQuotaExhausted = error.message?.includes('limit: 0') || error.message?.includes('exceeded your current quota');
+
+                return reply.status(429).send({
+                    error: 'rate_limit_exceeded',
+                    message: isQuotaExhausted
+                        ? 'You have exceeded your AI provider\'s daily quota. Please try again tomorrow or use a different API key.'
+                        : `AI provider is rate limited. Please wait ${retrySeconds} seconds before trying again.`,
+                    retryAfter: retrySeconds,
+                    isQuotaExhausted
+                });
             }
             return reply.status(500).send({ error: `RAG processing failed: ${error.message}` });
         }
@@ -258,7 +276,18 @@ export default async function chatRoutes(fastify) {
 
         await conversation.save();
 
-        // ... existing response generation ...
+        // LOG USAGE: Track token consumption
+        if (response.tokens && response.tokens.total > 0) {
+            await usageService.logUsage({
+                userId: request.session.userId,
+                conversationId: conversation._id,
+                promptTokens: response.tokens.prompt || 0,
+                completionTokens: response.tokens.completion || 0,
+                model: response.model || 'gemini-pro',
+                provider: response.provider || 'gemini',
+                requestType: 'chat'
+            });
+        }
 
         // AUDIT LOG: Query
         auditService.log(request, 'QUERY', { type: 'conversation', id: conversation._id.toString() }, {

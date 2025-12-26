@@ -5,7 +5,7 @@ import { useAuth } from '@/lib/auth-context';
 import { useRouter, useSearchParams } from 'next/navigation';
 import {
     User, Bell, Shield, Palette, Database, Key,
-    Save, LogOut, Trash2, Eye, EyeOff, LayoutDashboard, FileText, Users, Activity
+    Save, LogOut, Trash2, Eye, EyeOff, LayoutDashboard, FileText, Users, Activity, Zap, DollarSign
 } from 'lucide-react';
 
 // Import New Components
@@ -13,6 +13,9 @@ import AnalyticsDashboard from '@/components/settings/AnalyticsDashboard';
 import DocumentsManager from '@/components/settings/DocumentsManager';
 import UsersList from '@/components/settings/UsersList';
 import AuditLogViewer from '@/components/settings/AuditLogViewer';
+import UsageDashboard from '@/components/settings/UsageDashboard';
+import CostControlsAdmin from '@/components/settings/CostControlsAdmin';
+import AIModelsSettings from '@/components/settings/AIModelsSettings';
 
 export default function SettingsPage() {
     const { user, logout, isAdmin, hasPermission } = useAuth();
@@ -48,12 +51,15 @@ export default function SettingsPage() {
 
     const tabs = [
         { id: 'profile', label: 'Profile', icon: User, allowed: true },
+        // Usage & Cost Controls
+        { id: 'usage', label: 'Usage', icon: Zap, allowed: true },
+        { id: 'ai-models', label: 'AI Models', icon: Database, allowed: isAdmin },
+        { id: 'cost-controls', label: 'Cost Controls', icon: DollarSign, allowed: isAdmin },
         // Admin / Manager Sections
         { id: 'analytics', label: 'Analytics', icon: Activity, allowed: true },
-        { id: 'documents', label: 'Documents', icon: FileText, allowed: true }, // Everyone can see docs (permissions handled inside)
-        { id: 'users', label: 'Users', icon: Users, allowed: true }, // Visually check inside component, but tab can be visible
-        { id: 'audit', label: 'Audit Logs', icon: Shield, allowed: isAdmin }, // Only admin
-
+        { id: 'documents', label: 'Documents', icon: FileText, allowed: true },
+        { id: 'users', label: 'Users', icon: Users, allowed: true },
+        { id: 'audit', label: 'Audit Logs', icon: Shield, allowed: isAdmin },
         // System Settings
         { id: 'notifications', label: 'Notifications', icon: Bell, allowed: true },
         { id: 'security', label: 'Security', icon: Key, allowed: true },
@@ -110,6 +116,9 @@ export default function SettingsPage() {
                     {activeTab === 'documents' && <DocumentsManager />}
                     {(activeTab === 'users') && <UsersList />}
                     {(activeTab === 'audit' && isAdmin) && <AuditLogViewer />}
+                    {activeTab === 'usage' && <div className="p-6"><UsageDashboard /></div>}
+                    {(activeTab === 'ai-models' && isAdmin) && <AIModelsSettings />}
+                    {(activeTab === 'cost-controls' && isAdmin) && <div className="p-6"><CostControlsAdmin /></div>}
 
                     {/* Restricted Width Container for Forms */}
                     {['profile', 'notifications', 'security', 'appearance', 'integrations'].includes(activeTab) && (
