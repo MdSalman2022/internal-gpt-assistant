@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import Link from 'next/link';
 import { useAuth } from '@/lib/auth-context';
 import { useRouter } from 'next/navigation';
 import { Eye, EyeOff, Mail, Lock, User, ArrowRight } from 'lucide-react';
@@ -165,9 +166,9 @@ export default function LoginPage() {
 
                         {isLogin && (
                             <div className="flex justify-end">
-                                <a href="#" className="text-sm text-primary-400 hover:text-primary-300">
+                                <Link href="/forgot-password" className="text-sm text-primary-400 hover:text-primary-300">
                                     Forgot password?
-                                </a>
+                                </Link>
                             </div>
                         )}
 

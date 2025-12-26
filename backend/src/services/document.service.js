@@ -9,7 +9,8 @@ import { chunkText, cleanText } from '../utils/chunker.js';
 
 class DocumentService {
     // Upload file to Cloudinary and create document record
-    async uploadAndCreateDocument(fileBuffer, fileName, mimeType, userId) {
+    // options.conversationId - if provided, document is scoped to that conversation only
+    async uploadAndCreateDocument(fileBuffer, fileName, mimeType, userId, options = {}) {
         try {
             console.log(`🚀 Starting upload for: ${fileName}, Type: ${mimeType}, Size: ${fileBuffer.length}`);
 
@@ -34,10 +35,14 @@ class DocumentService {
                 },
                 uploadedBy: userId,
                 status: 'pending',
+                // Conversation scope - if set, only visible in that conversation's context
+                conversationId: options.conversationId || null,
+                isGlobal: !options.conversationId, // Global = available to all users
             });
 
             await document.save();
-            console.log(`💾 Document saved to MongoDB: ${document._id}`);
+            const scope = options.conversationId ? 'conversation-scoped' : 'global';
+            console.log(`💾 Document saved to MongoDB: ${document._id} (${scope})`);
 
             return document;
         } catch (error) {
@@ -86,6 +91,10 @@ class DocumentService {
                 documentTitle: document.title,
                 content: chunk.content,
                 chunkIndex: chunk.index,
+                // RBAC Fields for filtering
+                uploadedBy: document.uploadedBy.toString(),
+                conversationId: document.conversationId ? document.conversationId.toString() : null,
+                isGlobal: !!document.isGlobal,
                 metadata: document.metadata || {},
             }));
 
@@ -95,9 +104,11 @@ class DocumentService {
             // Generate tags automatically
             const tags = await geminiService.generateDocumentTags(cleanedText);
 
-            // Update document
+            // Update document with chunk and vector counts
             document.status = 'completed';
             document.chunkCount = chunks.length;
+            document.vectorCount = chunks.length;  // Will match chunkCount after successful upsert
+            document.lastVectorSync = new Date();
             document.tags = tags;
             document.metadata = {
                 ...document.metadata,
@@ -149,12 +160,16 @@ class DocumentService {
             try {
                 await cloudinaryService.deleteFile(document.source.cloudinaryId);
             } catch (error) {
-                console.warn('Could not delete from Cloudinary:', error.message);
+                console.warn('⚠️ Could not delete from Cloudinary:', error.message);
             }
         }
 
-        // Delete vectors from Qdrant
-        await qdrantService.deleteByDocument(documentId);
+        // Delete vectors from Qdrant (don't fail if Qdrant is unavailable)
+        try {
+            await qdrantService.deleteByDocument(documentId);
+        } catch (error) {
+            console.warn('⚠️ Could not delete from Qdrant:', error.message);
+        }
 
         // Delete from MongoDB
         await Document.findByIdAndDelete(documentId);
@@ -164,16 +179,12 @@ class DocumentService {
     }
 
     // Get documents with pagination and filters
-    async getDocuments(options = {}) {
-        const {
-            userId = null,
-            status = null,
-            page = 1,
-            limit = 20,
-            search = null,
-        } = options;
-
+    async getDocuments({ userId, status, search, page = 1, limit = 20 }) {
         const query = {};
+
+        // Strictly exclude conversation-scoped documents
+        // They should only be accessible within their specific chat context
+        query.conversationId = null;
 
         if (userId) query.uploadedBy = userId;
         if (status) query.status = status;

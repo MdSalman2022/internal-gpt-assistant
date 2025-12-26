@@ -15,11 +15,28 @@ const config = {
         collection: process.env.QDRANT_COLLECTION || 'documents',
     },
 
-    // Gemini
+    // ==================== AI PROVIDERS ====================
+    // Gemini (Google) - Default provider, also used for embeddings
     gemini: {
         apiKey: process.env.GEMINI_API_KEY,
-        model: process.env.GEMINI_MODEL || 'gemini-1.5-flash',
+        model: process.env.GEMINI_MODEL,
     },
+
+    // OpenAI (ChatGPT)
+    openai: {
+        apiKey: process.env.OPENAI_API_KEY,
+        model: process.env.OPENAI_MODEL || 'gpt-4o-mini',
+    },
+
+    // Anthropic (Claude)
+    anthropic: {
+        apiKey: process.env.ANTHROPIC_API_KEY,
+        model: process.env.ANTHROPIC_MODEL || 'claude-3-haiku-20240307',
+    },
+
+    // Default AI provider ('gemini', 'openai', or 'anthropic')
+    defaultAIProvider: process.env.DEFAULT_AI_PROVIDER || 'gemini',
+    // ======================================================
 
     // Session
     sessionSecret: process.env.SESSION_SECRET || 'change-this-secret',
@@ -31,11 +48,11 @@ const config = {
         callbackUrl: process.env.GOOGLE_CALLBACK_URL,
     },
 
-    // Cloudinary (supports both CLOUDINARY_CLOUD_NAME and Cloudinary_CloudName formats)
+    // Cloudinary
     cloudinary: {
-        cloudName: process.env.CLOUDINARY_CLOUD_NAME || process.env.Cloudinary_CloudName,
-        apiKey: process.env.CLOUDINARY_API_KEY || process.env.Cloudinary_API_KEY,
-        apiSecret: process.env.CLOUDINARY_API_SECRET || process.env.Cloudinary_API_SECRET,
+        cloudName: process.env.CLOUDINARY_CLOUD_NAME,
+        apiKey: process.env.CLOUDINARY_API_KEY,
+        apiSecret: process.env.CLOUDINARY_API_SECRET
     },
 
     // Frontend
@@ -43,10 +60,10 @@ const config = {
 
     // RAG Settings
     rag: {
-        chunkSize: 500,          // Characters per chunk
-        chunkOverlap: 100,       // Overlap between chunks
-        topK: 5,                 // Top results to retrieve
-        minConfidence: 0.7,      // Minimum confidence for answers
+        chunkSize: 500,
+        chunkOverlap: 100,
+        topK: 5,
+        minConfidence: 0.7,
     },
 };
 

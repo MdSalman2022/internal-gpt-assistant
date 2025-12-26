@@ -9,13 +9,19 @@ class AuthService {
         let user = await User.findOne({ email });
 
         if (!user) {
+            // Check if this is the first user (make them admin)
+            const userCount = await User.countDocuments();
+            const role = userCount === 0 ? 'admin' : 'employee';
+
             user = new User({
                 email,
                 name: profile.displayName || email.split('@')[0],
                 avatar: profile.photos?.[0]?.value || null,
                 googleId: provider === 'google' ? profile.id : null,
+                role,
             });
             await user.save();
+            console.log(`👤 New user registered: ${email} (role: ${role})`);
         } else if (provider === 'google' && !user.googleId) {
             // Link Google account to existing user
             user.googleId = profile.id;
@@ -56,13 +62,19 @@ class AuthService {
             throw new Error('Email already registered');
         }
 
+        // Check if this is the first user (make them admin)
+        const userCount = await User.countDocuments();
+        const role = userCount === 0 ? 'admin' : 'employee';
+
         const user = new User({
             email,
             password,
             name,
+            role,
         });
 
         await user.save();
+        console.log(`👤 New user registered: ${email} (role: ${role})`);
         return user;
     }
 

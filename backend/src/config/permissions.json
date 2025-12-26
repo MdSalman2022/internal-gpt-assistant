@@ -1,0 +1,65 @@
+{
+    "roles": {
+        "admin": {
+            "displayName": "Administrator",
+            "description": "Full access to all features",
+            "permissions": [
+                "documents:read",
+                "documents:upload",
+                "documents:delete",
+                "documents:update",
+                "chat:read",
+                "chat:write",
+                "chat:upload",
+                "analytics:read",
+                "users:manage",
+                "settings:manage"
+            ]
+        },
+        "visitor": {
+            "displayName": "Visitor",
+            "description": "Admin-level UI with restricted document deletion",
+            "permissions": [
+                "documents:read",
+                "documents:upload",
+                "documents:delete",
+                "documents:update",
+                "chat:read",
+                "chat:write",
+                "chat:upload",
+                "analytics:read",
+                "users:manage",
+                "settings:manage"
+            ]
+        },
+        "employee": {
+            "displayName": "Employee",
+            "description": "Admin-level UI with restricted document deletion",
+            "permissions": [
+                "documents:read",
+                "documents:upload",
+                "documents:delete",
+                "documents:update",
+                "chat:read",
+                "chat:write",
+                "chat:upload",
+                "analytics:read",
+                "users:manage",
+                "settings:manage"
+            ]
+        }
+    },
+    "defaultRole": "employee",
+    "permissionDescriptions": {
+        "documents:read": "View documents in the knowledge base",
+        "documents:upload": "Upload new documents to the knowledge base",
+        "documents:delete": "Delete documents from the knowledge base",
+        "documents:update": "Edit document metadata",
+        "chat:read": "View chat conversations",
+        "chat:write": "Send messages in chat",
+        "chat:upload": "Upload documents within a chat conversation",
+        "analytics:read": "View usage analytics and statistics",
+        "users:manage": "Manage user accounts and roles",
+        "settings:manage": "Modify system settings"
+    }
+}

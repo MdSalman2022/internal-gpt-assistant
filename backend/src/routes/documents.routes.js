@@ -1,5 +1,7 @@
-import { Document } from '../models/index.js';
-import { documentService } from '../services/index.js';
+import { Document, Conversation } from '../models/index.js';
+import User from '../models/User.js';
+import { documentService, qdrantService } from '../services/index.js';
+import { requireRole, requirePermission } from '../middleware/rbac.middleware.js';
 
 // Document routes
 export default async function documentRoutes(fastify) {
@@ -8,10 +10,25 @@ export default async function documentRoutes(fastify) {
         if (!request.session.userId) {
             return reply.status(401).send({ error: 'Not authenticated' });
         }
+
+        // Attach user role to request
+        const user = await User.findById(request.session.userId).select('role');
+        request.userRole = user?.role || 'employee';
     });
 
-    // Upload document (to Cloudinary)
-    fastify.post('/upload', async (request, reply) => {
+    // Admin: Clear all vectors (use with caution!)
+    fastify.delete('/admin/clear-vectors', {
+        preHandler: [requireRole('admin')]
+    }, async (request, reply) => {
+        console.log('⚠️ Admin request to clear all vectors');
+        const result = await qdrantService.clearAllVectors();
+        return result;
+    });
+
+    // Upload document (admin and visitor only)
+    fastify.post('/upload', {
+        preHandler: [requirePermission('documents:upload')]
+    }, async (request, reply) => {
         const data = await request.file();
 
         if (!data) {
@@ -55,12 +72,14 @@ export default async function documentRoutes(fastify) {
         };
     });
 
-    // List documents
-    fastify.get('/', async (request, reply) => {
+    // List documents (admin and visitor only)
+    fastify.get('/', {
+        preHandler: [requirePermission('documents:read')]
+    }, async (request, reply) => {
         const { page = 1, limit = 20, status, search } = request.query;
 
         const result = await documentService.getDocuments({
-            userId: request.session.userId,
+            // userId: request.session.userId, // Don't filter by user - show all global docs
             status,
             search,
             page: parseInt(page),
@@ -70,8 +89,10 @@ export default async function documentRoutes(fastify) {
         return result;
     });
 
-    // Get single document
-    fastify.get('/:id', async (request, reply) => {
+    // Get single document (admin and visitor only)
+    fastify.get('/:id', {
+        preHandler: [requirePermission('documents:read')]
+    }, async (request, reply) => {
         const document = await documentService.getDocument(request.params.id);
 
         if (!document) {
@@ -81,17 +102,76 @@ export default async function documentRoutes(fastify) {
         return { document };
     });
 
-    // Delete document
-    fastify.delete('/:id', async (request, reply) => {
+    // Download document (secure access check)
+    fastify.get('/:id/download', async (request, reply) => {
         const document = await Document.findById(request.params.id);
 
         if (!document) {
             return reply.status(404).send({ error: 'Document not found' });
         }
 
-        // Check ownership
-        if (document.uploadedBy.toString() !== request.session.userId.toString()) {
-            return reply.status(403).send({ error: 'Not authorized' });
+        // Access Control Logic
+        const userId = request.session.userId;
+        const isAdmin = request.userRole === 'admin';
+        const isOwner = document.uploadedBy.toString() === userId;
+        const isGlobal = !!document.isGlobal;
+
+        // If it's a conversation-scoped doc, check if user is in that conversation
+        let hasConvoAccess = false;
+        if (document.conversationId) {
+            const convo = await Conversation.findOne({
+                _id: document.conversationId,
+                userId
+            });
+            if (convo) hasConvoAccess = true;
+        }
+
+        // Broad access for Admin, Owner, Global docs, or Conversation members
+        if (!isAdmin && !isOwner && !isGlobal && !hasConvoAccess) {
+            return reply.status(403).send({
+                error: 'Forbidden: You do not have permission to download this document'
+            });
+        }
+
+        if (!document.source?.url) {
+            return reply.status(404).send({ error: 'Document source URL not found' });
+        }
+
+        // Stream from Cloudinary to force download and set filename securely
+        try {
+            const cloudRes = await fetch(document.source.url);
+
+            if (!cloudRes.ok) {
+                console.error(`❌ Cloudinary download link broken for ${document._id}: ${cloudRes.statusText}`);
+                return reply.redirect(document.source.url); // Fallback to redirect if fetch fails
+            }
+
+            const fileName = document.originalName || document.title;
+
+            // Set headers to force download with original filename
+            return reply
+                .header('Content-Type', document.mimeType || 'application/octet-stream')
+                .header('Content-Disposition', `attachment; filename="${encodeURIComponent(fileName)}"`)
+                .send(cloudRes.body);
+        } catch (error) {
+            console.error('❌ Streaming download failed:', error.message);
+            return reply.redirect(document.source.url);
+        }
+    });
+
+    fastify.delete('/:id', {
+        preHandler: [requirePermission('documents:delete')]
+    }, async (request, reply) => {
+        // Even if the visitor has the permission for UI reasons, we block the actual delete
+        // Same for employee if they have the permission
+        if (request.userRole === 'visitor' || request.userRole === 'employee') {
+            return reply.status(403).send({ error: 'You are not an admin. Only administrators can delete documents.' });
+        }
+
+        const document = await Document.findById(request.params.id);
+
+        if (!document) {
+            return reply.status(404).send({ error: 'Document not found' });
         }
 
         await documentService.deleteDocument(request.params.id);
@@ -99,16 +179,14 @@ export default async function documentRoutes(fastify) {
         return { success: true, message: 'Document deleted from cloud and knowledge base' };
     });
 
-    // Update document metadata
-    fastify.patch('/:id', async (request, reply) => {
+    // Update document metadata (admin and visitor)
+    fastify.patch('/:id', {
+        preHandler: [requirePermission('documents:update')]
+    }, async (request, reply) => {
         const document = await Document.findById(request.params.id);
 
         if (!document) {
             return reply.status(404).send({ error: 'Document not found' });
-        }
-
-        if (document.uploadedBy.toString() !== request.session.userId.toString()) {
-            return reply.status(403).send({ error: 'Not authorized' });
         }
 
         const updatedDoc = await documentService.updateDocument(
@@ -119,16 +197,14 @@ export default async function documentRoutes(fastify) {
         return { success: true, document: updatedDoc };
     });
 
-    // Reprocess a failed document
-    fastify.post('/:id/reprocess', async (request, reply) => {
+    // Reprocess a failed document (admin and visitor)
+    fastify.post('/:id/reprocess', {
+        preHandler: [requirePermission('documents:update')]
+    }, async (request, reply) => {
         const document = await Document.findById(request.params.id);
 
         if (!document) {
             return reply.status(404).send({ error: 'Document not found' });
-        }
-
-        if (document.uploadedBy.toString() !== request.session.userId.toString()) {
-            return reply.status(403).send({ error: 'Not authorized' });
         }
 
         if (document.status !== 'failed') {

@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '@/lib/auth-context';
-import { useSearchParams } from 'next/navigation';
+import { useSearchParams, useRouter } from 'next/navigation';
 import { documentsApi } from '@/lib/api';
 import {
     Upload, FileText, Search, Trash2, CheckCircle, Clock, AlertCircle, X, File,
@@ -10,7 +10,8 @@ import {
 } from 'lucide-react';
 
 export default function DocumentsPage() {
-    const { user } = useAuth();
+    const { user, hasPermission, isEmployee, isAdmin } = useAuth();
+    const router = useRouter();
     const searchParams = useSearchParams();
     const highlightId = searchParams.get('highlight');
 
@@ -22,6 +23,12 @@ export default function DocumentsPage() {
     const [showUploadModal, setShowUploadModal] = useState(false);
     const [selectedDocument, setSelectedDocument] = useState(null);
     const [viewMode, setViewMode] = useState('grid');
+    const [toast, setToast] = useState(null);
+
+    const showToast = (message, type = 'error') => {
+        setToast({ message, type });
+        setTimeout(() => setToast(null), 3000);
+    };
 
     useEffect(() => {
         if (user) loadDocuments();
@@ -63,6 +70,12 @@ export default function DocumentsPage() {
 
     const handleDelete = async (e, id) => {
         e.stopPropagation();
+
+        if (!isAdmin) {
+            showToast('You are not an admin. Only administrators can delete documents.', 'error');
+            return;
+        }
+
         if (!confirm('Delete this document?')) return;
         try {
             await documentsApi.deleteDocument(id);
@@ -250,6 +263,22 @@ export default function DocumentsPage() {
                     onClose={() => setSelectedDocument(null)}
                 />
             )}
+
+            {/* Toast Notification */}
+            {toast && (
+                <div className={`fixed bottom-6 right-6 z-[100] flex items-center gap-3 px-4 py-3 rounded-xl shadow-2xl animate-scale-in border
+                    ${toast.type === 'error'
+                        ? 'bg-slate-900 border-red-500/50 text-red-200'
+                        : 'bg-slate-900 border-primary-500/50 text-primary-200'
+                    }`}
+                >
+                    {toast.type === 'error' ? <AlertCircle className="w-5 h-5 text-red-400" /> : <CheckCircle className="w-5 h-5 text-primary-400" />}
+                    <span className="text-sm font-medium">{toast.message}</span>
+                    <button onClick={() => setToast(null)} className="ml-2 hover:bg-white/10 rounded p-0.5">
+                        <X className="w-4 h-4" />
+                    </button>
+                </div>
+            )}
         </div>
     );
 }
@@ -291,8 +320,11 @@ function DocumentPreviewModal({ document, onClose }) {
                 <div className="flex justify-end gap-2 p-5 border-t border-slate-800">
                     <button onClick={onClose} className="btn-secondary">Close</button>
                     {document.source?.url && (
-                        <a href={document.source.url} target="_blank" className="btn-primary">
-                            <ExternalLink className="w-4 h-4" />View Original
+                        <a
+                            href={documentsApi.getDownloadUrl(document._id)}
+                            className="btn-primary"
+                        >
+                            <FileText className="w-4 h-4" />Download Original
                         </a>
                     )}
                 </div>

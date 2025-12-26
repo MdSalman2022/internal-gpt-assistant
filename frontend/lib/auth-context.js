@@ -1,6 +1,6 @@
 'use client';
 
-import { createContext, useContext, useState, useEffect } from 'react';
+import { createContext, useContext, useState, useEffect, useCallback } from 'react';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
 
@@ -9,23 +9,32 @@ const AuthContext = createContext(null);
 export function AuthProvider({ children }) {
     const [user, setUser] = useState(null);
     const [loading, setLoading] = useState(true);
+    const [permissionsConfig, setPermissionsConfig] = useState(null);
 
-    // Check auth status on mount
+    // Load permissions and auth on mount
     useEffect(() => {
         checkAuth();
     }, []);
 
     const checkAuth = async () => {
         try {
-            const res = await fetch(`${API_URL}/api/auth/me`, {
-                credentials: 'include',
-            });
-            if (res.ok) {
-                const data = await res.json();
+            // Load both in parallel
+            const [meRes, permRes] = await Promise.all([
+                fetch(`${API_URL}/api/auth/me`, { credentials: 'include' }),
+                fetch(`${API_URL}/api/auth/permissions`)
+            ]);
+
+            if (meRes.ok) {
+                const data = await meRes.json();
                 setUser(data.user);
             }
+
+            if (permRes.ok) {
+                const config = await permRes.json();
+                setPermissionsConfig(config);
+            }
         } catch (error) {
-            console.error('Auth check failed:', error);
+            console.error('Auth/Permissions initialization failed:', error);
         } finally {
             setLoading(false);
         }
@@ -69,8 +78,38 @@ export function AuthProvider({ children }) {
         setUser(null);
     };
 
+    // Role-based helpers (uses permissions from backend config)
+    const hasPermission = useCallback((permission) => {
+        if (!user?.role || !permissionsConfig?.roles) return false;
+        const roleConfig = permissionsConfig.roles[user.role];
+        return roleConfig?.permissions?.includes(permission) || false;
+    }, [user?.role, permissionsConfig]);
+
+    const hasRole = useCallback((...roles) => {
+        if (!user?.role) return false;
+        return roles.includes(user.role);
+    }, [user?.role]);
+
+    const isAdmin = user?.role === 'admin';
+    const isVisitor = user?.role === 'visitor';
+    const isEmployee = user?.role === 'employee';
+
     return (
-        <AuthContext.Provider value={{ user, loading, login, register, logout, checkAuth }}>
+        <AuthContext.Provider value={{
+            user,
+            loading,
+            login,
+            register,
+            logout,
+            checkAuth,
+            // Role helpers
+            hasPermission,
+            hasRole,
+            isAdmin,
+            isVisitor,
+            isEmployee,
+            permissionsConfig,
+        }}>
             {children}
         </AuthContext.Provider>
     );

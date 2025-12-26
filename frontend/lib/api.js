@@ -1,14 +1,18 @@
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+export const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
 
 // Helper for API calls
 async function fetcher(endpoint, options = {}) {
+    const headers = { ...options.headers };
+
+    // Only add Content-Type for requests with body
+    if (options.body) {
+        headers['Content-Type'] = 'application/json';
+    }
+
     const res = await fetch(`${API_URL}${endpoint}`, {
         ...options,
         credentials: 'include',
-        headers: {
-            'Content-Type': 'application/json',
-            ...options.headers,
-        },
+        headers,
     });
 
     const data = await res.json();
@@ -18,6 +22,10 @@ async function fetcher(endpoint, options = {}) {
 
 // Chat API
 export const chatApi = {
+    // Get available AI providers
+    getProviders: () =>
+        fetcher('/api/chat/providers'),
+
     // Get all conversations
     getConversations: (page = 1) =>
         fetcher(`/api/chat/conversations?page=${page}`),
@@ -34,15 +42,22 @@ export const chatApi = {
         fetcher(`/api/chat/conversations/${id}`),
 
     // Send message and get AI response
-    sendMessage: (conversationId, content) =>
+    sendMessage: (conversationId, content, provider = null, fileIds = []) =>
         fetcher(`/api/chat/conversations/${conversationId}/messages`, {
             method: 'POST',
-            body: JSON.stringify({ content }),
+            body: JSON.stringify({ content, provider, fileIds }),
         }),
 
     // Delete conversation
     deleteConversation: (id) =>
         fetcher(`/api/chat/conversations/${id}`, { method: 'DELETE' }),
+
+    // Rename conversation
+    renameConversation: (id, title) =>
+        fetcher(`/api/chat/conversations/${id}`, {
+            method: 'PATCH',
+            body: JSON.stringify({ title })
+        }),
 
     // Toggle pin
     togglePin: (id) =>
@@ -57,6 +72,23 @@ export const chatApi = {
             method: 'POST',
             body: JSON.stringify({ feedback, comment }),
         }),
+
+    // Upload file to a specific conversation
+    uploadFileToChat: async (conversationId, file) => {
+        const formData = new FormData();
+        formData.append('file', file);
+
+        const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+        const res = await fetch(`${API_URL}/api/chat/conversations/${conversationId}/upload`, {
+            method: 'POST',
+            credentials: 'include',
+            body: formData,
+        });
+
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'Upload failed');
+        return data;
+    },
 };
 
 // Documents API
@@ -100,6 +132,9 @@ export const documentsApi = {
     // Delete document
     deleteDocument: (id) =>
         fetcher(`/api/documents/${id}`, { method: 'DELETE' }),
+
+    // Get download URL
+    getDownloadUrl: (id) => `${API_URL}/api/documents/${id}/download`,
 };
 
 // Analytics API
@@ -121,4 +156,21 @@ export const analyticsApi = {
 
     // Get feedback summary
     getFeedback: () => fetcher('/api/analytics/feedback'),
+};
+
+// Users API
+export const usersApi = {
+    // List all users
+    getUsers: () => fetcher('/api/users'),
+
+    // Update user
+    updateUser: (id, updates) =>
+        fetcher(`/api/users/${id}`, {
+            method: 'PATCH',
+            body: JSON.stringify(updates),
+        }),
+
+    // Delete user
+    deleteUser: (id) =>
+        fetcher(`/api/users/${id}`, { method: 'DELETE' }),
 };

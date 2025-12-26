@@ -1,5 +1,6 @@
 import mongoose from 'mongoose';
 import bcrypt from 'bcryptjs';
+import crypto from 'crypto';
 
 const userSchema = new mongoose.Schema({
     email: {
@@ -12,7 +13,7 @@ const userSchema = new mongoose.Schema({
     password: {
         type: String,
         required: function () {
-            return !this.googleId; // Password required only for local auth
+            return !this.googleId;
         },
     },
     name: {
@@ -26,8 +27,8 @@ const userSchema = new mongoose.Schema({
     },
     role: {
         type: String,
-        enum: ['user', 'admin', 'super_admin'],
-        default: 'user',
+        enum: ['admin', 'visitor', 'employee'],
+        default: 'employee',
     },
     department: {
         type: String,
@@ -42,6 +43,15 @@ const userSchema = new mongoose.Schema({
         default: true,
     },
     lastLogin: {
+        type: Date,
+        default: null,
+    },
+    // Password reset fields
+    resetPasswordToken: {
+        type: String,
+        default: null,
+    },
+    resetPasswordExpires: {
         type: Date,
         default: null,
     },
@@ -68,10 +78,20 @@ userSchema.methods.comparePassword = async function (candidatePassword) {
     return bcrypt.compare(candidatePassword, this.password);
 };
 
+// Generate password reset token
+userSchema.methods.generateResetToken = function () {
+    const token = crypto.randomBytes(32).toString('hex');
+    this.resetPasswordToken = crypto.createHash('sha256').update(token).digest('hex');
+    this.resetPasswordExpires = Date.now() + 60 * 60 * 1000; // 1 hour
+    return token;
+};
+
 // Remove sensitive data when converting to JSON
 userSchema.methods.toJSON = function () {
     const user = this.toObject();
     delete user.password;
+    delete user.resetPasswordToken;
+    delete user.resetPasswordExpires;
     return user;
 };
 

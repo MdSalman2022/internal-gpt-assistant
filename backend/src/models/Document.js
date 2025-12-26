@@ -29,8 +29,8 @@ const documentSchema = new mongoose.Schema({
             enum: ['upload', 'notion', 'confluence', 'gdrive', 'slack', 'url'],
             default: 'upload',
         },
-        url: String,           // Cloudinary URL or external URL
-        cloudinaryId: String,  // Cloudinary public ID for deletion
+        url: String,
+        cloudinaryId: String,
     },
     status: {
         type: String,
@@ -45,6 +45,27 @@ const documentSchema = new mongoose.Schema({
         type: Number,
         default: 0,
     },
+
+    // Vector sync tracking
+    vectorCount: {
+        type: Number,  // Actual count in Qdrant (should match chunkCount)
+        default: 0,
+    },
+    lastVectorSync: {
+        type: Date,    // Last time vectors were synced to Qdrant
+        default: null,
+    },
+
+    // Usage analytics
+    queryCount: {
+        type: Number,  // How many times this document was cited
+        default: 0,
+    },
+    lastAccessedAt: {
+        type: Date,    // Last time document was used in a response
+        default: null,
+    },
+
     // Access control
     uploadedBy: {
         type: mongoose.Schema.Types.ObjectId,
@@ -59,6 +80,17 @@ const documentSchema = new mongoose.Schema({
         type: String,
         enum: ['private', 'department', 'public'],
         default: 'private',
+    },
+    // Per-conversation scoping - if set, document is only used for this conversation
+    conversationId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Conversation',
+        default: null,
+    },
+    // Global documents are available to all users in RAG queries
+    isGlobal: {
+        type: Boolean,
+        default: true,
     },
     allowedUsers: [{
         type: mongoose.Schema.Types.ObjectId,
@@ -89,6 +121,8 @@ const documentSchema = new mongoose.Schema({
 documentSchema.index({ title: 'text', description: 'text', tags: 'text' });
 documentSchema.index({ uploadedBy: 1, status: 1 });
 documentSchema.index({ department: 1 });
+documentSchema.index({ queryCount: -1 }); // For popular documents
+documentSchema.index({ lastAccessedAt: -1 }); // For recently used
 
 const Document = mongoose.model('Document', documentSchema);
 

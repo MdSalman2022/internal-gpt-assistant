@@ -3,8 +3,9 @@ import cors from '@fastify/cors';
 import cookie from '@fastify/cookie';
 import session from '@fastify/session';
 import multipart from '@fastify/multipart';
+import MongoStore from 'connect-mongo';
 import config from './config/index.js';
-import { authRoutes, documentRoutes, chatRoutes, analyticsRoutes } from './routes/index.js';
+import { authRoutes, documentRoutes, chatRoutes, analyticsRoutes, usersRoutes } from './routes/index.js';
 
 export async function buildApp() {
     const fastify = Fastify({
@@ -26,18 +27,24 @@ export async function buildApp() {
         credentials: true,
     });
 
-    // Cookie and Session
+    // Cookie and Session with MongoDB store (persists through server restarts)
     await fastify.register(cookie);
     await fastify.register(session, {
         secret: config.sessionSecret,
+        store: MongoStore.create({
+            mongoUrl: config.mongodbUri,
+            collectionName: 'sessions',
+            ttl: 7 * 24 * 60 * 60, // 7 days in seconds
+            autoRemove: 'native', // Use MongoDB TTL index for cleanup
+        }),
         cookie: {
             secure: config.nodeEnv === 'production',
             httpOnly: true,
             sameSite: 'lax',
-            maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+            maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days in ms
         },
         saveUninitialized: false,
-        rolling: true, // Refresh session expiry on each request (keeps active users logged in)
+        rolling: true, // Refresh session expiry on each request
     });
 
     // Multipart for file uploads
@@ -55,6 +62,7 @@ export async function buildApp() {
     fastify.register(documentRoutes, { prefix: '/api/documents' });
     fastify.register(chatRoutes, { prefix: '/api/chat' });
     fastify.register(analyticsRoutes, { prefix: '/api/analytics' });
+    fastify.register(usersRoutes, { prefix: '/api/users' });
 
     // Global error handler
     fastify.setErrorHandler((error, request, reply) => {

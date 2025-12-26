@@ -8,7 +8,7 @@ const citationSchema = new mongoose.Schema({
     },
     documentTitle: {
         type: String,
-        required: true,
+        default: 'Untitled Document',
     },
     chunkId: {
         type: String,
@@ -45,15 +45,43 @@ const messageSchema = new mongoose.Schema({
     },
     // Citations for assistant messages
     citations: [citationSchema],
-    // Metadata
+
+    // Files attached to this message (user uplods)
+    attachments: [{
+        documentId: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: 'Document',
+            required: true,
+        },
+        name: { type: String, required: true },
+        mimeType: { type: String, required: true },
+        size: { type: Number, required: true },
+    }],
+
+    // Token tracking for billing/analytics
     tokens: {
         prompt: { type: Number, default: 0 },
         completion: { type: Number, default: 0 },
+        total: { type: Number, default: 0 },
     },
+
+    // Performance metrics
     latency: {
-        type: Number, // milliseconds
+        type: Number, // Total response time in ms
         default: null,
     },
+    timings: {
+        embed: { type: Number, default: 0 },    // Embedding generation time
+        search: { type: Number, default: 0 },   // Vector + keyword search time
+        generate: { type: Number, default: 0 }, // LLM generation time
+    },
+
+    // RAG metadata
+    sourcesSearched: {
+        type: Number,  // How many chunks were searched
+        default: 0,
+    },
+
     // User feedback
     feedback: {
         type: String,
@@ -64,7 +92,8 @@ const messageSchema = new mongoose.Schema({
         type: String,
         default: null,
     },
-    // For "I don't know" responses
+
+    // Confidence tracking
     isLowConfidence: {
         type: Boolean,
         default: false,
@@ -80,6 +109,7 @@ const messageSchema = new mongoose.Schema({
 // Indexes
 messageSchema.index({ conversationId: 1, createdAt: 1 });
 messageSchema.index({ 'citations.documentId': 1 });
+messageSchema.index({ feedback: 1 }); // For analytics queries
 
 const Message = mongoose.model('Message', messageSchema);
 

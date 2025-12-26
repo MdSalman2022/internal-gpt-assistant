@@ -1,12 +1,61 @@
 'use client';
 
 import { ThumbsUp, ThumbsDown, Copy, Check, FileText, Clock, Sparkles, X, ExternalLink } from 'lucide-react';
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 
-export default function MessageBubble({ message, onFeedback, onViewDocument }) {
+// Typing animation hook
+function useTypingEffect(text, speed = 15, enabled = true) {
+    const [displayedText, setDisplayedText] = useState('');
+    const [isComplete, setIsComplete] = useState(!enabled);
+
+    useEffect(() => {
+        if (!enabled || !text) {
+            setDisplayedText(text || '');
+            setIsComplete(true);
+            return;
+        }
+
+        setDisplayedText('');
+        setIsComplete(false);
+        let index = 0;
+
+        const timer = setInterval(() => {
+            if (index < text.length) {
+                // Add multiple characters at once for faster typing
+                const charsToAdd = Math.min(3, text.length - index);
+                setDisplayedText(text.slice(0, index + charsToAdd));
+                index += charsToAdd;
+            } else {
+                setIsComplete(true);
+                clearInterval(timer);
+            }
+        }, speed);
+
+        return () => clearInterval(timer);
+    }, [text, speed, enabled]);
+
+    return { displayedText, isComplete };
+}
+
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
+
+// ... (useTypingEffect remains same)
+
+export default function MessageBubble({ message, onFeedback, onViewDocument, isNew = false }) {
     const [copied, setCopied] = useState(false);
     const [selectedCitation, setSelectedCitation] = useState(null);
     const isUser = message.role === 'user';
+
+    // Only animate if it's a new assistant message
+    const shouldAnimate = !isUser && isNew;
+    const { displayedText, isComplete } = useTypingEffect(
+        message.content,
+        10, // Speed (ms per batch)
+        shouldAnimate
+    );
+
+    const contentToShow = shouldAnimate ? displayedText : message.content;
 
     const handleCopy = () => {
         navigator.clipboard.writeText(message.content);
@@ -14,91 +63,13 @@ export default function MessageBubble({ message, onFeedback, onViewDocument }) {
         setTimeout(() => setCopied(false), 2000);
     };
 
-    // Format markdown-like content
-    const formatContent = (text) => {
-        if (!text) return null;
-
-        const paragraphs = text.split(/\n\n+/);
-
-        return paragraphs.map((para, pIdx) => {
-            // Handle bullet points
-            if (para.match(/^[\*\-•]\s/m)) {
-                const items = para.split(/\n/).filter(Boolean);
-                return (
-                    <ul key={pIdx} className="list-disc list-inside space-y-1 my-2 ml-2">
-                        {items.map((item, i) => (
-                            <li key={i} className="text-slate-200">
-                                {formatInlineText(item.replace(/^[\*\-•]\s*/, ''))}
-                            </li>
-                        ))}
-                    </ul>
-                );
-            }
-
-            // Handle numbered lists
-            if (para.match(/^\d+\.\s/m)) {
-                const items = para.split(/\n/).filter(Boolean);
-                return (
-                    <ol key={pIdx} className="list-decimal list-inside space-y-1 my-2 ml-2">
-                        {items.map((item, i) => (
-                            <li key={i} className="text-slate-200">
-                                {formatInlineText(item.replace(/^\d+\.\s*/, ''))}
-                            </li>
-                        ))}
-                    </ol>
-                );
-            }
-
-            // Regular paragraph
-            return (
-                <p key={pIdx} className="my-2 leading-relaxed">
-                    {formatInlineText(para)}
-                </p>
-            );
-        });
-    };
-
-    // Format inline text (bold, citations)
-    const formatInlineText = (text) => {
-        if (!text) return null;
-
-        const parts = text.split(/(\*\*[^*]+\*\*|\[Source \d+(?:,\s*\d+)*\])/g);
-
-        return parts.map((part, i) => {
-            // Bold text
-            if (part.match(/^\*\*[^*]+\*\*$/)) {
-                return <strong key={i} className="text-white font-semibold">{part.slice(2, -2)}</strong>;
-            }
-
-            // Citations [Source 1] or [Source 1, 2, 3]
-            const citationMatch = part.match(/\[Source ([\d,\s]+)\]/);
-            if (citationMatch) {
-                const nums = citationMatch[1].split(/,\s*/).map(n => parseInt(n.trim()));
-                return (
-                    <span key={i} className="inline-flex gap-1 mx-1">
-                        {nums.map(num => {
-                            const citation = message.citations?.[num - 1];
-                            return (
-                                <button
-                                    key={num}
-                                    onClick={() => setSelectedCitation({ ...citation, sourceNum: num })}
-                                    className="inline-flex items-center gap-1 px-1.5 py-0.5 
-                                               bg-primary-500/20 hover:bg-primary-500/30 
-                                               text-primary-400 text-xs font-medium rounded 
-                                               transition-all hover:scale-105 border border-primary-500/30"
-                                    title="Click to view source"
-                                >
-                                    {num}
-                                </button>
-                            );
-                        })}
-                    </span>
-                );
-            }
-
-            return <span key={i}>{part}</span>;
-        });
-    };
+    // Pre-process content to handle citations as links for ReactMarkdown
+    // Converts [Source 1, 2] to [1, 2](#citation-1-2) which is a valid URL
+    const processedContent = contentToShow?.replace(/\[Source (\d+(?:,\s*\d+)*)\]/g, (match, nums) => {
+        // Create a safe ID string: "1, 2" -> "1-2"
+        const safeId = nums.replace(/[\s,]+/g, '-');
+        return ` [${nums}](#citation-${safeId}) `;
+    });
 
     return (
         <>
@@ -110,49 +81,180 @@ export default function MessageBubble({ message, onFeedback, onViewDocument }) {
                     </div>
                 )}
 
-                <div className={`max-w-[80%] ${isUser ? 'order-first' : ''}`}>
+                <div className={`max-w-[85%] sm:max-w-[75%] ${isUser ? 'order-first' : ''}`}>
                     {/* Message bubble */}
                     <div className={`
-                        rounded-2xl px-4 py-3
+                        rounded-2xl px-5 py-4
                         ${isUser
                             ? 'bg-primary-600 text-white rounded-br-md'
                             : 'bg-slate-800/80 text-slate-200 rounded-bl-md border border-slate-700/50'
                         }
                     `}>
-                        <div className="text-[15px]">
-                            {isUser ? message.content : formatContent(message.content)}
+                        <div className="text-[15px] markdown-content">
+                            {isUser ? (
+                                <p className="whitespace-pre-wrap">{message.content}</p>
+                            ) : (
+                                <ReactMarkdown
+                                    remarkPlugins={[remarkGfm]}
+                                    components={{
+                                        // Custom link handler for citations
+                                        a: ({ node, href, children, ...props }) => {
+                                            if (href?.includes('citation-')) {
+                                                // Extract IDs from format "citation-1-2"
+                                                const nums = href.split('citation-')[1].split('-');
+                                                return (
+                                                    <span className="inline-flex gap-1 mx-1 align-baseline">
+                                                        {nums.map(numStr => {
+                                                            const num = parseInt(numStr);
+                                                            const citation = message.citations?.[num - 1];
+                                                            return (
+                                                                <button
+                                                                    key={num}
+                                                                    onClick={() => setSelectedCitation({ ...citation, sourceNum: num })}
+                                                                    className="inline-flex items-center justify-center w-5 h-5 
+                                                                               bg-primary-500/20 hover:bg-primary-500/30 
+                                                                               text-primary-400 text-[10px] font-bold rounded 
+                                                                               transition-all hover:scale-110 border border-primary-500/30
+                                                                               align-middle transform -translate-y-0.5"
+                                                                    title="View Source"
+                                                                >
+                                                                    {num}
+                                                                </button>
+                                                            );
+                                                        })}
+                                                    </span>
+                                                );
+                                            }
+                                            return <a href={href} className="text-primary-400 hover:underline" target="_blank" rel="noopener noreferrer" {...props}>{children}</a>;
+                                        },
+                                        // Styling for other elements
+                                        p: ({ node, children }) => <p className="mb-3 last:mb-0 leading-7">{children}</p>,
+                                        ul: ({ node, children }) => <ul className="list-disc list-outside ml-4 mb-4 space-y-1">{children}</ul>,
+                                        ol: ({ node, children }) => <ol className="list-decimal list-outside ml-4 mb-4 space-y-1">{children}</ol>,
+                                        li: ({ node, children }) => <li className="pl-1 text-slate-300">{children}</li>,
+                                        h1: ({ node, children }) => <h1 className="text-xl font-bold text-white mb-3 mt-4 first:mt-0">{children}</h1>,
+                                        h2: ({ node, children }) => <h2 className="text-lg font-bold text-white mb-2 mt-4">{children}</h2>,
+                                        h3: ({ node, children }) => <h3 className="text-base font-bold text-white mb-2 mt-3">{children}</h3>,
+                                        blockquote: ({ node, children }) => <blockquote className="border-l-4 border-slate-600 pl-4 py-1 my-4 text-slate-400 italic bg-slate-900/30 rounded-r">{children}</blockquote>,
+                                        code: ({ node, inline, className, children, ...props }) => {
+                                            return inline ? (
+                                                <code className="bg-slate-900 px-1.5 py-0.5 rounded text-sm font-mono text-primary-200 border border-slate-700/50" {...props}>
+                                                    {children}
+                                                </code>
+                                            ) : (
+                                                <div className="relative group my-4">
+                                                    <pre className="bg-slate-950 p-4 rounded-lg overflow-x-auto border border-slate-800 text-sm font-mono text-slate-300 scrollbar-thin scrollbar-thumb-slate-700 scrollbar-track-transparent">
+                                                        <code {...props}>{children}</code>
+                                                    </pre>
+                                                </div>
+                                            );
+                                        },
+                                        table: ({ node, children }) => (
+                                            <div className="overflow-x-auto my-4 border border-slate-700/50 rounded-lg">
+                                                <table className="w-full text-sm text-left text-slate-300 min-w-max">
+                                                    {children}
+                                                </table>
+                                            </div>
+                                        ),
+                                        thead: ({ node, children }) => (
+                                            <thead className="text-xs uppercase bg-slate-900/80 text-slate-400">
+                                                {children}
+                                            </thead>
+                                        ),
+                                        th: ({ node, children }) => (
+                                            <th className="px-4 py-3 font-semibold border-b border-slate-700 whitespace-nowrap">
+                                                {children}
+                                            </th>
+                                        ),
+                                        td: ({ node, children }) => (
+                                            <td className="px-4 py-3 border-b border-slate-800/50">
+                                                {children}
+                                            </td>
+                                        ),
+                                        tr: ({ node, children }) => (
+                                            <tr className="hover:bg-slate-700/20 transition-colors">
+                                                {children}
+                                            </tr>
+                                        ),
+                                    }}
+                                >
+                                    {processedContent}
+                                </ReactMarkdown>
+                            )}
+
+                            {/* Typing cursor */}
+                            {!isUser && !isComplete && (
+                                <span className="inline-block w-2 h-4 bg-primary-400 ml-1 animate-pulse align-middle" />
+                            )}
                         </div>
+
+                        {/* Attachments */}
+                        {message.attachments?.length > 0 && (
+                            <div className="flex flex-wrap gap-2 mt-3 pt-2 border-t border-white/10">
+                                {message.attachments.map((file, i) => (
+                                    <button
+                                        key={i}
+                                        onClick={() => onViewDocument?.(file.documentId)}
+                                        className={`
+                                            flex items-center gap-2 p-2 rounded-lg text-sm text-left
+                                            transition-colors border
+                                            ${isUser
+                                                ? 'bg-black/20 hover:bg-black/30 border-white/10'
+                                                : 'bg-black/20 hover:bg-black/30 border-slate-600/50'
+                                            }
+                                        `}
+                                    >
+                                        <FileText className="w-4 h-4 opacity-70" />
+                                        <div className="flex flex-col">
+                                            <span className="font-medium truncate max-w-[150px]">{file.name}</span>
+                                            <span className="text-xs opacity-60">{(file.size / 1024).toFixed(1)} KB</span>
+                                        </div>
+                                    </button>
+                                ))}
+                            </div>
+                        )}
                     </div>
 
-                    {/* Sources for assistant messages */}
-                    {!isUser && message.citations?.length > 0 && (
+
+                    {/* Sources for assistant messages - only show after typing complete */}
+                    {!isUser && isComplete && message.citations?.length > 0 && (
                         <div className="mt-3">
                             <p className="text-xs text-slate-500 mb-2">📎 Sources ({message.citations.length})</p>
                             <div className="flex flex-wrap gap-2">
-                                {message.citations.map((citation, i) => (
-                                    <button
-                                        key={i}
-                                        onClick={() => setSelectedCitation({ ...citation, sourceNum: i + 1 })}
-                                        className="group flex items-center gap-2 px-3 py-2 
-                                                   bg-slate-800/60 hover:bg-slate-700 
-                                                   rounded-lg text-xs transition-all
-                                                   border border-slate-700/50 hover:border-primary-500/50
-                                                   hover:shadow-lg hover:shadow-primary-500/10"
-                                    >
-                                        <span className="w-5 h-5 rounded bg-primary-500/20 text-primary-400 flex items-center justify-center text-[10px] font-bold group-hover:bg-primary-500 group-hover:text-white transition-colors">
-                                            {i + 1}
-                                        </span>
-                                        <span className="text-slate-300 truncate max-w-[140px] group-hover:text-white">
-                                            {citation.documentTitle || 'Document'}
-                                        </span>
-                                    </button>
-                                ))}
+                                {/* Deduplicate citations by documentId for the buttons list */}
+                                {(() => {
+                                    const uniqueDocs = new Map();
+                                    message.citations.forEach((citation, i) => {
+                                        if (!uniqueDocs.has(citation.documentId)) {
+                                            uniqueDocs.set(citation.documentId, { ...citation, originalIndex: i });
+                                        }
+                                    });
+
+                                    return Array.from(uniqueDocs.values()).map((citation) => (
+                                        <button
+                                            key={citation.originalIndex}
+                                            onClick={() => setSelectedCitation({ ...citation, sourceNum: citation.originalIndex + 1 })}
+                                            className="group flex items-center gap-2 px-3 py-2 
+                                                       bg-slate-800/60 hover:bg-slate-700 
+                                                       rounded-lg text-xs transition-all
+                                                       border border-slate-700/50 hover:border-primary-500/50
+                                                       hover:shadow-lg hover:shadow-primary-500/10"
+                                        >
+                                            <span className="w-5 h-5 rounded bg-primary-500/20 text-primary-400 flex items-center justify-center text-[10px] font-bold group-hover:bg-primary-500 group-hover:text-white transition-colors">
+                                                {citation.originalIndex + 1}
+                                            </span>
+                                            <span className="text-slate-300 truncate max-w-[140px] group-hover:text-white">
+                                                {citation.documentTitle || 'Document'}
+                                            </span>
+                                        </button>
+                                    ));
+                                })()}
                             </div>
                         </div>
                     )}
 
-                    {/* Actions for assistant messages */}
-                    {!isUser && (
+                    {/* Actions for assistant messages - only show after typing complete */}
+                    {!isUser && isComplete && (
                         <div className="flex items-center gap-2 mt-3 pt-2 border-t border-slate-700/30">
                             <button
                                 onClick={handleCopy}
@@ -200,7 +302,7 @@ export default function MessageBubble({ message, onFeedback, onViewDocument }) {
                     )}
 
                     {/* Low confidence warning */}
-                    {!isUser && message.isLowConfidence && (
+                    {!isUser && isComplete && message.isLowConfidence && (
                         <div className="mt-3 flex items-center gap-2 px-3 py-2 bg-amber-500/10 border border-amber-500/20 rounded-lg text-xs text-amber-400">
                             <span className="w-2 h-2 rounded-full bg-amber-400 animate-pulse" />
                             Low confidence - verify with source documents
@@ -299,7 +401,7 @@ function CitationModal({ citation, onClose, onViewDocument }) {
                 {/* Footer */}
                 <div className="flex items-center justify-between p-4 border-t border-slate-800 bg-slate-800/50">
                     <p className="text-xs text-slate-500">
-                        Click "Open Document" to view the full source
+                        Click "Download Document" to save the full source
                     </p>
                     <div className="flex gap-2">
                         <button
@@ -315,8 +417,8 @@ function CitationModal({ citation, onClose, onViewDocument }) {
                             }}
                             className="flex items-center gap-2 px-4 py-2 bg-primary-600 hover:bg-primary-500 text-white text-sm font-medium rounded-lg transition-colors"
                         >
-                            <ExternalLink className="w-4 h-4" />
-                            Open Document
+                            <FileText className="w-4 h-4" />
+                            Download Document
                         </button>
                     </div>
                 </div>

@@ -1,5 +1,6 @@
-import { Conversation, Message } from '../models/index.js';
-import { ragService, geminiService } from '../services/index.js';
+import { Conversation, Message, Document } from '../models/index.js';
+import { ragService, aiService, geminiService, documentService } from '../services/index.js';
+import { requirePermission } from '../middleware/rbac.middleware.js';
 
 // Chat routes
 export default async function chatRoutes(fastify) {
@@ -8,6 +9,72 @@ export default async function chatRoutes(fastify) {
         if (!request.session.userId) {
             return reply.status(401).send({ error: 'Not authenticated' });
         }
+    });
+
+    // Get available AI providers
+    fastify.get('/providers', async (request, reply) => {
+        const providers = aiService.getAvailableProviders();
+        return { providers };
+    });
+
+    // Upload file to a specific conversation (per-chat upload)
+    fastify.post('/conversations/:id/upload', {
+        preHandler: [requirePermission('chat:upload')]
+    }, async (request, reply) => {
+        const conversationId = request.params.id;
+
+        // Verify conversation exists and belongs to user
+        const conversation = await Conversation.findOne({
+            _id: conversationId,
+            userId: request.session.userId,
+        });
+
+        if (!conversation) {
+            return reply.status(404).send({ error: 'Conversation not found' });
+        }
+
+        const data = await request.file();
+
+        if (!data) {
+            return reply.status(400).send({ error: 'No file uploaded' });
+        }
+
+        // Validate file type
+        const allowedTypes = [
+            'application/pdf',
+            'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+            'application/msword',
+            'text/plain',
+            'text/markdown',
+            'text/csv',
+        ];
+
+        if (!allowedTypes.includes(data.mimetype)) {
+            return reply.status(400).send({ error: 'File type not supported' });
+        }
+
+        const fileBuffer = await data.toBuffer();
+
+        // Upload with conversation scope (not global)
+        const document = await documentService.uploadAndCreateDocument(
+            fileBuffer,
+            data.filename,
+            data.mimetype,
+            request.session.userId,
+            { conversationId } // Mark as conversation-specific
+        );
+
+        // Process document in background
+        documentService.processDocument(document._id).catch(err => {
+            console.error('Background processing error:', err);
+        });
+
+        return {
+            success: true,
+            documentId: document._id,
+            document: document.toObject(),
+            message: 'File uploaded for this conversation',
+        };
     });
 
     // Create new conversation
@@ -64,10 +131,10 @@ export default async function chatRoutes(fastify) {
 
     // Send message and get AI response
     fastify.post('/conversations/:id/messages', async (request, reply) => {
-        const { content } = request.body;
+        const { content, provider, fileIds = [] } = request.body;
 
-        if (!content?.trim()) {
-            return reply.status(400).send({ error: 'Message content required' });
+        if (!content?.trim() && fileIds.length === 0) {
+            return reply.status(400).send({ error: 'Message content or file required' });
         }
 
         const conversation = await Conversation.findOne({
@@ -79,11 +146,34 @@ export default async function chatRoutes(fastify) {
             return reply.status(404).send({ error: 'Conversation not found' });
         }
 
+        // Fetch attachments metadata if fileIds provided
+        const attachments = [];
+        if (fileIds.length > 0) {
+            const docs = await Document.find({
+                _id: { $in: fileIds },
+                // Ensure user can only attach their own docs or conversation docs
+                $or: [
+                    { uploadedBy: request.session.userId },
+                    { conversationId: conversation._id }
+                ]
+            });
+
+            for (const doc of docs) {
+                attachments.push({
+                    documentId: doc._id,
+                    name: doc.originalName,
+                    mimeType: doc.mimeType,
+                    size: doc.size
+                });
+            }
+        }
+
         // Save user message
         const userMessage = new Message({
             conversationId: conversation._id,
             role: 'user',
-            content: content.trim(),
+            content: content.trim() || 'Sent attachments',
+            attachments,
         });
         await userMessage.save();
 
@@ -93,13 +183,27 @@ export default async function chatRoutes(fastify) {
             .limit(10)
             .lean();
 
-        // Call RAG pipeline
-        const response = await ragService.query(content, {
-            userId: request.session.userId,
-            conversationHistory: history.reverse(),
-        });
+        // Call RAG pipeline with selected provider
+        let response;
+        try {
+            response = await ragService.query(content || 'Context from attachments', {
+                userId: request.session.userId,
+                conversationId: conversation._id, // Pass conversation ID for scoped RAG
+                conversationHistory: history.reverse(),
+                provider: provider || undefined,
+                // Pass directly attached files to prioritize them
+                targetDocumentIds: fileIds.length > 0 ? fileIds : undefined
+            });
+        } catch (error) {
+            console.error('❌ RAG Service Error:', error);
+            // Handle rate limiting specifically
+            if (error.message && error.message.includes('429')) {
+                return reply.status(429).send({ error: 'AI Provider Rate Limit Exceeded. Please try again in 1 minute.' });
+            }
+            return reply.status(500).send({ error: `RAG processing failed: ${error.message}` });
+        }
 
-        // Save assistant message
+        // Save assistant message with all tracking data
         const assistantMessage = new Message({
             conversationId: conversation._id,
             role: 'assistant',
@@ -108,6 +212,9 @@ export default async function chatRoutes(fastify) {
             confidence: response.confidence,
             isLowConfidence: response.isLowConfidence,
             latency: response.latency,
+            timings: response.timings || { embed: 0, search: 0, generate: 0 },
+            sourcesSearched: response.sourcesSearched || 0,
+            tokens: response.tokens || { prompt: 0, completion: 0, total: 0 },
         });
         await assistantMessage.save();
 
@@ -117,7 +224,7 @@ export default async function chatRoutes(fastify) {
 
         // Auto-generate title from first message
         if (conversation.autoTitle && conversation.messageCount === 2) {
-            conversation.title = await geminiService.generateConversationTitle(content);
+            conversation.title = await geminiService.generateConversationTitle(content || 'New Conversation');
             conversation.autoTitle = false;
         }
 
@@ -149,6 +256,33 @@ export default async function chatRoutes(fastify) {
         await Message.deleteMany({ conversationId: conversation._id });
 
         return { success: true };
+    });
+
+    // Rename conversation
+    fastify.patch('/conversations/:id', async (request, reply) => {
+        const { title } = request.body;
+
+        if (!title || !title.trim()) {
+            return reply.status(400).send({ error: 'Title is required' });
+        }
+
+        const conversation = await Conversation.findOneAndUpdate(
+            {
+                _id: request.params.id,
+                userId: request.session.userId,
+            },
+            {
+                title: title.trim(),
+                autoTitle: false
+            },
+            { new: true }
+        );
+
+        if (!conversation) {
+            return reply.status(404).send({ error: 'Conversation not found' });
+        }
+
+        return { success: true, conversation: conversation.toObject() };
     });
 
     // Toggle pin conversation

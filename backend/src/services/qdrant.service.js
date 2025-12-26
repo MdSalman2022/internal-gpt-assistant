@@ -32,6 +32,33 @@ class QdrantService {
             } else {
                 console.log(`✅ Qdrant collection exists: ${this.collectionName}`);
             }
+
+            // These calls are idempotent or will fail benignly if index exists
+            const indexes = ['isGlobal', 'uploadedBy', 'conversationId', 'documentId', 'chunkIndex'];
+            const schemas = {
+                isGlobal: 'bool',
+                uploadedBy: 'keyword',
+                conversationId: 'keyword',
+                documentId: 'keyword',
+                chunkIndex: 'integer'
+            };
+
+            for (const field of indexes) {
+                try {
+                    await this.client.createPayloadIndex(this.collectionName, {
+                        field_name: field,
+                        field_schema: schemas[field],
+                        wait: true,
+                    });
+                } catch (error) {
+                    // Ignore error if index already exists
+                    if (!error.message?.includes('already exists')) {
+                        console.warn(`⚠️ Failed to create index for ${field}:`, error.message);
+                    }
+                }
+            }
+            console.log('✅ Qdrant payload indexes verified');
+
         } catch (error) {
             console.error('❌ Qdrant init error:', error.message);
             throw error;
@@ -53,6 +80,10 @@ class QdrantService {
                     content: chunk.content,
                     chunkIndex: chunk.chunkIndex,
                     pageNumber: chunk.pageNumber || null,
+                    // RBAC Fields
+                    uploadedBy: chunk.uploadedBy,
+                    conversationId: chunk.conversationId,
+                    isGlobal: chunk.isGlobal,
                     metadata: chunk.metadata || {},
                 },
             }));
@@ -75,13 +106,14 @@ class QdrantService {
      * @param {Object} options - Search options
      */
     async search(queryVector, options = {}) {
-        const { limit = 5, scoreThreshold = 0.5, filter = null } = options;
+        const { limit = 5, scoreThreshold, filter = null } = options;
+        const actualThreshold = scoreThreshold !== undefined ? scoreThreshold : 0.35;
 
         try {
             const results = await this.client.search(this.collectionName, {
                 vector: queryVector,
                 limit,
-                score_threshold: scoreThreshold,
+                score_threshold: actualThreshold,
                 with_payload: true,
                 filter: filter,
             });
@@ -121,6 +153,30 @@ class QdrantService {
     }
 
     /**
+     * Count vectors for a specific document
+     * @param {string} documentId
+     */
+    async countVectors(documentId) {
+        try {
+            const result = await this.client.count(this.collectionName, {
+                filter: {
+                    must: [
+                        {
+                            key: 'documentId',
+                            match: { value: documentId },
+                        },
+                    ],
+                },
+                exact: true,
+            });
+            return result.count;
+        } catch (error) {
+            console.error('❌ Qdrant count error:', error.message);
+            return 0;
+        }
+    }
+
+    /**
      * Get collection stats
      */
     async getStats() {
@@ -133,6 +189,32 @@ class QdrantService {
             };
         } catch (error) {
             console.error('❌ Qdrant stats error:', error.message);
+            throw error;
+        }
+    }
+
+    /**
+     * Clear ALL vectors from the collection (use with caution!)
+     * This is useful for cleaning up orphaned vectors
+     */
+    async clearAllVectors() {
+        try {
+            // Delete and recreate the collection
+            await this.client.deleteCollection(this.collectionName);
+            console.log(`🗑️ Deleted Qdrant collection: ${this.collectionName}`);
+
+            // Recreate it
+            await this.client.createCollection(this.collectionName, {
+                vectors: {
+                    size: this.vectorSize,
+                    distance: 'Cosine',
+                },
+            });
+            console.log(`✅ Recreated Qdrant collection: ${this.collectionName}`);
+
+            return { success: true, message: 'All vectors cleared' };
+        } catch (error) {
+            console.error('❌ Qdrant clear error:', error.message);
             throw error;
         }
     }
