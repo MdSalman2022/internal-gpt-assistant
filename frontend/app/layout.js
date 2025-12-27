@@ -11,6 +11,9 @@ const inter = Inter({
 export const metadata = {
   title: 'InsightAI - Internal Knowledge Assistant',
   description: 'AI-powered knowledge assistant for finding answers from internal documents',
+  icons: {
+    icon: '/favicon.ico',
+  },
 };
 
 export default function RootLayout({ children }) {

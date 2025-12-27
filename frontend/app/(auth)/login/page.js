@@ -53,35 +53,37 @@ export default function LoginPage() {
     };
 
     return (
-        <div className="min-h-screen flex bg-background">
+        <div className="min-h-screen flex bg-white">
             {/* Left side - Form */}
-            <div className="flex-1 flex items-center justify-center p-8">
+            <div className="flex-1 flex items-center justify-center p-8 bg-white relative z-10">
                 <div className="w-full max-w-md">
                     {/* Logo */}
-                    <div className="flex items-center gap-3 mb-8">
-                        <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary to-primary/80 flex items-center justify-center shadow-lg shadow-primary/20">
-                            <Sparkles className="w-5 h-5 text-primary-foreground" />
+                    <Link href="/" className="flex items-center gap-3 mb-10 group">
+                        <div className="w-10 h-10 rounded-xl bg-black flex items-center justify-center group-hover:scale-105 transition-transform duration-300">
+                            <Sparkles className="w-5 h-5 text-white" />
                         </div>
-                        <span className="text-xl font-bold text-foreground">InsightAI</span>
-                    </div>
+                        <span className="text-xl font-bold text-zinc-900">InsightAI</span>
+                    </Link>
 
                     {/* Header */}
-                    <h1 className="text-3xl font-bold text-foreground mb-2">
-                        {isLogin ? 'Welcome back' : 'Create account'}
-                    </h1>
-                    <p className="text-muted-foreground mb-8">
-                        {isLogin
-                            ? 'Sign in to access your knowledge assistant'
-                            : 'Start finding answers from your documents'
-                        }
-                    </p>
+                    <div className="mb-10">
+                        <h1 className="text-3xl font-bold text-zinc-900 mb-3">
+                            {isLogin ? 'Welcome back' : 'Create account'}
+                        </h1>
+                        <p className="text-zinc-500">
+                            {isLogin
+                                ? 'Sign in to access your knowledge assistant'
+                                : 'Start finding answers from your documents'
+                            }
+                        </p>
+                    </div>
 
                     {/* Google OAuth */}
                     <button
                         onClick={handleGoogleLogin}
-                        className="w-full flex items-center justify-center gap-3 px-4 py-3 
-                       bg-white hover:bg-gray-100 text-gray-800 font-medium 
-                       rounded-lg transition-colors mb-6"
+                        className="w-full flex items-center justify-center gap-3 px-4 py-3.5 
+                       bg-white border border-zinc-200 hover:bg-zinc-50 hover:border-zinc-300 
+                       text-zinc-700 font-medium rounded-xl transition-all mb-8"
                     >
                         <svg className="w-5 h-5" viewBox="0 0 24 24">
                             <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
@@ -93,78 +95,79 @@ export default function LoginPage() {
                     </button>
 
                     {/* Divider */}
-                    <div className="relative mb-6">
+                    <div className="relative mb-8">
                         <div className="absolute inset-0 flex items-center">
-                            <div className="w-full border-t border-border" />
+                            <div className="w-full border-t border-zinc-200" />
                         </div>
                         <div className="relative flex justify-center text-sm">
-                            <span className="px-4 bg-background text-muted-foreground">or continue with email</span>
+                            <span className="px-4 bg-white text-zinc-500">or continue with email</span>
                         </div>
                     </div>
 
                     {/* Error message */}
                     {error && (
-                        <div className="mb-4 p-3 bg-red-500/10 border border-red-500/20 rounded-lg text-red-400 text-sm">
+                        <div className="mb-6 p-4 bg-red-50 border border-red-100 rounded-xl flex items-center gap-3 text-red-600 text-sm">
+                            <div className="w-1.5 h-1.5 rounded-full bg-red-500" />
                             {error}
                         </div>
                     )}
 
                     {/* Form */}
-                    <form onSubmit={handleSubmit} className="space-y-4">
+                    <form onSubmit={handleSubmit} className="space-y-5">
                         {!isLogin && (
                             <div>
-                                <label className="block text-sm font-medium text-foreground mb-1.5">
+                                <label className="block text-sm font-medium text-zinc-900 mb-2">
                                     Full Name
                                 </label>
-                                <div className="relative">
-                                    <User className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+                                <div className="relative group">
+                                    <User className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-zinc-400 group-focus-within:text-black transition-colors" />
                                     <input
                                         type="text"
                                         value={formData.name}
                                         onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                                         placeholder="John Doe"
                                         required={!isLogin}
-                                        className="input pl-10"
+                                        className="w-full pl-10 pr-4 py-3 bg-zinc-50 border border-zinc-200 rounded-xl focus:bg-white focus:border-black focus:ring-1 focus:ring-black outline-none transition-all"
                                     />
                                 </div>
                             </div>
                         )}
 
                         <div>
-                            <label className="block text-sm font-medium text-foreground mb-1.5">
+                            <label className="block text-sm font-medium text-zinc-900 mb-2">
                                 Email Address
                             </label>
-                            <div className="relative">
-                                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+                            <div className="relative group">
+                                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-zinc-400 group-focus-within:text-black transition-colors" />
                                 <input
                                     type="email"
                                     value={formData.email}
                                     onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                                     placeholder="you@company.com"
                                     required
-                                    className="input pl-10"
+                                    className="w-full pl-10 pr-4 py-3 bg-zinc-50 border border-zinc-200 rounded-xl focus:bg-white focus:border-black focus:ring-1 focus:ring-black outline-none transition-all"
                                 />
                             </div>
                         </div>
 
                         <div>
-                            <label className="block text-sm font-medium text-foreground mb-1.5">
+                            <label className="block text-sm font-medium text-zinc-900 mb-2">
                                 Password
                             </label>
-                            <div className="relative">
-                                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+                            <div className="relative group">
+                                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-zinc-400 group-focus-within:text-black transition-colors" />
                                 <input
                                     type={showPassword ? 'text' : 'password'}
                                     value={formData.password}
                                     onChange={(e) => setFormData({ ...formData, password: e.target.value })}
                                     placeholder="••••••••"
                                     required
-                                    className="input pl-10 pr-10"
+                                    className="w-full pl-10 pr-12 py-3 bg-zinc-50 border border-zinc-200 rounded-xl focus:bg-white focus:border-black focus:ring-1 focus:ring-black outline-none transition-all"
                                 />
                                 <button
                                     type="button"
                                     onClick={() => setShowPassword(!showPassword)}
-                                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                                    className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-black p-1"
                                 >
                                     {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                                 </button>
@@ -173,7 +176,7 @@ export default function LoginPage() {
 
                         {isLogin && (
                             <div className="flex justify-end">
-                                <Link href="/forgot-password" className="text-sm text-primary hover:text-primary/80">
+                                <Link href="/forgot-password" className="text-sm text-zinc-500 hover:text-black hover:underline">
                                     Forgot password?
                                 </Link>
                             </div>
@@ -182,7 +185,7 @@ export default function LoginPage() {
                         <button
                             type="submit"
                             disabled={loading}
-                            className="w-full btn-primary py-3"
+                            className="w-full bg-black text-white hover:bg-zinc-800 disabled:opacity-50 disabled:cursor-not-allowed py-3.5 rounded-xl font-medium transition-all flex items-center justify-center gap-2"
                         >
                             {loading ? (
                                 <span className="flex items-center gap-2">
@@ -202,11 +205,11 @@ export default function LoginPage() {
                     </form>
 
                     {/* Toggle */}
-                    <p className="text-center text-muted-foreground mt-6">
+                    <p className="text-center text-zinc-500 mt-8">
                         {isLogin ? "Don't have an account?" : 'Already have an account?'}
                         <button
                             onClick={() => setIsLogin(!isLogin)}
-                            className="ml-1 text-primary hover:text-primary/80 font-medium"
+                            className="ml-2 text-black font-semibold hover:underline"
                         >
                             {isLogin ? 'Sign up' : 'Sign in'}
                         </button>
@@ -214,47 +217,58 @@ export default function LoginPage() {
                 </div>
             </div>
 
-            {/* Right side - Decorative */}
-            <div className="hidden lg:flex flex-1 items-center justify-center bg-card p-12">
-                <div className="max-w-lg text-center">
-                    <div className="w-20 h-20 rounded-2xl bg-primary flex items-center justify-center mx-auto mb-8 shadow-lg shadow-primary/40 ring-1 ring-primary/20">
-                        <Sparkles className="w-10 h-10 text-primary-foreground fill-primary-foreground/10" />
+            {/* Right side - Modern Dark Theme */}
+            <div className="hidden lg:flex flex-[1.2] bg-black relative overflow-hidden items-center justify-center p-16">
+                {/* Background Gradients */}
+                <div className="absolute top-0 right-0 w-[600px] h-[600px] bg-cyan-500/20 rounded-full blur-[120px] -translate-y-1/2 translate-x-1/2" />
+                <div className="absolute bottom-0 left-0 w-[500px] h-[500px] bg-purple-500/10 rounded-full blur-[100px] translate-y-1/2 -translate-x-1/2" />
+
+                {/* Content */}
+                <div className="relative z-10 max-w-xl">
+                    <div className="w-20 h-20 rounded-2xl bg-white/10 backdrop-blur-xl border border-white/10 flex items-center justify-center mb-10 ring-1 ring-white/20">
+                        <Sparkles className="w-10 h-10 text-cyan-400" />
                     </div>
-                    <h2 className="text-2xl font-bold text-foreground mb-4">
-                        Your Company Knowledge, Instantly Accessible
+
+                    <h2 className="text-4xl font-bold text-white mb-6 leading-tight">
+                        Your Company Knowledge,<br />
+                        <span className="text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-purple-400">Instantly Accessible</span>
                     </h2>
-                    <p className="text-muted-foreground mb-8">
-                        Ask questions in natural language and get accurate answers from your internal documents, with sources and citations.
+
+                    <p className="text-lg text-white/60 mb-12 leading-relaxed">
+                        Join forward-thinking teams using InsightAI to unlock the power of their internal documents through natural language.
                     </p>
 
-                    {/* Use cases */}
-                    <div className="text-left space-y-4 mb-8">
-                        <div className="flex items-start gap-3 p-3 bg-secondary/50 rounded-lg border border-border/50">
-                            <span className="text-xl">🎯</span>
-                            <div>
-                                <p className="text-foreground font-medium">HR & Policy</p>
-                                <p className="text-sm text-muted-foreground">Vacation, benefits, onboarding guides</p>
+                    {/* Feature cards */}
+                    <div className="space-y-4">
+                        <div className="p-5 bg-white/5 backdrop-blur-md rounded-2xl border border-white/10 hover:bg-white/10 transition-colors group">
+                            <div className="flex items-start gap-4">
+                                <div className="p-2.5 bg-cyan-500/10 rounded-lg group-hover:bg-cyan-500/20 transition-colors">
+                                    <span className="text-2xl">🎯</span>
+                                </div>
+                                <div>
+                                    <p className="text-white font-medium mb-1">Instant Answers</p>
+                                    <p className="text-sm text-white/40">Get accurate citations from PDFs, Notion, and Drive</p>
+                                </div>
                             </div>
                         </div>
-                        <div className="flex items-start gap-3 p-3 bg-secondary/50 rounded-lg border border-border/50">
-                            <span className="text-xl">💻</span>
-                            <div>
-                                <p className="text-foreground font-medium">IT Support</p>
-                                <p className="text-sm text-muted-foreground">Setup guides, troubleshooting, security</p>
-                            </div>
-                        </div>
-                        <div className="flex items-start gap-3 p-3 bg-secondary/50 rounded-lg border border-border/50">
-                            <span className="text-xl">📊</span>
-                            <div>
-                                <p className="text-foreground font-medium">Sales Enablement</p>
-                                <p className="text-sm text-muted-foreground">Product info, pricing, competitor analysis</p>
+
+                        <div className="p-5 bg-white/5 backdrop-blur-md rounded-2xl border border-white/10 hover:bg-white/10 transition-colors group">
+                            <div className="flex items-start gap-4">
+                                <div className="p-2.5 bg-purple-500/10 rounded-lg group-hover:bg-purple-500/20 transition-colors">
+                                    <span className="text-2xl">�</span>
+                                </div>
+                                <div>
+                                    <p className="text-white font-medium mb-1">Enterprise Security</p>
+                                    <p className="text-sm text-white/40">Bank-grade encryption and role-based access control</p>
+                                </div>
                             </div>
                         </div>
                     </div>
 
-                    <div className="flex flex-wrap justify-center gap-3">
-                        {['PDFs', 'Word Docs', 'Notion', 'Confluence', 'Slack'].map(tag => (
-                            <span key={tag} className="px-3 py-1 bg-secondary text-muted-foreground rounded-full text-sm border border-border/50">
+                    {/* Tags */}
+                    <div className="flex flex-wrap gap-3 mt-12">
+                        {['SOC2 Compliant', 'SSO Ready', '99.9% Uptime'].map(tag => (
+                            <span key={tag} className="px-4 py-1.5 bg-white/5 text-white/40 rounded-full text-sm border border-white/5">
                                 {tag}
                             </span>
                         ))}

@@ -16,9 +16,12 @@ export async function buildApp() {
     // CORS
     await fastify.register(cors, {
         origin: (origin, cb) => {
-            if (!origin || origin.startsWith('http://localhost')) {
-                cb(null, true);
-            } else if (origin === config.frontendUrl) {
+            const allowedOrigins = [
+                'https://corporate-gpt-client.vercel.app',
+                config.frontendUrl
+            ].filter(Boolean);
+
+            if (!origin || origin.startsWith('http://localhost') || allowedOrigins.includes(origin)) {
                 cb(null, true);
             } else {
                 cb(new Error('Not allowed by CORS'), false);
