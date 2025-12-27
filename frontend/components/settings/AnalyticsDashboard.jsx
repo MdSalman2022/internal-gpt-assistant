@@ -3,8 +3,9 @@
 import { useState, useEffect } from 'react';
 import { analyticsApi } from '@/lib/api';
 import {
-    MessageSquare, FileText, Users, Clock, TrendingUp,
-    AlertTriangle, ThumbsUp, ThumbsDown, Search, RefreshCw
+    MessageSquare, FileText, Users, Clock, TrendingUp, TrendingDown,
+    AlertTriangle, ThumbsUp, ThumbsDown, Search, RefreshCw,
+    BarChart2, Zap, Activity, Calendar, ArrowUpRight, ArrowDownRight
 } from 'lucide-react';
 
 export default function AnalyticsDashboard() {
@@ -42,152 +43,325 @@ export default function AnalyticsDashboard() {
     };
 
     const formatNumber = (num) => {
+        if (num >= 1000000) return (num / 1000000).toFixed(1) + 'M';
         if (num >= 1000) return (num / 1000).toFixed(1) + 'K';
         return num?.toString() || '0';
     };
 
     const formatTime = (ms) => {
         if (!ms) return '0s';
+        if (ms >= 60000) return (ms / 60000).toFixed(1) + 'm';
         return (ms / 1000).toFixed(1) + 's';
     };
 
-    // Helper StatCard Component (internal)
-    function StatCard({ icon, label, value, change, color }) {
-        const colors = { primary: 'text-primary-400 bg-primary-500/10', blue: 'text-blue-400 bg-blue-500/10', purple: 'text-purple-400 bg-purple-500/10', amber: 'text-amber-400 bg-amber-500/10' };
+    // Calculate query trend
+    const getQueryTrend = () => {
+        if (queryVolume.length < 7) return { trend: 0, direction: 'neutral' };
+        const recentWeek = queryVolume.slice(-7).reduce((sum, d) => sum + d.count, 0);
+        const previousWeek = queryVolume.slice(0, 7).reduce((sum, d) => sum + d.count, 0);
+        if (previousWeek === 0) return { trend: recentWeek > 0 ? 100 : 0, direction: 'up' };
+        const trend = ((recentWeek - previousWeek) / previousWeek) * 100;
+        return { trend: Math.abs(trend).toFixed(0), direction: trend >= 0 ? 'up' : 'down' };
+    };
+
+    const queryTrend = getQueryTrend();
+
+    // Helper StatCard Component
+    function StatCard({ icon, label, value, change, trend, color }) {
+        const colors = {
+            primary: 'text-primary-400 bg-primary-500/10 border-primary-500/20',
+            blue: 'text-blue-400 bg-blue-500/10 border-blue-500/20',
+            purple: 'text-purple-400 bg-purple-500/10 border-purple-500/20',
+            amber: 'text-amber-400 bg-amber-500/10 border-amber-500/20',
+            green: 'text-green-400 bg-green-500/10 border-green-500/20'
+        };
         return (
-            <div className="card">
-                <div className="flex items-center gap-3 mb-3">
-                    <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${colors[color]}`}>
+            <div className="bg-slate-900/50 border border-slate-800 rounded-xl p-5 hover:border-slate-700 transition-all">
+                <div className="flex items-center justify-between mb-4">
+                    <div className={`w-10 h-10 rounded-lg flex items-center justify-center border ${colors[color]}`}>
                         {icon}
                     </div>
+                    {trend && (
+                        <div className={`flex items-center gap-1 text-xs px-2 py-1 rounded-full ${trend.direction === 'up' ? 'bg-green-500/10 text-green-400' : 'bg-red-500/10 text-red-400'
+                            }`}>
+                            {trend.direction === 'up' ? <ArrowUpRight className="w-3 h-3" /> : <ArrowDownRight className="w-3 h-3" />}
+                            {trend.value}%
+                        </div>
+                    )}
                 </div>
-                <p className="text-2xl font-bold text-white">{value}</p>
-                <p className="text-xs text-slate-500 mt-1">{label}</p>
-                <p className="text-xs text-slate-600">{change}</p>
+                <p className="text-3xl font-bold text-white mb-1">{value}</p>
+                <p className="text-sm text-slate-400">{label}</p>
+                {change && <p className="text-xs text-slate-500 mt-1">{change}</p>}
             </div>
         );
     }
 
     return (
-        <div className="flex flex-col h-full overflow-hidden p-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
-            <div className="flex justify-between items-center mb-6">
-                <div>
-                    <h2 className="text-lg font-medium text-white">Analytics Overview</h2>
-                    <p className="text-slate-400 text-sm">Real-time insights into system usage and knowledge gaps.</p>
-                </div>
-                <button onClick={loadAnalytics} className="btn-secondary text-xs">
-                    <RefreshCw className={`w-3 h-3 ${loading ? 'animate-spin' : ''}`} />
-                    Refresh
-                </button>
-            </div>
-
-            {loading ? (
-                <div className="flex items-center justify-center h-64">
-                    <div className="animate-spin w-8 h-8 border-2 border-primary-500 border-t-transparent rounded-full" />
-                </div>
-            ) : (
-                <div className="space-y-6 max-w-7xl">
-                    {/* Stats Grid */}
-                    <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-                        <StatCard icon={<MessageSquare />} label="Total Queries" value={formatNumber(stats?.totalQueries)} change={`${stats?.queriesThisWeek || 0} this week`} color="primary" />
-                        <StatCard icon={<FileText />} label="Documents" value={formatNumber(stats?.totalDocuments)} change={`${stats?.documentsThisMonth || 0} this month`} color="blue" />
-                        <StatCard icon={<Users />} label="Active Users" value={formatNumber(stats?.activeUsers)} change="Last 30 days" color="purple" />
-                        <StatCard icon={<Clock />} label="Avg Response" value={formatTime(stats?.avgResponseTime)} change="Per query" color="amber" />
+        <div className="h-full overflow-y-auto">
+            <div className="p-6 pb-12 max-w-7xl mx-auto space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+                {/* Header */}
+                <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
+                    <div>
+                        <h2 className="text-xl font-semibold text-white flex items-center gap-2">
+                            <BarChart2 className="w-5 h-5 text-primary-400" />
+                            Analytics Dashboard
+                        </h2>
+                        <p className="text-slate-400 text-sm mt-1">Real-time insights into system usage and performance</p>
                     </div>
+                    <button
+                        onClick={loadAnalytics}
+                        disabled={loading}
+                        className="btn-secondary text-sm flex items-center gap-2 w-fit"
+                    >
+                        <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
+                        Refresh Data
+                    </button>
+                </div>
 
-                    {/* Charts Row */}
-                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                        {/* Satisfaction */}
-                        <div className="card">
-                            <h3 className="font-medium text-white mb-4">Satisfaction</h3>
-                            {feedback?.total > 0 ? (
-                                <div className="flex items-center justify-center gap-8">
-                                    <div className="relative w-28 h-28">
-                                        <svg className="w-full h-full -rotate-90">
-                                            <circle cx="56" cy="56" r="48" fill="none" stroke="#1e293b" strokeWidth="10" />
-                                            <circle cx="56" cy="56" r="48" fill="none" stroke="#10B981" strokeWidth="10" strokeDasharray={`${(feedback.satisfactionRate / 100) * 302} 302`} strokeLinecap="round" />
-                                        </svg>
-                                        <div className="absolute inset-0 flex items-center justify-center">
-                                            <span className="text-2xl font-bold text-white">{feedback.satisfactionRate}%</span>
+                {loading ? (
+                    <div className="flex items-center justify-center h-64">
+                        <div className="flex flex-col items-center gap-3">
+                            <div className="animate-spin w-10 h-10 border-2 border-primary-500 border-t-transparent rounded-full" />
+                            <p className="text-slate-400 text-sm">Loading analytics...</p>
+                        </div>
+                    </div>
+                ) : (
+                    <>
+                        {/* Stats Grid */}
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                            <StatCard
+                                icon={<MessageSquare className="w-5 h-5" />}
+                                label="Total Queries"
+                                value={formatNumber(stats?.totalQueries)}
+                                change={`${stats?.queriesThisWeek || 0} this week`}
+                                trend={queryTrend.trend > 0 ? { direction: queryTrend.direction, value: queryTrend.trend } : null}
+                                color="primary"
+                            />
+                            <StatCard
+                                icon={<FileText className="w-5 h-5" />}
+                                label="Documents"
+                                value={formatNumber(stats?.totalDocuments)}
+                                change={`${stats?.documentsThisMonth || 0} uploaded this month`}
+                                color="blue"
+                            />
+                            <StatCard
+                                icon={<Users className="w-5 h-5" />}
+                                label="Active Users"
+                                value={formatNumber(stats?.activeUsers)}
+                                change="Active in last 30 days"
+                                color="purple"
+                            />
+                            <StatCard
+                                icon={<Zap className="w-5 h-5" />}
+                                label="Avg Response Time"
+                                value={formatTime(stats?.avgResponseTime)}
+                                change="Per AI response"
+                                color="amber"
+                            />
+                        </div>
+
+                        {/* Charts Row */}
+                        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                            {/* Satisfaction */}
+                            <div className="bg-slate-900/50 border border-slate-800 rounded-xl p-5">
+                                <div className="flex items-center justify-between mb-4">
+                                    <h3 className="font-medium text-white flex items-center gap-2">
+                                        <Activity className="w-4 h-4 text-green-400" />
+                                        User Satisfaction
+                                    </h3>
+                                    <span className="text-xs text-slate-500">Based on {feedback?.total || 0} ratings</span>
+                                </div>
+                                {feedback?.total > 0 ? (
+                                    <div className="flex items-center justify-center gap-8">
+                                        <div className="relative w-32 h-32">
+                                            <svg className="w-full h-full -rotate-90">
+                                                <circle cx="64" cy="64" r="52" fill="none" stroke="#1e293b" strokeWidth="12" />
+                                                <circle
+                                                    cx="64" cy="64" r="52"
+                                                    fill="none"
+                                                    stroke={feedback.satisfactionRate >= 80 ? '#10B981' : feedback.satisfactionRate >= 50 ? '#F59E0B' : '#EF4444'}
+                                                    strokeWidth="12"
+                                                    strokeDasharray={`${(feedback.satisfactionRate / 100) * 327} 327`}
+                                                    strokeLinecap="round"
+                                                />
+                                            </svg>
+                                            <div className="absolute inset-0 flex flex-col items-center justify-center">
+                                                <span className="text-3xl font-bold text-white">{feedback.satisfactionRate}%</span>
+                                                <span className="text-xs text-slate-500">Satisfied</span>
+                                            </div>
+                                        </div>
+                                        <div className="space-y-3">
+                                            <div className="flex items-center gap-3 p-2 bg-green-500/10 rounded-lg">
+                                                <ThumbsUp className="w-5 h-5 text-green-400" />
+                                                <div>
+                                                    <span className="text-lg font-bold text-white">{feedback.positive}</span>
+                                                    <p className="text-xs text-slate-500">Positive</p>
+                                                </div>
+                                            </div>
+                                            <div className="flex items-center gap-3 p-2 bg-red-500/10 rounded-lg">
+                                                <ThumbsDown className="w-5 h-5 text-red-400" />
+                                                <div>
+                                                    <span className="text-lg font-bold text-white">{feedback.negative}</span>
+                                                    <p className="text-xs text-slate-500">Negative</p>
+                                                </div>
+                                            </div>
                                         </div>
                                     </div>
-                                    <div className="space-y-2 text-sm">
-                                        <div className="flex items-center gap-2"><ThumbsUp className="w-4 h-4 text-primary-400" /><span className="text-slate-400">{feedback.positive}</span></div>
-                                        <div className="flex items-center gap-2"><ThumbsDown className="w-4 h-4 text-red-400" /><span className="text-slate-400">{feedback.negative}</span></div>
+                                ) : (
+                                    <div className="h-32 flex flex-col items-center justify-center text-slate-500">
+                                        <ThumbsUp className="w-8 h-8 mb-2 opacity-30" />
+                                        <p className="text-sm">No feedback received yet</p>
+                                        <p className="text-xs mt-1">Encourage users to rate responses</p>
+                                    </div>
+                                )}
+                            </div>
+
+                            {/* Query Volume Chart */}
+                            <div className="bg-slate-900/50 border border-slate-800 rounded-xl p-5 lg:col-span-2">
+                                <div className="flex items-center justify-between mb-4">
+                                    <h3 className="font-medium text-white flex items-center gap-2">
+                                        <TrendingUp className="w-4 h-4 text-primary-400" />
+                                        Query Volume
+                                    </h3>
+                                    <div className="flex items-center gap-2 text-xs text-slate-500">
+                                        <Calendar className="w-3 h-3" />
+                                        Last 14 days
                                     </div>
                                 </div>
-                            ) : (
-                                <div className="h-28 flex items-center justify-center text-slate-500 text-sm">No feedback yet</div>
-                            )}
-                        </div>
-
-                        {/* Query Volume */}
-                        <div className="card lg:col-span-2">
-                            <h3 className="font-medium text-white mb-4">Query Volume (14 days)</h3>
-                            <div className="h-32 flex items-end gap-1">
-                                {queryVolume.map((d, i) => {
-                                    const max = Math.max(...queryVolume.map(v => v.count), 1);
-                                    return (
-                                        <div key={i} className="flex-1 flex flex-col items-center gap-1">
-                                            <div className="w-full bg-primary-500/80 rounded-t hover:bg-primary-400 transition-colors" style={{ height: `${Math.max((d.count / max) * 100, 4)}%` }} title={`${d.count} queries`} />
-                                            <span className="text-[9px] text-slate-600">{new Date(d.date).getDate()}</span>
-                                        </div>
-                                    );
-                                })}
-                            </div>
-                        </div>
-                    </div>
-
-                    {/* Lists Row */}
-                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                        {/* Top Queries */}
-                        <div className="card">
-                            <div className="flex items-center justify-between mb-4">
-                                <h3 className="font-medium text-white">Top Queries</h3>
-                                <Search className="w-4 h-4 text-slate-500" />
-                            </div>
-                            {topQueries.length > 0 ? (
-                                <ul className="space-y-2">
-                                    {topQueries.map((q, i) => (
-                                        <li key={i} className="flex items-center gap-3 p-2 rounded-lg hover:bg-slate-800/50">
-                                            <span className="w-6 h-6 rounded-full bg-primary-500/10 text-primary-400 text-xs flex items-center justify-center font-medium">{i + 1}</span>
-                                            <span className="flex-1 text-sm text-slate-300 truncate">{q.query}</span>
-                                            <span className="text-xs text-slate-500">{q.count}x</span>
-                                        </li>
-                                    ))}
-                                </ul>
-                            ) : (
-                                <div className="py-8 text-center text-slate-500 text-sm">No queries yet</div>
-                            )}
-                        </div>
-
-                        {/* Knowledge Gaps */}
-                        <div className="card">
-                            <div className="flex items-center justify-between mb-4">
-                                <h3 className="font-medium text-white">Knowledge Gaps</h3>
-                                <AlertTriangle className="w-4 h-4 text-amber-400" />
-                            </div>
-                            {knowledgeGaps.length > 0 ? (
-                                <ul className="space-y-2">
-                                    {knowledgeGaps.map((gap, i) => (
-                                        <li key={i} className="p-3 bg-slate-800/30 rounded-lg border border-slate-800">
-                                            <p className="text-sm text-slate-300 truncate mb-2">{gap.question}</p>
-                                            <div className="flex items-center gap-2">
-                                                <div className="flex-1 h-1 bg-slate-700 rounded-full overflow-hidden">
-                                                    <div className="h-full bg-amber-500 rounded-full" style={{ width: `${(gap.confidence || 0) * 100}%` }} />
+                                {queryVolume.length > 0 ? (
+                                    <div className="h-40 flex items-end gap-1.5 px-2">
+                                        {queryVolume.map((d, i) => {
+                                            const max = Math.max(...queryVolume.map(v => v.count), 1);
+                                            const height = Math.max((d.count / max) * 100, 8);
+                                            const isToday = new Date(d.date).toDateString() === new Date().toDateString();
+                                            return (
+                                                <div key={i} className="flex-1 flex flex-col items-center gap-2 group">
+                                                    <div className="relative w-full">
+                                                        <div
+                                                            className={`w-full rounded-t-md transition-all cursor-pointer ${isToday
+                                                                ? 'bg-primary-400'
+                                                                : 'bg-primary-500/60 hover:bg-primary-500'
+                                                                }`}
+                                                            style={{ height: `${height}px` }}
+                                                        />
+                                                        <div className="absolute -top-8 left-1/2 -translate-x-1/2 px-2 py-1 bg-slate-800 rounded text-xs text-white opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none z-10">
+                                                            {d.count} queries
+                                                        </div>
+                                                    </div>
+                                                    <span className={`text-[10px] ${isToday ? 'text-primary-400 font-medium' : 'text-slate-500'}`}>
+                                                        {new Date(d.date).getDate()}
+                                                    </span>
                                                 </div>
-                                                <span className="text-xs text-amber-400">{Math.round((gap.confidence || 0) * 100)}%</span>
-                                            </div>
-                                        </li>
-                                    ))}
-                                </ul>
-                            ) : (
-                                <div className="py-8 text-center text-slate-500 text-sm">No gaps detected ✓</div>
-                            )}
+                                            );
+                                        })}
+                                    </div>
+                                ) : (
+                                    <div className="h-40 flex items-center justify-center text-slate-500 text-sm">
+                                        No query data available
+                                    </div>
+                                )}
+                            </div>
                         </div>
-                    </div>
-                </div>
-            )}
+
+                        {/* Lists Row */}
+                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                            {/* Top Queries */}
+                            <div className="bg-slate-900/50 border border-slate-800 rounded-xl p-5">
+                                <div className="flex items-center justify-between mb-4">
+                                    <h3 className="font-medium text-white flex items-center gap-2">
+                                        <Search className="w-4 h-4 text-blue-400" />
+                                        Top Queries
+                                    </h3>
+                                    <span className="text-xs text-slate-500">Most frequent</span>
+                                </div>
+                                {topQueries.length > 0 ? (
+                                    <ul className="space-y-2">
+                                        {topQueries.map((q, i) => (
+                                            <li key={i} className="flex items-center gap-3 p-3 rounded-lg bg-slate-800/30 border border-slate-800/50 hover:border-slate-700 transition-colors">
+                                                <span className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold ${i === 0 ? 'bg-amber-500/20 text-amber-400' :
+                                                    i === 1 ? 'bg-slate-400/20 text-slate-300' :
+                                                        i === 2 ? 'bg-orange-500/20 text-orange-400' :
+                                                            'bg-slate-700/50 text-slate-400'
+                                                    }`}>
+                                                    {i + 1}
+                                                </span>
+                                                <span className="flex-1 text-sm text-slate-300 truncate">{q.query}</span>
+                                                <span className="text-xs text-slate-500 bg-slate-800 px-2 py-1 rounded-full">{q.count}x</span>
+                                            </li>
+                                        ))}
+                                    </ul>
+                                ) : (
+                                    <div className="py-12 text-center">
+                                        <Search className="w-8 h-8 text-slate-700 mx-auto mb-2" />
+                                        <p className="text-slate-500 text-sm">No queries yet</p>
+                                        <p className="text-xs text-slate-600 mt-1">Queries will appear once users start chatting</p>
+                                    </div>
+                                )}
+                            </div>
+
+                            {/* Knowledge Gaps */}
+                            <div className="bg-slate-900/50 border border-slate-800 rounded-xl p-5">
+                                <div className="flex items-center justify-between mb-4">
+                                    <h3 className="font-medium text-white flex items-center gap-2">
+                                        <AlertTriangle className="w-4 h-4 text-amber-400" />
+                                        Knowledge Gaps
+                                    </h3>
+                                    <span className="text-xs text-slate-500">Low confidence answers</span>
+                                </div>
+                                {knowledgeGaps.length > 0 ? (
+                                    <ul className="space-y-3">
+                                        {knowledgeGaps.map((gap, i) => (
+                                            <li key={i} className="p-3 bg-amber-500/5 rounded-lg border border-amber-500/20 hover:border-amber-500/40 transition-colors">
+                                                <p className="text-sm text-slate-300 truncate mb-2">{gap.question}</p>
+                                                <div className="flex items-center gap-3">
+                                                    <div className="flex-1 h-2 bg-slate-800 rounded-full overflow-hidden">
+                                                        <div
+                                                            className={`h-full rounded-full transition-all ${(gap.confidence || 0) < 0.3 ? 'bg-red-500' :
+                                                                (gap.confidence || 0) < 0.6 ? 'bg-amber-500' : 'bg-green-500'
+                                                                }`}
+                                                            style={{ width: `${(gap.confidence || 0) * 100}%` }}
+                                                        />
+                                                    </div>
+                                                    <span className={`text-xs font-medium px-2 py-0.5 rounded ${(gap.confidence || 0) < 0.3 ? 'bg-red-500/20 text-red-400' :
+                                                        (gap.confidence || 0) < 0.6 ? 'bg-amber-500/20 text-amber-400' : 'bg-green-500/20 text-green-400'
+                                                        }`}>
+                                                        {Math.round((gap.confidence || 0) * 100)}%
+                                                    </span>
+                                                </div>
+                                            </li>
+                                        ))}
+                                    </ul>
+                                ) : (
+                                    <div className="py-12 text-center">
+                                        <div className="w-12 h-12 rounded-full bg-green-500/10 flex items-center justify-center mx-auto mb-3">
+                                            <ThumbsUp className="w-6 h-6 text-green-400" />
+                                        </div>
+                                        <p className="text-green-400 text-sm font-medium">No knowledge gaps detected</p>
+                                        <p className="text-xs text-slate-500 mt-1">All queries are being answered confidently</p>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+
+                        {/* Additional Info Footer */}
+                        <div className="bg-slate-900/30 border border-slate-800 rounded-xl p-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                            <div className="flex items-center gap-2 text-xs text-slate-500">
+                                <Clock className="w-4 h-4" />
+                                <span>Data refreshes automatically every 5 minutes</span>
+                            </div>
+                            <div className="flex items-center gap-4 text-xs">
+                                <span className="flex items-center gap-1 text-slate-500">
+                                    <div className="w-2 h-2 rounded-full bg-green-400" />
+                                    Live data
+                                </span>
+                                <span className="text-slate-600">
+                                    Last updated: {new Date().toLocaleTimeString()}
+                                </span>
+                            </div>
+                        </div>
+                    </>
+                )}
+            </div>
         </div>
     );
 }
