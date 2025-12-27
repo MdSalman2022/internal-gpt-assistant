@@ -11,6 +11,7 @@ import {
   Languages, Bot, BookOpen, TrendingUp, ArrowUpRight,
   Mic, Image as ImageIcon, Code, GitBranch, History, Share2
 } from 'lucide-react';
+import { HeroScene } from '../components/landing/Scene3D';
 
 // Intersection Observer hook for scroll animations
 function useInView(options = {}) {
@@ -122,53 +123,8 @@ export default function LandingPage() {
           </div>
 
           {/* Right - 3D AI Brain Visual */}
-          <div className="relative flex items-center justify-center">
-            <div className="relative w-full max-w-lg aspect-square">
-              {/* 3D AI Brain Neural Network SVG */}
-              <svg viewBox="0 0 400 400" className="relative w-full h-full">
-                <defs>
-                  <linearGradient id="nodeGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-                    <stop offset="0%" stopColor="#06b6d4" />
-                    <stop offset="100%" stopColor="#0e7490" />
-                  </linearGradient>
-                </defs>
-
-                {/* Neural network connections */}
-                <g stroke="#06b6d4" strokeWidth="1.5" opacity="0.3">
-                  <line x1="200" y1="100" x2="120" y2="160" />
-                  <line x1="200" y1="100" x2="280" y2="160" />
-                  <line x1="120" y1="160" x2="80" y2="240" />
-                  <line x1="120" y1="160" x2="160" y2="240" />
-                  <line x1="280" y1="160" x2="240" y2="240" />
-                  <line x1="280" y1="160" x2="320" y2="240" />
-                  <line x1="80" y1="240" x2="120" y2="320" />
-                  <line x1="160" y1="240" x2="200" y2="320" />
-                  <line x1="240" y1="240" x2="200" y2="320" />
-                  <line x1="320" y1="240" x2="280" y2="320" />
-                </g>
-
-                {/* Neural nodes */}
-                <circle cx="200" cy="100" r="14" fill="url(#nodeGrad)" />
-                <circle cx="120" cy="160" r="10" fill="#0891b2" />
-                <circle cx="280" cy="160" r="10" fill="#0891b2" />
-                <circle cx="80" cy="240" r="8" fill="#06b6d4" opacity="0.7" />
-                <circle cx="160" cy="240" r="8" fill="#06b6d4" opacity="0.7" />
-                <circle cx="240" cy="240" r="8" fill="#06b6d4" opacity="0.7" />
-                <circle cx="320" cy="240" r="8" fill="#06b6d4" opacity="0.7" />
-                <circle cx="120" cy="320" r="6" fill="#22d3ee" />
-                <circle cx="200" cy="320" r="12" fill="url(#nodeGrad)" />
-                <circle cx="280" cy="320" r="6" fill="#22d3ee" />
-
-                {/* Center brain icon */}
-                <circle cx="200" cy="200" r="45" fill="white" stroke="#06b6d4" strokeWidth="2" />
-                <g transform="translate(175, 175)">
-                  <path d="M25 10 C15 10 10 18 10 25 C10 32 15 38 20 40 L20 42 L30 42 L30 40 C35 38 40 32 40 25 C40 18 35 10 25 10 Z" fill="none" stroke="#0891b2" strokeWidth="2" />
-                  <circle cx="18" cy="22" r="3" fill="#06b6d4" />
-                  <circle cx="32" cy="22" r="3" fill="#06b6d4" />
-                  <circle cx="25" cy="30" r="3" fill="#0891b2" />
-                </g>
-              </svg>
-            </div>
+          <div className="relative flex items-center justify-center h-[500px] w-full">
+            <HeroScene />
           </div>
         </div>
       </section>
@@ -335,10 +291,10 @@ export default function LandingPage() {
             {/* Right - Model cards */}
             <div className="space-y-4">
               {[
-                { name: 'GPT-4o', provider: 'OpenAI', desc: 'Most capable model for complex reasoning and analysis.', tag: 'Recommended' },
-                { name: 'Claude 3.5 Sonnet', provider: 'Anthropic', desc: 'Excellent for long-form content and nuanced understanding.' },
-                { name: 'Gemini 2.0 Flash', provider: 'Google', desc: 'Fast responses with strong multilingual capabilities.' },
-                { name: 'GPT-4o Mini', provider: 'OpenAI', desc: 'Cost-effective for everyday queries and quick tasks.' },
+                { name: 'GPT-5', provider: 'OpenAI', desc: 'Most capable model for complex reasoning and analysis.', tag: 'Recommended' },
+                { name: 'Claude 4.5 Sonnet', provider: 'Anthropic', desc: 'Excellent for long-form content and nuanced understanding.' },
+                { name: 'Gemini 3.0', provider: 'Google', desc: 'Fast responses with strong multilingual capabilities.' },
+                { name: 'Custom Model', provider: 'Custom', desc: 'Cost-effective for everyday queries and quick tasks.' },
               ].map((model, i) => (
                 <FadeIn key={i} delay={i * 100}>
                   <div className="p-6 bg-white rounded-2xl border border-zinc-200 hover:border-cyan-300 hover:shadow-lg transition-all flex items-start justify-between group cursor-default">

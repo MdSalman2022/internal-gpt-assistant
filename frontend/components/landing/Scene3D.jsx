@@ -1,54 +1,77 @@
 'use client';
 
-import { useRef, useMemo } from 'react';
 import { Canvas, useFrame } from '@react-three/fiber';
-import { Float } from '@react-three/drei';
+import { Float, Sparkles, MeshDistortMaterial } from '@react-three/drei';
+import * as THREE from 'three';
+import { useRef, useMemo } from 'react';
 
 // Neural Network Node
 function NeuralNode({ color = '#8b5cf6' }) {
     const meshRef = useRef();
+    const lightRef = useRef();
 
     useFrame(({ clock }) => {
         if (meshRef.current) {
-            meshRef.current.rotation.x = clock.getElapsedTime() * 0.3;
-            meshRef.current.rotation.y = clock.getElapsedTime() * 0.4;
+            meshRef.current.rotation.x = clock.getElapsedTime() * 0.1;
+            meshRef.current.rotation.y = clock.getElapsedTime() * 0.15;
+        }
+        if (lightRef.current) {
+            // Move light in a circle
+            lightRef.current.position.x = Math.sin(clock.getElapsedTime()) * 1.5;
+            lightRef.current.position.z = Math.cos(clock.getElapsedTime()) * 1.5;
         }
     });
 
     const connections = useMemo(() => {
         const lines = [];
         const nodePositions = [
-            [0, 0, 0], [0.6, 0.3, 0.2], [-0.5, 0.5, -0.1], [0.4, -0.5, 0.3], [-0.6, -0.3, 0.2]
+            [0, 0, 0], [0.8, 0.4, 0.2], [-0.7, 0.6, -0.3], [0.5, -0.7, 0.4], [-0.8, -0.4, 0.3],
+            [0.3, 0.8, -0.2], [-0.4, -0.6, -0.4], [0.7, -0.2, -0.5]
         ];
         for (let i = 0; i < nodePositions.length; i++) {
             for (let j = i + 1; j < nodePositions.length; j++) {
-                if (Math.random() > 0.3) lines.push([nodePositions[i], nodePositions[j]]);
+                if (Math.random() > 0.4) lines.push([nodePositions[i], nodePositions[j]]);
             }
         }
         return lines;
     }, []);
 
     return (
-        <Float speed={2} rotationIntensity={0.4} floatIntensity={0.6}>
-            <group ref={meshRef}>
-                <mesh>
-                    <icosahedronGeometry args={[0.2, 1]} />
-                    <meshBasicMaterial color={color} wireframe transparent opacity={0.7} />
-                </mesh>
-                {[[0.6, 0.3, 0.2], [-0.5, 0.5, -0.1], [0.4, -0.5, 0.3], [-0.6, -0.3, 0.2]].map((pos, i) => (
-                    <mesh key={i} position={pos}>
-                        <sphereGeometry args={[0.06, 8, 8]} />
-                        <meshBasicMaterial color={color} transparent opacity={0.6} />
+        <Float speed={2} rotationIntensity={0.5} floatIntensity={0.8}>
+            <group>
+                {/* Moving Light Source */}
+                <pointLight ref={lightRef} intensity={2} distance={3} color="#22d3ee" />
+
+                <group ref={meshRef}>
+                    {/* Core Sphere */}
+                    <mesh scale={0.8}>
+                        <icosahedronGeometry args={[1, 2]} />
+                        <meshStandardMaterial color={color} wireframe transparent opacity={0.3} />
                     </mesh>
-                ))}
-                {connections.map((conn, i) => (
-                    <line key={i}>
-                        <bufferGeometry>
-                            <bufferAttribute attach="attributes-position" count={2} array={new Float32Array([...conn[0], ...conn[1]])} itemSize={3} />
-                        </bufferGeometry>
-                        <lineBasicMaterial color={color} transparent opacity={0.3} />
-                    </line>
-                ))}
+
+                    {/* Inner Core */}
+                    <mesh scale={0.4}>
+                        <sphereGeometry args={[1, 16, 16]} />
+                        <meshStandardMaterial color={color} transparent opacity={0.6} />
+                    </mesh>
+
+                    {/* Nodes and Connections */}
+                    {[[0.8, 0.4, 0.2], [-0.7, 0.6, -0.3], [0.5, -0.7, 0.4], [-0.8, -0.4, 0.3], [0.3, 0.8, -0.2], [-0.4, -0.6, -0.4], [0.7, -0.2, -0.5]].map((pos, i) => (
+                        <mesh key={i} position={pos}>
+                            <sphereGeometry args={[0.08, 16, 16]} />
+                            <meshStandardMaterial color={color} transparent opacity={0.8} />
+                        </mesh>
+                    ))}
+
+                    {connections.map((conn, i) => (
+                        <line key={i}>
+                            <bufferGeometry>
+                                <bufferAttribute attach="attributes-position" count={2} array={new Float32Array([...conn[0], ...conn[1]])} itemSize={3} />
+                            </bufferGeometry>
+                            <lineBasicMaterial color={color} transparent opacity={0.2} linewidth={1} />
+                        </line>
+                    ))}
+                </group>
             </group>
         </Float>
     );
@@ -215,8 +238,8 @@ function Scene3DInline({ children, className = '' }) {
 // Export individual scene components for each section
 export function HeroScene() {
     return (
-        <Scene3DInline className="absolute right-0 top-1/2 -translate-y-1/2 w-[400px] h-[400px] opacity-60">
-            <NeuralNode color="#8b5cf6" />
+        <Scene3DInline className="absolute right-0 top-1/2 -translate-y-1/2 w-full h-[500px] pointer-events-none">
+            <NeuralNode color="#06b6d4" />
         </Scene3DInline>
     );
 }
