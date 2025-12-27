@@ -60,6 +60,17 @@ export default async function authRoutes(fastify) {
         request.session.userId = user._id;
         request.session.user = user.toJSON();
 
+        // Explicitly save session to ensure cookie is sent
+        await request.session.save();
+
+        // Debug logging for production
+        console.log('Login successful:', {
+            userId: user._id,
+            email: user.email,
+            sessionId: request.session.sessionId,
+            nodeEnv: config.nodeEnv
+        });
+
         // AUDIT LOG: Login
         auditService.log(request, 'LOGIN', { type: 'user', id: user._id.toString() }, { method: 'password' });
 
@@ -77,6 +88,14 @@ export default async function authRoutes(fastify) {
 
     // Get current user
     fastify.get('/me', async (request, reply) => {
+        // Debug logging for production
+        console.log('/me check:', {
+            hasSession: !!request.session,
+            userId: request.session?.userId || 'NONE',
+            sessionId: request.session?.sessionId || 'NONE',
+            cookies: request.headers.cookie || 'NO COOKIES'
+        });
+
         if (!request.session.userId) {
             return reply.status(401).send({ error: 'Not authenticated' });
         }
