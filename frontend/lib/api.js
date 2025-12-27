@@ -1,4 +1,4 @@
-export const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+export const API_URL = process.env.NEXT_PUBLIC_API_URL
 
 // Helper for API calls
 async function fetcher(endpoint, options = {}) {
@@ -86,7 +86,7 @@ export const chatApi = {
         const formData = new FormData();
         formData.append('file', file);
 
-        const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+        const API_URL = process.env.NEXT_PUBLIC_API_URL
         const res = await fetch(`${API_URL}/api/chat/conversations/${conversationId}/upload`, {
             method: 'POST',
             credentials: 'include',

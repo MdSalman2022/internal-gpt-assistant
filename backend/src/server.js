@@ -19,7 +19,10 @@ async function start() {
             host: '0.0.0.0',
         });
 
-        console.log(`🚀 Server running at http://localhost:${config.port}`);
+        const baseUrl = `http://localhost:${config.port}`;
+        console.log(`🚀 Server running at ${baseUrl}`);
+        console.log(`📡 API Base URL: ${baseUrl}/api`);
+        console.log(`❤️  Health Check: ${baseUrl}/health`);
         console.log(`📚 Environment: ${config.nodeEnv}`);
     } catch (error) {
         console.error('❌ Failed to start server:', error);

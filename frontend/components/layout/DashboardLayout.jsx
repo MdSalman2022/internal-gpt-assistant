@@ -8,7 +8,8 @@ import { chatApi } from '@/lib/api';
 import {
     MessageSquare, FileText, BarChart3, Settings, LogOut,
     Menu, X, ChevronLeft, Sparkles, Plus, MessageCircle,
-    MoreHorizontal, Pencil, Trash2, Check, X as XIcon, Shield, Users, Search
+    MoreHorizontal, Pencil, Trash2, Check, X as XIcon, Shield, Users, Search,
+    User, Bell, Palette, Database, Key, Zap, DollarSign, Activity, ArrowLeft
 } from 'lucide-react';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 
@@ -17,6 +18,22 @@ import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 const navItems = [
     { href: '/chat', icon: MessageSquare, label: 'Chat', permission: 'chat:read' },
     { href: '/settings', icon: Settings, label: 'Settings', permission: null }, // Everyone can access
+];
+
+// Settings tabs configuration for mobile sidebar
+const getSettingsTabs = (isAdmin) => [
+    { id: 'profile', label: 'Profile', icon: User },
+    { id: 'usage', label: 'Usage', icon: Zap },
+    ...(isAdmin ? [{ id: 'ai-models', label: 'AI Models', icon: Database }] : []),
+    ...(isAdmin ? [{ id: 'cost-controls', label: 'Cost Controls', icon: DollarSign }] : []),
+    { id: 'analytics', label: 'Analytics', icon: Activity },
+    { id: 'documents', label: 'Documents', icon: FileText },
+    { id: 'users', label: 'Users', icon: Users },
+    ...(isAdmin ? [{ id: 'audit', label: 'Audit Logs', icon: Shield }] : []),
+    { id: 'notifications', label: 'Notifications', icon: Bell },
+    { id: 'security', label: 'Security', icon: Key },
+    { id: 'appearance', label: 'Appearance', icon: Palette },
+    { id: 'integrations', label: 'Integrations', icon: Database },
 ];
 
 export default function DashboardLayout({ children }) {
@@ -151,7 +168,7 @@ export default function DashboardLayout({ children }) {
                 ${sidebarOpen ? 'w-64' : 'w-20'}
             `}>
                 {/* Logo */}
-                <div className="flex items-center justify-between h-16 px-4 border-b border-slate-800">
+                <div className={`flex items-center h-16 px-4 border-b border-slate-800 ${sidebarOpen ? 'justify-between' : 'justify-center'}`}>
                     <Link href="/chat" className="flex items-center gap-3">
                         <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary-400 to-primary-600 flex items-center justify-center shadow-lg shadow-primary-500/20">
                             <Sparkles className="w-5 h-5 text-white" />
@@ -160,13 +177,27 @@ export default function DashboardLayout({ children }) {
                             <span className="font-bold text-white text-lg">KnowledgeAI</span>
                         )}
                     </Link>
-                    <button
-                        onClick={() => setSidebarOpen(!sidebarOpen)}
-                        className="p-2 hover:bg-slate-800 rounded-lg transition-colors"
-                    >
-                        <ChevronLeft className={`w-5 h-5 text-slate-400 transition-transform ${!sidebarOpen ? 'rotate-180' : ''}`} />
-                    </button>
+                    {sidebarOpen && (
+                        <button
+                            onClick={() => setSidebarOpen(!sidebarOpen)}
+                            className="p-2 hover:bg-slate-800 rounded-lg transition-colors"
+                        >
+                            <ChevronLeft className="w-5 h-5 text-slate-400" />
+                        </button>
+                    )}
                 </div>
+
+                {/* Expand button when collapsed - positioned below logo */}
+                {!sidebarOpen && (
+                    <div className="flex justify-center p-2 border-b border-slate-800">
+                        <button
+                            onClick={() => setSidebarOpen(!sidebarOpen)}
+                            className="p-2 hover:bg-slate-800 rounded-lg transition-colors"
+                        >
+                            <ChevronLeft className="w-5 h-5 text-slate-400 rotate-180" />
+                        </button>
+                    </div>
+                )}
 
                 {/* New Chat Button */}
                 <div className="p-3">
@@ -338,106 +369,169 @@ export default function DashboardLayout({ children }) {
 
             {/* Mobile Slide-Out Drawer using shadcn Sheet */}
             <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
-                <SheetContent side="left" className="w-80 p-0 bg-slate-900 border-slate-800">
-                    {/* Header */}
-                    <div className="flex items-center gap-3 h-14 px-4 border-b border-slate-800">
-                        <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-primary-400 to-primary-600 flex items-center justify-center">
-                            <Sparkles className="w-4 h-4 text-white" />
-                        </div>
-                        <span className="font-bold text-white">KnowledgeAI</span>
-                    </div>
+                <SheetContent side="left" className="w-80 p-0 bg-slate-900 border-slate-800 flex flex-col">
+                    {pathname.startsWith('/settings') ? (
+                        /* Settings Page Sidebar */
+                        <>
+                            {/* Header with back to chat */}
+                            <div className="flex items-center gap-3 h-14 px-4 border-b border-slate-800">
+                                <button
+                                    onClick={() => { router.push('/chat'); setMobileMenuOpen(false); }}
+                                    className="flex items-center gap-2 text-slate-400 hover:text-white transition-colors"
+                                >
+                                    <ArrowLeft className="w-5 h-5" />
+                                    <span className="font-medium">Back to Chat</span>
+                                </button>
+                            </div>
 
-                    {/* New Chat */}
-                    <div className="p-3">
-                        <button
-                            onClick={() => { handleNewChat(); setMobileMenuOpen(false); }}
-                            className="flex items-center gap-3 w-full px-4 py-3 rounded-lg bg-slate-800 hover:bg-slate-700 text-white font-medium border border-slate-700 transition-colors"
-                        >
-                            <Plus className="w-5 h-5" />
-                            <span>New chat</span>
-                        </button>
-                    </div>
+                            {/* Settings Title */}
+                            <div className="px-4 py-3 border-b border-slate-800">
+                                <h2 className="text-lg font-semibold text-white">Settings</h2>
+                                <p className="text-xs text-slate-500">Manage your preferences</p>
+                            </div>
 
-                    {/* Search Chats */}
-                    <div className="px-3 pb-2">
-                        <div className="flex items-center gap-2 px-3 py-2 bg-slate-800/50 rounded-lg border border-slate-700/50">
-                            <Search className="w-4 h-4 text-slate-500" />
-                            <span className="text-sm text-slate-500">Search chats</span>
-                        </div>
-                    </div>
-
-                    {/* Your Chats */}
-                    <div className="flex-1 overflow-y-auto px-3">
-                        {recentChats.length > 0 && (
-                            <>
-                                <p className="px-2 py-2 text-xs font-medium text-slate-500">Your chats</p>
-                                <div className="space-y-0.5">
-                                    {recentChats.map((chat) => (
-                                        <div key={chat._id} className="group flex items-center">
-                                            <Link
-                                                href={`/chat?conversation=${chat._id}`}
-                                                onClick={() => setMobileMenuOpen(false)}
-                                                className={`flex-1 flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors ${currentConversationId === chat._id
-                                                    ? 'bg-slate-800 text-white'
-                                                    : 'text-slate-300 hover:bg-slate-800/50'
+                            {/* Settings Tabs */}
+                            <div className="flex-1 overflow-y-auto p-3">
+                                <div className="space-y-1">
+                                    {getSettingsTabs(isAdmin).map((tab) => {
+                                        const currentTab = searchParams.get('tab') || 'profile';
+                                        const isActive = currentTab === tab.id;
+                                        return (
+                                            <button
+                                                key={tab.id}
+                                                onClick={() => {
+                                                    router.push(`/settings?tab=${tab.id}`);
+                                                    setMobileMenuOpen(false);
+                                                }}
+                                                className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors text-left
+                                                    ${isActive
+                                                        ? 'bg-slate-800 text-white'
+                                                        : 'text-slate-400 hover:text-white hover:bg-slate-800/50'
                                                     }`}
                                             >
-                                                <MessageCircle className="w-4 h-4 flex-shrink-0 text-slate-500" />
-                                                <span className="truncate text-sm">{chat.title || 'New chat'}</span>
-                                            </Link>
-                                            <button
-                                                onClick={(e) => handleDeleteChat(e, chat._id)}
-                                                className="opacity-0 group-hover:opacity-100 p-2 text-slate-500 hover:text-red-400 transition-opacity"
-                                            >
-                                                <MoreHorizontal className="w-4 h-4" />
+                                                <tab.icon className="w-4 h-4" />
+                                                <span className="text-sm font-medium">{tab.label}</span>
                                             </button>
-                                        </div>
-                                    ))}
-                                </div>
-                            </>
-                        )}
-                    </div>
-
-                    {/* Bottom Section */}
-                    <div className="mt-auto border-t border-slate-800">
-                        {/* Menu Items */}
-                        <div className="p-2">
-                            {visibleNavItems.map((item) => (
-                                <Link
-                                    key={item.href}
-                                    href={item.href}
-                                    onClick={() => setMobileMenuOpen(false)}
-                                    className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors ${pathname === item.href
-                                        ? 'bg-slate-800 text-white'
-                                        : 'text-slate-300 hover:bg-slate-800/50'
-                                        }`}
-                                >
-                                    <item.icon className="w-5 h-5" />
-                                    <span className="text-sm font-medium">{item.label}</span>
-                                </Link>
-                            ))}
-                        </div>
-
-                        {/* User Profile */}
-                        <div className="p-2 border-t border-slate-800">
-                            <div className="flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-slate-800/50 cursor-pointer">
-                                <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-purple-500 flex items-center justify-center">
-                                    <span className="text-xs font-bold text-white">{user?.name?.slice(0, 2).toUpperCase() || 'U'}</span>
-                                </div>
-                                <div className="flex-1 min-w-0">
-                                    <p className="text-sm font-medium text-white truncate">{user?.name}</p>
-                                    <p className="text-xs text-slate-500 truncate">{user?.email}</p>
+                                        );
+                                    })}
                                 </div>
                             </div>
-                            <button
-                                onClick={handleLogout}
-                                className="flex items-center gap-3 w-full px-3 py-2.5 text-slate-400 hover:bg-slate-800/50 rounded-lg transition-colors"
-                            >
-                                <LogOut className="w-5 h-5" />
-                                <span className="text-sm">Log out</span>
-                            </button>
-                        </div>
-                    </div>
+
+                            {/* Logout at bottom */}
+                            <div className="p-3 border-t border-slate-800">
+                                <button
+                                    onClick={handleLogout}
+                                    className="flex items-center gap-3 w-full px-3 py-2.5 rounded-lg text-red-400 hover:bg-red-500/10 transition-colors text-left"
+                                >
+                                    <LogOut className="w-4 h-4" />
+                                    <span className="text-sm font-medium">Logout</span>
+                                </button>
+                            </div>
+                        </>
+                    ) : (
+                        /* Default Chat Sidebar */
+                        <>
+                            {/* Header */}
+                            <div className="flex items-center gap-3 h-14 px-4 border-b border-slate-800">
+                                <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-primary-400 to-primary-600 flex items-center justify-center">
+                                    <Sparkles className="w-4 h-4 text-white" />
+                                </div>
+                                <span className="font-bold text-white">KnowledgeAI</span>
+                            </div>
+
+                            {/* New Chat */}
+                            <div className="p-3">
+                                <button
+                                    onClick={() => { handleNewChat(); setMobileMenuOpen(false); }}
+                                    className="flex items-center gap-3 w-full px-4 py-3 rounded-lg bg-slate-800 hover:bg-slate-700 text-white font-medium border border-slate-700 transition-colors"
+                                >
+                                    <Plus className="w-5 h-5" />
+                                    <span>New chat</span>
+                                </button>
+                            </div>
+
+                            {/* Search Chats */}
+                            <div className="px-3 pb-2">
+                                <div className="flex items-center gap-2 px-3 py-2 bg-slate-800/50 rounded-lg border border-slate-700/50">
+                                    <Search className="w-4 h-4 text-slate-500" />
+                                    <span className="text-sm text-slate-500">Search chats</span>
+                                </div>
+                            </div>
+
+                            {/* Your Chats */}
+                            <div className="flex-1 overflow-y-auto px-3">
+                                {recentChats.length > 0 && (
+                                    <>
+                                        <p className="px-2 py-2 text-xs font-medium text-slate-500">Your chats</p>
+                                        <div className="space-y-0.5">
+                                            {recentChats.map((chat) => (
+                                                <div key={chat._id} className="group flex items-center">
+                                                    <Link
+                                                        href={`/chat?conversation=${chat._id}`}
+                                                        onClick={() => setMobileMenuOpen(false)}
+                                                        className={`flex-1 flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors ${currentConversationId === chat._id
+                                                            ? 'bg-slate-800 text-white'
+                                                            : 'text-slate-300 hover:bg-slate-800/50'
+                                                            }`}
+                                                    >
+                                                        <MessageCircle className="w-4 h-4 flex-shrink-0 text-slate-500" />
+                                                        <span className="truncate text-sm">{chat.title || 'New chat'}</span>
+                                                    </Link>
+                                                    <button
+                                                        onClick={(e) => handleDeleteChat(e, chat._id)}
+                                                        className="opacity-0 group-hover:opacity-100 p-2 text-slate-500 hover:text-red-400 transition-opacity"
+                                                    >
+                                                        <MoreHorizontal className="w-4 h-4" />
+                                                    </button>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </>
+                                )}
+                            </div>
+
+                            {/* Bottom Section */}
+                            <div className="mt-auto border-t border-slate-800">
+                                {/* Menu Items */}
+                                <div className="p-2">
+                                    {visibleNavItems.map((item) => (
+                                        <Link
+                                            key={item.href}
+                                            href={item.href}
+                                            onClick={() => setMobileMenuOpen(false)}
+                                            className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors ${pathname === item.href
+                                                ? 'bg-slate-800 text-white'
+                                                : 'text-slate-300 hover:bg-slate-800/50'
+                                                }`}
+                                        >
+                                            <item.icon className="w-5 h-5" />
+                                            <span className="text-sm font-medium">{item.label}</span>
+                                        </Link>
+                                    ))}
+                                </div>
+
+                                {/* User Profile */}
+                                <div className="p-2 border-t border-slate-800">
+                                    <div className="flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-slate-800/50 cursor-pointer">
+                                        <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-purple-500 flex items-center justify-center">
+                                            <span className="text-xs font-bold text-white">{user?.name?.slice(0, 2).toUpperCase() || 'U'}</span>
+                                        </div>
+                                        <div className="flex-1 min-w-0">
+                                            <p className="text-sm font-medium text-white truncate">{user?.name}</p>
+                                            <p className="text-xs text-slate-500 truncate">{user?.email}</p>
+                                        </div>
+                                    </div>
+                                    <button
+                                        onClick={handleLogout}
+                                        className="flex items-center gap-3 w-full px-3 py-2.5 text-slate-400 hover:bg-slate-800/50 rounded-lg transition-colors"
+                                    >
+                                        <LogOut className="w-5 h-5" />
+                                        <span className="text-sm">Log out</span>
+                                    </button>
+                                </div>
+                            </div>
+                        </>
+                    )}
                 </SheetContent>
             </Sheet>
 
@@ -446,11 +540,11 @@ export default function DashboardLayout({ children }) {
                 {children}
             </main>
 
-            {/* Mobile Hamburger Menu Toggle - only on chat page */}
-            {pathname.startsWith('/chat') && (
+            {/* Mobile Hamburger Menu Toggle - on chat and settings pages */}
+            {(pathname.startsWith('/chat') || pathname.startsWith('/settings')) && (
                 <button
                     onClick={() => setMobileMenuOpen(true)}
-                    className="md:hidden fixed top-4 left-4 z-30 p-2.5 bg-slate-800/90 backdrop-blur-sm rounded-xl border border-slate-700 shadow-lg"
+                    className="md:hidden fixed top-2 left-2 z-30 p-2.5 bg-slate-800/90 backdrop-blur-sm rounded-xl border border-slate-700 shadow-lg"
                 >
                     <Menu className="w-5 h-5 text-white" />
                 </button>
