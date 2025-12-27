@@ -33,8 +33,8 @@ export default function UsageDashboard() {
 
     if (!stats) {
         return (
-            <div className="text-center text-slate-500 py-8">
-                <AlertTriangle className="w-8 h-8 mx-auto mb-2" />
+            <div className="text-center text-muted-foreground py-8">
+                <AlertTriangle className="w-8 h-8 mx-auto mb-2 opacity-50" />
                 <p>Failed to load usage data</p>
             </div>
         );
@@ -43,21 +43,20 @@ export default function UsageDashboard() {
     const ProgressBar = ({ value, max, color = 'primary', warning = false }) => {
         const percent = Math.min(100, Math.round((value / max) * 100));
         const isHigh = percent >= 80;
-        const barColor = warning || isHigh ? 'bg-red-500' : `bg-${color}-500`;
 
         return (
             <div className="w-full">
-                <div className="flex justify-between text-xs text-slate-400 mb-1">
+                <div className="flex justify-between text-xs text-muted-foreground mb-1.5">
                     <span>{value.toLocaleString()} tokens</span>
                     <span>{percent}%</span>
                 </div>
-                <div className="h-2 bg-slate-700 rounded-full overflow-hidden">
+                <div className="h-2 bg-secondary rounded-full overflow-hidden">
                     <div
-                        className={`h-full rounded-full transition-all duration-500 ${isHigh ? 'bg-red-500' : 'bg-primary-500'}`}
+                        className={`h-full rounded-full transition-all duration-500 ${isHigh ? 'bg-destructive' : 'bg-primary'}`}
                         style={{ width: `${percent}%` }}
                     />
                 </div>
-                <div className="text-right text-xs text-slate-500 mt-1">
+                <div className="text-right text-xs text-muted-foreground/60 mt-1.5">
                     Limit: {max.toLocaleString()}
                 </div>
             </div>
@@ -68,26 +67,26 @@ export default function UsageDashboard() {
         <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
             {/* Header */}
             <div>
-                <h3 className="text-lg font-medium text-white flex items-center gap-2">
-                    <Activity className="w-5 h-5 text-primary-400" />
+                <h3 className="text-lg font-medium text-foreground flex items-center gap-2">
+                    <Activity className="w-5 h-5 text-primary" />
                     Token Usage
                 </h3>
-                <p className="text-slate-400 text-sm mt-1">Monitor your AI usage and limits</p>
+                <p className="text-muted-foreground text-sm mt-1">Monitor your AI usage and limits</p>
             </div>
 
             {/* Usage Cards */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {/* Daily Usage */}
-                <div className="bg-slate-800/50 border border-slate-700 rounded-xl p-5">
+                <div className="bg-card/50 border border-border/50 rounded-xl p-5">
                     <div className="flex items-center justify-between mb-4">
                         <div className="flex items-center gap-2">
-                            <div className="p-2 bg-blue-500/10 rounded-lg">
-                                <Zap className="w-4 h-4 text-blue-400" />
+                            <div className="p-2 bg-primary/10 rounded-lg">
+                                <Zap className="w-4 h-4 text-primary" />
                             </div>
-                            <span className="text-sm font-medium text-white">Today</span>
+                            <span className="text-sm font-medium text-foreground">Today</span>
                         </div>
                         {stats.percentUsed?.daily >= 80 && (
-                            <span className="text-xs bg-red-500/20 text-red-400 px-2 py-1 rounded-full">
+                            <span className="text-xs bg-destructive/10 text-destructive px-2 py-1 rounded-full">
                                 Near Limit
                             </span>
                         )}
@@ -99,16 +98,16 @@ export default function UsageDashboard() {
                 </div>
 
                 {/* Monthly Usage */}
-                <div className="bg-slate-800/50 border border-slate-700 rounded-xl p-5">
+                <div className="bg-card/50 border border-border/50 rounded-xl p-5">
                     <div className="flex items-center justify-between mb-4">
                         <div className="flex items-center gap-2">
-                            <div className="p-2 bg-purple-500/10 rounded-lg">
-                                <Calendar className="w-4 h-4 text-purple-400" />
+                            <div className="p-2 bg-primary/10 rounded-lg">
+                                <Calendar className="w-4 h-4 text-primary" />
                             </div>
-                            <span className="text-sm font-medium text-white">This Month</span>
+                            <span className="text-sm font-medium text-foreground">This Month</span>
                         </div>
                         {stats.percentUsed?.monthly >= 80 && (
-                            <span className="text-xs bg-red-500/20 text-red-400 px-2 py-1 rounded-full">
+                            <span className="text-xs bg-destructive/10 text-destructive px-2 py-1 rounded-full">
                                 Near Limit
                             </span>
                         )}
@@ -122,25 +121,25 @@ export default function UsageDashboard() {
 
             {/* Stats Summary */}
             <div className="grid grid-cols-3 gap-4">
-                <div className="bg-slate-800/30 border border-slate-700/50 rounded-lg p-4 text-center">
-                    <p className="text-2xl font-bold text-white">{stats.today?.requestCount || 0}</p>
-                    <p className="text-xs text-slate-400">Requests Today</p>
+                <div className="bg-card/30 border border-border/40 rounded-lg p-4 text-center">
+                    <p className="text-2xl font-bold text-foreground">{stats.today?.requestCount || 0}</p>
+                    <p className="text-xs text-muted-foreground">Requests Today</p>
                 </div>
-                <div className="bg-slate-800/30 border border-slate-700/50 rounded-lg p-4 text-center">
-                    <p className="text-2xl font-bold text-white">{stats.thisMonth?.requestCount || 0}</p>
-                    <p className="text-xs text-slate-400">Requests This Month</p>
+                <div className="bg-card/30 border border-border/40 rounded-lg p-4 text-center">
+                    <p className="text-2xl font-bold text-foreground">{stats.thisMonth?.requestCount || 0}</p>
+                    <p className="text-xs text-muted-foreground">Requests This Month</p>
                 </div>
-                <div className="bg-slate-800/30 border border-slate-700/50 rounded-lg p-4 text-center">
-                    <p className="text-2xl font-bold text-green-400">
+                <div className="bg-card/30 border border-border/40 rounded-lg p-4 text-center">
+                    <p className="text-2xl font-bold text-primary">
                         ${((stats.thisMonth?.totalCost || 0) / 100).toFixed(2)}
                     </p>
-                    <p className="text-xs text-slate-400">Est. Cost This Month</p>
+                    <p className="text-xs text-muted-foreground">Est. Cost This Month</p>
                 </div>
             </div>
 
             {/* Limits Info */}
-            <div className="bg-slate-800/20 border border-slate-700/30 rounded-lg p-4">
-                <p className="text-xs text-slate-500">
+            <div className="bg-secondary/30 border border-border/30 rounded-lg p-4">
+                <p className="text-xs text-muted-foreground">
                     <strong>Note:</strong> Limits reset at midnight UTC (daily) and on the 1st of each month (monthly).
                     Contact an admin to request higher limits.
                 </p>

@@ -89,6 +89,11 @@ const userSchema = new mongoose.Schema({
             type: [String],
             default: ['gemini-pro', 'gpt-4o-mini', 'gpt-4o', 'claude-3-haiku']
         }
+    },
+    // UI Preferences
+    uiPreferences: {
+        baseTheme: { type: String, default: 'emerald' },
+        primaryColor: { type: String, default: '#10B981' }
     }
 }, {
     timestamps: true,

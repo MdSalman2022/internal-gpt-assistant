@@ -254,6 +254,13 @@ export const profileApi = {
             method: 'PATCH',
             body: JSON.stringify(updates)
         }),
+
+    // Update current user's UI preferences (theme, primary color)
+    updateUIPreferences: (preferences) =>
+        fetcher('/api/auth/preferences', {
+            method: 'POST',
+            body: JSON.stringify(preferences)
+        }),
 };
 
 // Departments API

@@ -14,7 +14,7 @@ export default function IntegrationsPage() {
                 <h2 className="text-lg font-semibold text-white">Connected Apps</h2>
                 <div className="space-y-3">
                     {integrations.map(i => (
-                        <div key={i.name} className="flex items-center justify-between p-4 bg-slate-800/50 rounded-lg border border-slate-800">
+                        <div key={i.name} className="flex items-center justify-between p-4 bg-primary/5 border-primary/50 rounded-lg border border-slate-800">
                             <div className="flex items-center gap-3">
                                 <span className="text-2xl">{i.icon}</span>
                                 <div>

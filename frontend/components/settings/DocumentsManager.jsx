@@ -139,24 +139,24 @@ export default function DocumentsManager() {
             {/* Toolbar */}
             <div className="flex items-center justify-between mb-6">
                 <div>
-                    <h2 className="text-lg font-medium text-white">Documents</h2>
-                    <p className="text-slate-400 text-sm">{documents.length} files in knowledge base.</p>
+                    <h2 className="text-lg font-medium text-foreground">Documents</h2>
+                    <p className="text-muted-foreground text-sm">{documents.length} files in knowledge base.</p>
                 </div>
                 <div className="flex items-center gap-4">
                     <div className="relative">
-                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
+                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                         <input
                             type="text"
                             placeholder="Search files..."
                             value={searchQuery}
                             onChange={(e) => setSearchQuery(e.target.value)}
-                            className="bg-slate-800 border border-slate-700 rounded-lg pl-9 pr-4 py-1.5 text-sm text-slate-200 focus:outline-none focus:ring-1 focus:ring-primary-500"
+                            className="bg-secondary/50 border border-border/50 rounded-lg pl-9 pr-4 py-1.5 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary"
                         />
                     </div>
                     <select
                         value={statusFilter}
                         onChange={(e) => setStatusFilter(e.target.value)}
-                        className="bg-slate-800 border border-slate-700 rounded-lg px-3 py-1.5 text-sm text-slate-200 focus:outline-none focus:ring-1 focus:ring-primary-500"
+                        className="bg-secondary/50 border border-border/50 rounded-lg px-3 py-1.5 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
                     >
                         <option value="">All Status</option>
                         <option value="completed">Completed</option>
@@ -174,34 +174,34 @@ export default function DocumentsManager() {
             <div className="flex-1 overflow-y-auto">
                 {loading ? (
                     <div className="flex items-center justify-center h-32">
-                        <div className="animate-spin w-6 h-6 border-2 border-primary-500 border-t-transparent rounded-full" />
+                        <div className="animate-spin w-6 h-6 border-2 border-primary border-t-transparent rounded-full" />
                     </div>
                 ) : filteredDocs.length === 0 ? (
-                    <div className="text-center py-12 border border-dashed border-slate-800 rounded-xl">
-                        <FileText className="w-10 h-10 text-slate-600 mx-auto mb-3" />
-                        <p className="text-slate-400">No documents found.</p>
+                    <div className="text-center py-12 border border-dashed border-border rounded-xl">
+                        <FileText className="w-10 h-10 text-muted-foreground opacity-20 mx-auto mb-3" />
+                        <p className="text-muted-foreground">No documents found.</p>
                     </div>
                 ) : (
-                    <div className="bg-slate-900/50 border border-slate-800 rounded-xl overflow-hidden">
-                        <div className="divide-y divide-slate-800">
+                    <div className="bg-card/50 border border-border/50 rounded-xl overflow-hidden">
+                        <div className="divide-y divide-border/50">
                             {filteredDocs.map(doc => (
                                 <div
                                     key={doc._id}
                                     onClick={() => setSelectedDocument(doc)}
-                                    className="flex items-center gap-4 p-4 hover:bg-slate-800/50 cursor-pointer transition-colors group"
+                                    className="flex items-center gap-4 p-4 hover:bg-secondary/50 cursor-pointer transition-colors group"
                                 >
-                                    <div className="w-10 h-10 rounded-lg bg-slate-800 flex items-center justify-center flex-shrink-0">
-                                        <File className="w-5 h-5 text-primary-400" />
+                                    <div className="w-10 h-10 rounded-lg bg-secondary flex items-center justify-center flex-shrink-0">
+                                        <File className="w-5 h-5 text-primary" />
                                     </div>
                                     <div className="flex-1 min-w-0">
                                         <div className="flex items-center gap-2">
-                                            <h3 className="font-medium text-white truncate text-sm">{doc.title}</h3>
-                                            <div className="flex items-center gap-1 px-1.5 py-0.5 bg-slate-800 rounded text-[10px] text-slate-400 border border-slate-700" title={`Access: ${getAccessLabel(doc)}`}>
+                                            <h3 className="font-medium text-foreground truncate text-sm">{doc.title}</h3>
+                                            <div className="flex items-center gap-1 px-1.5 py-0.5 bg-secondary rounded text-[10px] text-muted-foreground border border-border" title={`Access: ${getAccessLabel(doc)}`}>
                                                 {getAccessIcon(doc)}
                                                 <span>{getAccessLabel(doc)}</span>
                                             </div>
                                         </div>
-                                        <div className="flex items-center gap-2 text-xs text-slate-500 mt-0.5">
+                                        <div className="flex items-center gap-2 text-xs text-muted-foreground mt-0.5">
                                             <span>{(doc.size / 1024).toFixed(1)} KB</span>
                                             <span>•</span>
                                             <span>{doc.chunkCount || 0} chunks</span>
@@ -247,13 +247,13 @@ export default function DocumentsManager() {
             {toast && (
                 <div className={`fixed bottom-6 right-6 z-[100] flex items-center gap-3 px-4 py-3 rounded-xl shadow-2xl animate-scale-in border
                     ${toast.type === 'error'
-                        ? 'bg-slate-900 border-red-500/50 text-red-200'
-                        : 'bg-slate-900 border-primary-500/50 text-primary-200'
+                        ? 'bg-card border-destructive/50 text-destructive'
+                        : 'bg-card border-primary/50 text-primary'
                     }`}
                 >
-                    {toast.type === 'error' ? <AlertCircle className="w-5 h-5 text-red-400" /> : <CheckCircle className="w-5 h-5 text-primary-400" />}
+                    {toast.type === 'error' ? <AlertCircle className="w-5 h-5" /> : <CheckCircle className="w-5 h-5" />}
                     <span className="text-sm font-medium">{toast.message}</span>
-                    <button onClick={() => setToast(null)} className="ml-2 hover:bg-white/10 rounded p-0.5">
+                    <button onClick={() => setToast(null)} className="ml-2 hover:bg-foreground/10 rounded p-0.5">
                         <X className="w-4 h-4" />
                     </button>
                 </div>
@@ -300,17 +300,17 @@ function DocumentPreviewModal({ document, onClose, onUpdate }) {
 
     return (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4" onClick={onClose}>
-            <div className="bg-slate-900 border border-slate-700 rounded-2xl w-full max-w-2xl max-h-[85vh] overflow-hidden shadow-2xl animate-scale-in flex flex-col" onClick={e => e.stopPropagation()}>
+            <div className="bg-card border border-border rounded-2xl w-full max-w-2xl max-h-[85vh] overflow-hidden shadow-2xl animate-scale-in flex flex-col" onClick={e => e.stopPropagation()}>
 
                 {/* Header */}
-                <div className="flex items-center justify-between p-5 border-b border-slate-800">
+                <div className="flex items-center justify-between p-5 border-b border-border">
                     <div className="flex items-center gap-4">
-                        <div className="w-12 h-12 rounded-xl bg-primary-500/10 flex items-center justify-center">
-                            <FileText className="w-6 h-6 text-primary-400" />
+                        <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center">
+                            <FileText className="w-6 h-6 text-primary" />
                         </div>
                         <div>
-                            <h3 className="font-semibold text-white text-lg">{document.title}</h3>
-                            <p className="text-sm text-slate-400">{document.originalName}</p>
+                            <h3 className="font-semibold text-foreground text-lg">{document.title}</h3>
+                            <p className="text-sm text-muted-foreground">{document.originalName}</p>
                         </div>
                     </div>
                     <div className="flex items-center gap-2">
@@ -319,41 +319,41 @@ function DocumentPreviewModal({ document, onClose, onUpdate }) {
                                 <Edit2 className="w-3 h-3 mr-1" /> Edit
                             </button>
                         )}
-                        <button onClick={onClose} className="p-2 hover:bg-slate-800 rounded-lg"><X className="w-5 h-5 text-slate-400" /></button>
+                        <button onClick={onClose} className="p-2 hover:bg-secondary rounded-lg transition-colors"><X className="w-5 h-5 text-muted-foreground hover:text-foreground" /></button>
                     </div>
                 </div>
 
                 {/* Content */}
                 <div className="p-5 overflow-y-auto flex-1">
                     <div className="grid grid-cols-2 gap-4 mb-6">
-                        <div className="p-4 bg-slate-800/50 rounded-xl">
-                            <p className="text-xs text-slate-500 mb-1">Metadata</p>
+                        <div className="p-4 bg-secondary/30 rounded-xl">
+                            <p className="text-xs text-muted-foreground mb-1">Metadata</p>
                             <div className="space-y-1">
-                                <p className="text-sm text-slate-300 flex justify-between"><span>Size:</span> <span className="text-white font-medium">{(document.size / 1024).toFixed(1)} KB</span></p>
-                                <p className="text-sm text-slate-300 flex justify-between"><span>Type:</span> <span className="text-white font-medium capitalize">{document.mimeType?.split('/')[1] || 'Unknown'}</span></p>
-                                <p className="text-sm text-slate-300 flex justify-between"><span>Chunks:</span> <span className="text-white font-medium">{document.chunkCount || 0}</span></p>
-                                <p className="text-sm text-slate-300 flex justify-between"><span>Uploaded:</span> <span className="text-white font-medium">{new Date(document.createdAt).toLocaleDateString()}</span></p>
+                                <p className="text-sm text-muted-foreground flex justify-between"><span>Size:</span> <span className="text-foreground font-medium">{(document.size / 1024).toFixed(1)} KB</span></p>
+                                <p className="text-sm text-muted-foreground flex justify-between"><span>Type:</span> <span className="text-foreground font-medium capitalize">{document.mimeType?.split('/')[1] || 'Unknown'}</span></p>
+                                <p className="text-sm text-muted-foreground flex justify-between"><span>Chunks:</span> <span className="text-foreground font-medium">{document.chunkCount || 0}</span></p>
+                                <p className="text-sm text-muted-foreground flex justify-between"><span>Uploaded:</span> <span className="text-foreground font-medium">{new Date(document.createdAt).toLocaleDateString()}</span></p>
                             </div>
                         </div>
-                        <div className="p-4 bg-slate-800/50 rounded-xl">
-                            <p className="text-xs text-slate-500 mb-1">Uploaded By</p>
+                        <div className="p-4 bg-secondary/30 rounded-xl">
+                            <p className="text-xs text-muted-foreground mb-1">Uploaded By</p>
                             <div className="flex items-center gap-2 mt-2">
-                                <div className="w-8 h-8 rounded-full bg-indigo-500/20 flex items-center justify-center text-indigo-400 text-xs font-bold">
+                                <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center text-primary text-xs font-bold">
                                     {(document.uploadedBy?.name || 'U').charAt(0)}
                                 </div>
                                 <div>
-                                    <p className="text-sm text-white font-medium">{document.uploadedBy?.name || 'Unknown User'}</p>
-                                    <p className="text-xs text-slate-500">{document.uploadedBy?.email}</p>
+                                    <p className="text-sm text-foreground font-medium">{document.uploadedBy?.name || 'Unknown User'}</p>
+                                    <p className="text-xs text-muted-foreground">{document.uploadedBy?.email}</p>
                                 </div>
                             </div>
                         </div>
                     </div>
 
-                    <div className="h-px bg-slate-800 my-4" />
+                    <div className="h-px bg-border my-4" />
 
                     {/* Permissions Section */}
                     {isEditing ? (
-                        <div className="bg-slate-800/30 p-4 rounded-xl border border-slate-700/50">
+                        <div className="bg-secondary/20 p-4 rounded-xl border border-border/50">
                             <AccessControlSettings
                                 accessLevel={accessLevel}
                                 setAccessLevel={setAccessLevel}
@@ -374,27 +374,27 @@ function DocumentPreviewModal({ document, onClose, onUpdate }) {
                         </div>
                     ) : (
                         <div>
-                            <h4 className="text-sm font-medium text-white mb-3 flex items-center gap-2">
-                                <Lock className="w-4 h-4 text-primary-400" />
+                            <h4 className="text-sm font-medium text-foreground mb-3 flex items-center gap-2">
+                                <Lock className="w-4 h-4 text-primary" />
                                 Permissions
                             </h4>
                             <div className="flex flex-wrap gap-2">
-                                <div className="px-3 py-1.5 rounded-lg bg-slate-800 border border-slate-700 text-sm text-slate-300 flex items-center gap-2">
-                                    {document.accessLevel === 'public' ? <Globe className="w-3 h-3 text-green-400" /> :
-                                        document.accessLevel === 'department' ? <Building className="w-3 h-3 text-blue-400" /> :
-                                            document.accessLevel === 'team' ? <Users className="w-3 h-3 text-amber-400" /> :
-                                                <Lock className="w-3 h-3 text-slate-400" />}
+                                <div className="px-3 py-1.5 rounded-lg bg-secondary border border-border text-sm text-muted-foreground flex items-center gap-2">
+                                    {document.accessLevel === 'public' ? <Globe className="w-3 h-3 text-primary" /> :
+                                        document.accessLevel === 'department' ? <Building className="w-3 h-3 text-primary" /> :
+                                            document.accessLevel === 'team' ? <Users className="w-3 h-3 text-primary" /> :
+                                                <Lock className="w-3 h-3 text-muted-foreground opacity-50" />}
                                     <span className="capitalize">{document.accessLevel}</span>
                                 </div>
 
                                 {document.accessLevel === 'department' && document.allowedDepartments?.map(dept => (
-                                    <span key={dept} className="px-3 py-1.5 rounded-lg bg-blue-500/10 border border-blue-500/20 text-blue-300 text-sm">
+                                    <span key={dept} className="px-3 py-1.5 rounded-lg bg-primary/10 border border-primary/20 text-primary text-sm">
                                         {dept}
                                     </span>
                                 ))}
 
                                 {document.accessLevel === 'team' && document.allowedTeams?.map(team => (
-                                    <span key={team} className="px-3 py-1.5 rounded-lg bg-amber-500/10 border border-amber-500/20 text-amber-300 text-sm">
+                                    <span key={team} className="px-3 py-1.5 rounded-lg bg-primary/10 border border-primary/20 text-primary text-sm">
                                         {team}
                                     </span>
                                 ))}
@@ -404,7 +404,7 @@ function DocumentPreviewModal({ document, onClose, onUpdate }) {
                 </div>
 
                 {/* Footer */}
-                <div className="flex justify-end gap-2 p-5 border-t border-slate-800 bg-slate-900/50">
+                <div className="flex justify-end gap-2 p-5 border-t border-border bg-secondary/50">
                     <button onClick={onClose} className="btn-secondary">Close</button>
                     {document.source?.url && (
                         <a
@@ -458,10 +458,10 @@ function UploadModal({ onClose, onUpload, uploading, isAdmin }) {
 
     return (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50" onClick={onClose}>
-            <div className="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-lg mx-4 animate-scale-in flex flex-col max-h-[90vh]" onClick={e => e.stopPropagation()}>
-                <div className="flex items-center justify-between p-4 border-b border-slate-800">
-                    <h2 className="text-lg font-semibold text-white">Upload Documents</h2>
-                    <button onClick={onClose} className="btn-icon"><X className="w-5 h-5" /></button>
+            <div className="bg-card border border-border rounded-2xl w-full max-w-lg mx-4 animate-scale-in flex flex-col max-h-[90vh]" onClick={e => e.stopPropagation()}>
+                <div className="flex items-center justify-between p-4 border-b border-border">
+                    <h2 className="text-lg font-semibold text-foreground">Upload Documents</h2>
+                    <button onClick={onClose} className="p-2 hover:bg-secondary rounded-lg transition-colors"><X className="w-5 h-5 text-muted-foreground hover:text-foreground" /></button>
                 </div>
 
                 <div className="p-4 overflow-y-auto">
@@ -470,10 +470,10 @@ function UploadModal({ onClose, onUpload, uploading, isAdmin }) {
                         onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
                         onDragLeave={() => setDragOver(false)}
                         onDrop={handleDrop}
-                        className={`border-2 border-dashed rounded-xl p-6 text-center transition-colors ${dragOver ? 'border-primary-500 bg-primary-500/10' : 'border-slate-700'}`}
+                        className={`border-2 border-dashed rounded-xl p-6 text-center transition-colors ${dragOver ? 'border-primary bg-primary/10' : 'border-border'}`}
                     >
-                        <Upload className="w-8 h-8 text-slate-500 mx-auto mb-2" />
-                        <p className="text-slate-300 text-sm mb-2">Drag and drop files here</p>
+                        <Upload className="w-8 h-8 text-muted-foreground opacity-50 mx-auto mb-2" />
+                        <p className="text-muted-foreground text-sm mb-2">Drag and drop files here</p>
                         <label className="btn-secondary text-xs cursor-pointer inline-flex">
                             Browse Files
                             <input type="file" multiple accept=".pdf,.doc,.docx,.txt,.md,.csv" onChange={(e) => setFiles(prev => [...prev, ...Array.from(e.target.files)])} className="hidden" />
@@ -484,12 +484,12 @@ function UploadModal({ onClose, onUpload, uploading, isAdmin }) {
                     {files.length > 0 && (
                         <div className="mt-4 space-y-2 mb-4">
                             {files.map((file, i) => (
-                                <div key={i} className="flex items-center justify-between p-2 bg-slate-800 rounded-lg text-sm">
+                                <div key={i} className="flex items-center justify-between p-2 bg-secondary/50 rounded-lg text-sm">
                                     <div className="flex items-center gap-2 overflow-hidden">
-                                        <File className="w-4 h-4 text-primary-400 flex-shrink-0" />
-                                        <span className="text-slate-200 truncate">{file.name}</span>
+                                        <File className="w-4 h-4 text-primary flex-shrink-0" />
+                                        <span className="text-foreground truncate">{file.name}</span>
                                     </div>
-                                    <button onClick={() => setFiles(prev => prev.filter((_, idx) => idx !== i))} className="text-slate-500 hover:text-red-400"><X className="w-4 h-4" /></button>
+                                    <button onClick={() => setFiles(prev => prev.filter((_, idx) => idx !== i))} className="text-muted-foreground hover:text-destructive transition-colors"><X className="w-4 h-4" /></button>
                                 </div>
                             ))}
                         </div>
@@ -497,7 +497,7 @@ function UploadModal({ onClose, onUpload, uploading, isAdmin }) {
 
                     {isAdmin && (
                         <>
-                            <div className="h-px bg-slate-800 my-4" />
+                            <div className="h-px bg-border my-4" />
                             <AccessControlSettings
                                 accessLevel={accessLevel}
                                 setAccessLevel={setAccessLevel}
@@ -513,7 +513,7 @@ function UploadModal({ onClose, onUpload, uploading, isAdmin }) {
 
                 </div>
 
-                <div className="flex justify-end gap-3 p-4 border-t border-slate-800 bg-slate-900 rounded-b-2xl">
+                <div className="flex justify-end gap-3 p-4 border-t border-border bg-secondary/50 rounded-b-2xl">
                     <button onClick={onClose} className="btn-secondary">Cancel</button>
                     <button onClick={submitUpload} disabled={files.length === 0 || uploading} className="btn-primary">
                         {uploading ? 'Uploading...' : 'Upload Files'}

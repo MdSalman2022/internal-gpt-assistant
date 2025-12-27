@@ -1,15 +1,15 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useAuth } from '@/lib/auth-context';
 import { useRouter } from 'next/navigation';
-import { Eye, EyeOff, Mail, Lock, User, ArrowRight } from 'lucide-react';
+import { Eye, EyeOff, Mail, Lock, User, ArrowRight, Sparkles } from 'lucide-react';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL
 
 export default function LoginPage() {
-    const { login, register } = useAuth();
+    const { login, register, user, loading: authLoading } = useAuth();
     const router = useRouter();
     const [isLogin, setIsLogin] = useState(true);
     const [showPassword, setShowPassword] = useState(false);
@@ -21,6 +21,13 @@ export default function LoginPage() {
         email: '',
         password: '',
     });
+
+    // Redirect if already logged in
+    useEffect(() => {
+        if (!authLoading && user) {
+            router.push('/chat');
+        }
+    }, [user, authLoading, router]);
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -46,23 +53,23 @@ export default function LoginPage() {
     };
 
     return (
-        <div className="min-h-screen flex bg-slate-950">
+        <div className="min-h-screen flex bg-background">
             {/* Left side - Form */}
             <div className="flex-1 flex items-center justify-center p-8">
                 <div className="w-full max-w-md">
                     {/* Logo */}
                     <div className="flex items-center gap-3 mb-8">
-                        <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary-400 to-primary-600 flex items-center justify-center shadow-glow">
-                            <span className="text-white font-bold text-lg">K</span>
+                        <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary to-primary/80 flex items-center justify-center shadow-lg shadow-primary/20">
+                            <Sparkles className="w-5 h-5 text-primary-foreground" />
                         </div>
-                        <span className="text-xl font-bold text-white">KnowledgeAI</span>
+                        <span className="text-xl font-bold text-foreground">KnowledgeAI</span>
                     </div>
 
                     {/* Header */}
-                    <h1 className="text-3xl font-bold text-white mb-2">
+                    <h1 className="text-3xl font-bold text-foreground mb-2">
                         {isLogin ? 'Welcome back' : 'Create account'}
                     </h1>
-                    <p className="text-slate-400 mb-8">
+                    <p className="text-muted-foreground mb-8">
                         {isLogin
                             ? 'Sign in to access your knowledge assistant'
                             : 'Start finding answers from your documents'
@@ -88,10 +95,10 @@ export default function LoginPage() {
                     {/* Divider */}
                     <div className="relative mb-6">
                         <div className="absolute inset-0 flex items-center">
-                            <div className="w-full border-t border-slate-700" />
+                            <div className="w-full border-t border-border" />
                         </div>
                         <div className="relative flex justify-center text-sm">
-                            <span className="px-4 bg-slate-950 text-slate-500">or continue with email</span>
+                            <span className="px-4 bg-background text-muted-foreground">or continue with email</span>
                         </div>
                     </div>
 
@@ -106,11 +113,11 @@ export default function LoginPage() {
                     <form onSubmit={handleSubmit} className="space-y-4">
                         {!isLogin && (
                             <div>
-                                <label className="block text-sm font-medium text-slate-300 mb-1.5">
+                                <label className="block text-sm font-medium text-foreground mb-1.5">
                                     Full Name
                                 </label>
                                 <div className="relative">
-                                    <User className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-500" />
+                                    <User className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
                                     <input
                                         type="text"
                                         value={formData.name}
@@ -124,11 +131,11 @@ export default function LoginPage() {
                         )}
 
                         <div>
-                            <label className="block text-sm font-medium text-slate-300 mb-1.5">
+                            <label className="block text-sm font-medium text-foreground mb-1.5">
                                 Email Address
                             </label>
                             <div className="relative">
-                                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-500" />
+                                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
                                 <input
                                     type="email"
                                     value={formData.email}
@@ -141,11 +148,11 @@ export default function LoginPage() {
                         </div>
 
                         <div>
-                            <label className="block text-sm font-medium text-slate-300 mb-1.5">
+                            <label className="block text-sm font-medium text-foreground mb-1.5">
                                 Password
                             </label>
                             <div className="relative">
-                                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-500" />
+                                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
                                 <input
                                     type={showPassword ? 'text' : 'password'}
                                     value={formData.password}
@@ -157,7 +164,7 @@ export default function LoginPage() {
                                 <button
                                     type="button"
                                     onClick={() => setShowPassword(!showPassword)}
-                                    className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300"
+                                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
                                 >
                                     {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                                 </button>
@@ -166,7 +173,7 @@ export default function LoginPage() {
 
                         {isLogin && (
                             <div className="flex justify-end">
-                                <Link href="/forgot-password" className="text-sm text-primary-400 hover:text-primary-300">
+                                <Link href="/forgot-password" className="text-sm text-primary hover:text-primary/80">
                                     Forgot password?
                                 </Link>
                             </div>
@@ -195,11 +202,11 @@ export default function LoginPage() {
                     </form>
 
                     {/* Toggle */}
-                    <p className="text-center text-slate-400 mt-6">
+                    <p className="text-center text-muted-foreground mt-6">
                         {isLogin ? "Don't have an account?" : 'Already have an account?'}
                         <button
                             onClick={() => setIsLogin(!isLogin)}
-                            className="ml-1 text-primary-400 hover:text-primary-300 font-medium"
+                            className="ml-1 text-primary hover:text-primary/80 font-medium"
                         >
                             {isLogin ? 'Sign up' : 'Sign in'}
                         </button>
@@ -208,46 +215,46 @@ export default function LoginPage() {
             </div>
 
             {/* Right side - Decorative */}
-            <div className="hidden lg:flex flex-1 items-center justify-center bg-gradient-to-br from-slate-900 to-slate-950 p-12">
+            <div className="hidden lg:flex flex-1 items-center justify-center bg-card p-12">
                 <div className="max-w-lg text-center">
-                    <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-primary-400 to-primary-600 flex items-center justify-center mx-auto mb-8 shadow-glow-lg">
-                        <span className="text-white font-bold text-3xl">K</span>
+                    <div className="w-20 h-20 rounded-2xl bg-primary flex items-center justify-center mx-auto mb-8 shadow-lg shadow-primary/40 ring-1 ring-primary/20">
+                        <Sparkles className="w-10 h-10 text-primary-foreground fill-primary-foreground/10" />
                     </div>
-                    <h2 className="text-2xl font-bold text-white mb-4">
+                    <h2 className="text-2xl font-bold text-foreground mb-4">
                         Your Company Knowledge, Instantly Accessible
                     </h2>
-                    <p className="text-slate-400 mb-8">
+                    <p className="text-muted-foreground mb-8">
                         Ask questions in natural language and get accurate answers from your internal documents, with sources and citations.
                     </p>
 
                     {/* Use cases */}
                     <div className="text-left space-y-4 mb-8">
-                        <div className="flex items-start gap-3 p-3 bg-slate-800/50 rounded-lg">
+                        <div className="flex items-start gap-3 p-3 bg-secondary/50 rounded-lg border border-border/50">
                             <span className="text-xl">🎯</span>
                             <div>
-                                <p className="text-white font-medium">HR & Policy</p>
-                                <p className="text-sm text-slate-400">Vacation, benefits, onboarding guides</p>
+                                <p className="text-foreground font-medium">HR & Policy</p>
+                                <p className="text-sm text-muted-foreground">Vacation, benefits, onboarding guides</p>
                             </div>
                         </div>
-                        <div className="flex items-start gap-3 p-3 bg-slate-800/50 rounded-lg">
+                        <div className="flex items-start gap-3 p-3 bg-secondary/50 rounded-lg border border-border/50">
                             <span className="text-xl">💻</span>
                             <div>
-                                <p className="text-white font-medium">IT Support</p>
-                                <p className="text-sm text-slate-400">Setup guides, troubleshooting, security</p>
+                                <p className="text-foreground font-medium">IT Support</p>
+                                <p className="text-sm text-muted-foreground">Setup guides, troubleshooting, security</p>
                             </div>
                         </div>
-                        <div className="flex items-start gap-3 p-3 bg-slate-800/50 rounded-lg">
+                        <div className="flex items-start gap-3 p-3 bg-secondary/50 rounded-lg border border-border/50">
                             <span className="text-xl">📊</span>
                             <div>
-                                <p className="text-white font-medium">Sales Enablement</p>
-                                <p className="text-sm text-slate-400">Product info, pricing, competitor analysis</p>
+                                <p className="text-foreground font-medium">Sales Enablement</p>
+                                <p className="text-sm text-muted-foreground">Product info, pricing, competitor analysis</p>
                             </div>
                         </div>
                     </div>
 
                     <div className="flex flex-wrap justify-center gap-3">
                         {['PDFs', 'Word Docs', 'Notion', 'Confluence', 'Slack'].map(tag => (
-                            <span key={tag} className="px-3 py-1 bg-slate-800 text-slate-300 rounded-full text-sm">
+                            <span key={tag} className="px-3 py-1 bg-secondary text-muted-foreground rounded-full text-sm border border-border/50">
                                 {tag}
                             </span>
                         ))}

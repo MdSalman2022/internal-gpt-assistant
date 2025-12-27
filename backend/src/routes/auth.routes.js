@@ -104,6 +104,32 @@ export default async function authRoutes(fastify) {
         return { success: true, user };
     });
 
+    // Update UI preferences
+    fastify.post('/preferences', async (request, reply) => {
+        if (!request.session.userId) {
+            return reply.status(401).send({ error: 'Not authenticated' });
+        }
+
+        const { baseTheme, primaryColor } = request.body;
+
+        const user = await User.findById(request.session.userId);
+        if (!user) {
+            return reply.status(404).send({ error: 'User not found' });
+        }
+
+        user.uiPreferences = {
+            baseTheme: baseTheme || user.uiPreferences.baseTheme,
+            primaryColor: primaryColor || user.uiPreferences.primaryColor
+        };
+
+        await user.save();
+
+        // Update session
+        request.session.user = user.toJSON();
+
+        return { success: true, user: user.toJSON() };
+    });
+
     // ==================== FORGOT PASSWORD ====================
 
     // Request password reset

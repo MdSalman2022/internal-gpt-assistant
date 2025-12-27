@@ -150,12 +150,12 @@ export default function ConversationPage() {
     return (
         <div className="flex flex-col h-full">
             {/* Chat Header */}
-            <header className="flex items-center justify-between px-6 py-4 border-b border-slate-800">
+            <header className="flex items-center justify-between px-6 py-4 border-b border-border pl-14 md:pl-6">
                 <div>
-                    <h1 className="text-lg font-semibold text-white">
+                    <h1 className="text-lg font-semibold text-foreground">
                         {activeConversation?.title || 'Conversation'}
                     </h1>
-                    <p className="text-sm text-slate-500">
+                    <p className="text-sm text-muted-foreground">
                         {messages.length > 0 ? `${messages.length} messages` : 'Start a conversation'}
                     </p>
                 </div>
@@ -183,31 +183,31 @@ export default function ConversationPage() {
             {/* Toast Notification */}
             {toast && (
                 <div className={`fixed bottom-6 right-6 z-50 min-w-[320px] max-w-md animate-in slide-in-from-bottom-4 fade-in duration-300
-                    bg-slate-900/95 backdrop-blur-xl rounded-2xl shadow-2xl border overflow-hidden
-                    ${toast.type === 'error' ? 'border-red-500/30' : 'border-amber-500/30'}`}>
+                    bg-card/95 backdrop-blur-xl rounded-2xl shadow-2xl border border-border overflow-hidden
+                    ${toast.type === 'error' ? 'ring-1 ring-destructive/30' : 'ring-1 ring-amber-500/30'}`}>
 
                     <div className={`h-1 ${toast.type === 'error' ? 'bg-gradient-to-r from-red-500 to-red-600' : 'bg-gradient-to-r from-amber-500 to-orange-500'}`} />
 
                     <div className="flex items-start gap-3 p-4">
-                        <div className={`p-2 rounded-xl ${toast.type === 'error' ? 'bg-red-500/20' : 'bg-amber-500/20'}`}>
-                            <AlertTriangle className={`w-5 h-5 ${toast.type === 'error' ? 'text-red-400' : 'text-amber-400'}`} />
+                        <div className={`p-2 rounded-xl ${toast.type === 'error' ? 'bg-destructive/20' : 'bg-amber-500/20'}`}>
+                            <AlertTriangle className={`w-5 h-5 ${toast.type === 'error' ? 'text-destructive' : 'text-amber-400'}`} />
                         </div>
                         <div className="flex-1 min-w-0">
-                            <p className="text-sm font-semibold text-white">{toast.title}</p>
-                            <p className="text-sm text-slate-400 mt-1">{toast.message}</p>
+                            <p className="text-sm font-semibold text-foreground">{toast.title}</p>
+                            <p className="text-sm text-muted-foreground mt-1">{toast.message}</p>
                         </div>
                         <button
                             onClick={() => setToast(null)}
-                            className="text-slate-500 hover:text-white transition-colors p-1 hover:bg-slate-800 rounded-lg"
+                            className="text-muted-foreground hover:text-foreground transition-colors p-1 hover:bg-secondary rounded-lg"
                         >
                             <X className="w-4 h-4" />
                         </button>
                     </div>
 
                     {!toast.persistent && (
-                        <div className="h-0.5 bg-slate-800">
+                        <div className="h-0.5 bg-secondary">
                             <div
-                                className={`h-full ${toast.type === 'error' ? 'bg-red-500' : 'bg-amber-500'}`}
+                                className={`h-full ${toast.type === 'error' ? 'bg-destructive' : 'bg-amber-500'}`}
                                 style={{
                                     animation: `shrink ${toast.retryAfter || 5}s linear forwards`
                                 }}

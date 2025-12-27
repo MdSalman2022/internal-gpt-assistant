@@ -94,8 +94,8 @@ function ResetPasswordForm() {
     if (validating) {
         return (
             <div className="text-center">
-                <div className="animate-spin w-8 h-8 border-2 border-primary-500 border-t-transparent rounded-full mx-auto mb-4" />
-                <p className="text-slate-400">Validating reset link...</p>
+                <div className="animate-spin w-8 h-8 border-2 border-primary border-t-transparent rounded-full mx-auto mb-4" />
+                <p className="text-muted-foreground">Validating reset link...</p>
             </div>
         );
     }
@@ -103,14 +103,14 @@ function ResetPasswordForm() {
     if (!tokenValid && !success) {
         return (
             <div className="text-center">
-                <div className="w-16 h-16 rounded-full bg-red-500/10 flex items-center justify-center mx-auto mb-4">
-                    <XCircle className="w-8 h-8 text-red-400" />
+                <div className="w-16 h-16 rounded-full bg-destructive/10 flex items-center justify-center mx-auto mb-4">
+                    <XCircle className="w-8 h-8 text-destructive" />
                 </div>
-                <h2 className="text-xl font-bold text-white mb-2">Invalid Link</h2>
-                <p className="text-slate-400 mb-6">{error || 'This reset link is invalid or has expired.'}</p>
+                <h2 className="text-xl font-bold text-foreground mb-2">Invalid Link</h2>
+                <p className="text-muted-foreground mb-6">{error || 'This reset link is invalid or has expired.'}</p>
                 <Link
                     href="/forgot-password"
-                    className="inline-block px-6 py-3 bg-primary-500 hover:bg-primary-600 text-white font-semibold rounded-xl transition-colors"
+                    className="inline-block px-6 py-3 bg-primary hover:bg-primary/90 text-primary-foreground font-semibold rounded-xl transition-colors"
                 >
                     Request New Link
                 </Link>
@@ -121,16 +121,16 @@ function ResetPasswordForm() {
     if (success) {
         return (
             <div className="text-center">
-                <div className="w-16 h-16 rounded-full bg-primary-500/10 flex items-center justify-center mx-auto mb-4">
-                    <CheckCircle className="w-8 h-8 text-primary-400" />
+                <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-4">
+                    <CheckCircle className="w-8 h-8 text-primary" />
                 </div>
-                <h2 className="text-xl font-bold text-white mb-2">Password Reset!</h2>
-                <p className="text-slate-400 mb-6">
+                <h2 className="text-xl font-bold text-foreground mb-2">Password Reset!</h2>
+                <p className="text-muted-foreground mb-6">
                     Your password has been successfully reset. Redirecting to login...
                 </p>
                 <Link
                     href="/login"
-                    className="inline-block px-6 py-3 bg-primary-500 hover:bg-primary-600 text-white font-semibold rounded-xl transition-colors"
+                    className="inline-block px-6 py-3 bg-primary hover:bg-primary/90 text-primary-foreground font-semibold rounded-xl transition-colors"
                 >
                     Go to Login
                 </Link>
@@ -141,8 +141,8 @@ function ResetPasswordForm() {
     return (
         <>
             <div className="text-center mb-6">
-                <h1 className="text-2xl font-bold text-white mb-2">Reset Password</h1>
-                <p className="text-slate-400">Enter your new password below</p>
+                <h1 className="text-2xl font-bold text-foreground mb-2">Reset Password</h1>
+                <p className="text-muted-foreground">Enter your new password below</p>
             </div>
 
             <form onSubmit={handleSubmit} className="space-y-4">
@@ -153,11 +153,11 @@ function ResetPasswordForm() {
                 )}
 
                 <div>
-                    <label className="block text-sm font-medium text-slate-300 mb-2">
+                    <label className="block text-sm font-medium text-foreground mb-2">
                         New Password
                     </label>
                     <div className="relative">
-                        <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-500" />
+                        <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
                         <input
                             type={showPassword ? 'text' : 'password'}
                             value={password}
@@ -165,12 +165,12 @@ function ResetPasswordForm() {
                             required
                             minLength={6}
                             placeholder="••••••••"
-                            className="w-full pl-10 pr-12 py-3 bg-slate-800/50 border border-slate-700 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all"
+                            className="w-full pl-10 pr-12 py-3 bg-secondary/50 border border-border rounded-xl text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all"
                         />
                         <button
                             type="button"
                             onClick={() => setShowPassword(!showPassword)}
-                            className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300"
+                            className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
                         >
                             {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                         </button>
@@ -178,11 +178,11 @@ function ResetPasswordForm() {
                 </div>
 
                 <div>
-                    <label className="block text-sm font-medium text-slate-300 mb-2">
+                    <label className="block text-sm font-medium text-foreground mb-2">
                         Confirm Password
                     </label>
                     <div className="relative">
-                        <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-500" />
+                        <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
                         <input
                             type={showPassword ? 'text' : 'password'}
                             value={confirmPassword}
@@ -190,7 +190,7 @@ function ResetPasswordForm() {
                             required
                             minLength={6}
                             placeholder="••••••••"
-                            className="w-full pl-10 pr-4 py-3 bg-slate-800/50 border border-slate-700 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all"
+                            className="w-full pl-10 pr-4 py-3 bg-secondary/50 border border-border rounded-xl text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all"
                         />
                     </div>
                 </div>
@@ -198,7 +198,7 @@ function ResetPasswordForm() {
                 <button
                     type="submit"
                     disabled={loading}
-                    className="w-full py-3 bg-primary-500 hover:bg-primary-600 disabled:opacity-50 disabled:cursor-not-allowed text-white font-semibold rounded-xl transition-colors shadow-lg shadow-primary-500/25"
+                    className="w-full py-3 bg-primary hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed text-primary-foreground font-semibold rounded-xl transition-colors shadow-lg shadow-primary/25"
                 >
                     {loading ? 'Resetting...' : 'Reset Password'}
                 </button>
@@ -209,28 +209,28 @@ function ResetPasswordForm() {
 
 export default function ResetPasswordPage() {
     return (
-        <div className="min-h-screen flex items-center justify-center bg-slate-950 px-4">
+        <div className="min-h-screen flex items-center justify-center bg-background px-4">
             {/* Background gradient */}
-            <div className="absolute inset-0 overflow-hidden pointer-events-none">
-                <div className="absolute top-1/4 left-1/2 -translate-x-1/2 w-[600px] h-[400px] bg-primary-500/10 rounded-full blur-[100px]" />
+            <div className="absolute inset-0 overflow-hidden pointer-events-none opacity-20">
+                <div className="absolute top-1/4 left-1/2 -translate-x-1/2 w-[600px] h-[400px] bg-primary rounded-full blur-[120px]" />
             </div>
 
             <div className="relative w-full max-w-md">
                 {/* Logo */}
                 <div className="text-center mb-8">
                     <Link href="/" className="inline-flex items-center gap-3">
-                        <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-primary-400 to-primary-600 flex items-center justify-center shadow-lg shadow-primary-500/25">
-                            <Sparkles className="w-6 h-6 text-white" />
+                        <div className="w-12 h-12 rounded-xl bg-primary flex items-center justify-center shadow-lg shadow-primary/40 ring-1 ring-primary/20">
+                            <Sparkles className="w-7 h-7 text-primary-foreground fill-primary-foreground/10" />
                         </div>
-                        <span className="text-2xl font-bold text-white">KnowledgeAI</span>
+                        <span className="text-2xl font-bold text-foreground">KnowledgeAI</span>
                     </Link>
                 </div>
 
                 {/* Card */}
-                <div className="bg-slate-900/80 backdrop-blur-xl border border-slate-800 rounded-2xl p-8 shadow-xl">
+                <div className="bg-card/80 backdrop-blur-xl border border-border rounded-2xl p-8 shadow-xl">
                     <Suspense fallback={
                         <div className="text-center">
-                            <div className="animate-spin w-8 h-8 border-2 border-primary-500 border-t-transparent rounded-full mx-auto" />
+                            <div className="animate-spin w-8 h-8 border-2 border-primary border-t-transparent rounded-full mx-auto" />
                         </div>
                     }>
                         <ResetPasswordForm />

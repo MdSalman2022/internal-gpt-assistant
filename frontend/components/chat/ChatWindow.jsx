@@ -50,13 +50,13 @@ export default function ChatWindow({ messages, isTyping, onFeedback, onQuickProm
     if (messages.length === 0) {
         return (
             <div className="flex-1 flex flex-col items-center justify-center p-8 text-center">
-                <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-primary-400 to-primary-600 flex items-center justify-center mb-6 shadow-glow">
-                    <MessageSquare className="w-8 h-8 text-white" />
+                <div className="w-16 h-16 rounded-2xl bg-primary flex items-center justify-center mb-6 shadow-glow">
+                    <MessageSquare className="w-8 h-8 text-primary-foreground" />
                 </div>
-                <h2 className="text-2xl font-bold text-white mb-2">
+                <h2 className="text-2xl font-bold text-foreground mb-2">
                     How can I help you today?
                 </h2>
-                <p className="text-slate-400 max-w-md mb-8">
+                <p className="text-muted-foreground max-w-md mb-8">
                     Ask me anything about your company documents. I'll find the answers and show you exactly where they came from.
                 </p>
 
@@ -71,9 +71,9 @@ export default function ChatWindow({ messages, isTyping, onFeedback, onQuickProm
                         <button
                             key={i}
                             onClick={() => onQuickPrompt?.(prompt)}
-                            className="p-3 text-left text-sm text-slate-300 bg-slate-800/50 
-                         border border-slate-700 rounded-xl hover:bg-slate-800 
-                         hover:border-primary-500/50 transition-all"
+                            className="p-3 text-left text-sm text-muted-foreground bg-secondary/50 
+                         border border-border rounded-xl hover:bg-secondary 
+                         hover:border-primary/50 transition-all"
                         >
                             {prompt}
                         </button>
@@ -99,14 +99,14 @@ export default function ChatWindow({ messages, isTyping, onFeedback, onQuickProm
                 {/* Typing indicator */}
                 {isTyping && (
                     <div className="flex gap-4 animate-fade-in">
-                        <div className="flex-shrink-0 w-9 h-9 rounded-xl bg-gradient-to-br from-primary-400 to-primary-600 flex items-center justify-center shadow-lg shadow-primary-500/20">
-                            <Sparkles className="w-5 h-5 text-white" />
+                        <div className="flex-shrink-0 w-9 h-9 rounded-xl bg-primary flex items-center justify-center shadow-lg shadow-primary/20">
+                            <Sparkles className="w-5 h-5 text-primary-foreground" />
                         </div>
-                        <div className="rounded-2xl rounded-bl-md px-4 py-3 bg-slate-800/80 border border-slate-700/50">
+                        <div className="rounded-2xl rounded-bl-md px-4 py-3 bg-muted/80 border border-border/50">
                             <div className="flex gap-1.5 py-1">
-                                <span className="w-2 h-2 bg-slate-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
-                                <span className="w-2 h-2 bg-slate-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
-                                <span className="w-2 h-2 bg-slate-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+                                <span className="w-2 h-2 bg-muted-foreground rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
+                                <span className="w-2 h-2 bg-muted-foreground rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
+                                <span className="w-2 h-2 bg-muted-foreground rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
                             </div>
                         </div>
                     </div>

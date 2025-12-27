@@ -73,9 +73,9 @@ export default function NewChatPage() {
             {/* Centered welcome content */}
             <div className="flex-1 flex flex-col items-start md:items-center justify-center px-6 md:px-4 pb-32">
                 {/* Greeting - Gemini style */}
-                <p className="text-slate-400 text-sm md:text-base mb-1">Hi {user?.name?.split(' ')[0] || 'there'}</p>
-                <h1 className="text-2xl md:text-3xl lg:text-4xl font-medium text-white mb-8 md:mb-10">
-                    <span className="bg-gradient-to-r from-primary-400 to-purple-400 bg-clip-text text-transparent">
+                <p className="text-muted-foreground text-sm md:text-base mb-1">Hi {user?.name?.split(' ')[0] || 'there'}</p>
+                <h1 className="text-2xl md:text-3xl lg:text-4xl font-medium text-foreground mb-8 md:mb-10">
+                    <span className="bg-gradient-to-r from-primary to-purple-400 bg-clip-text text-transparent">
                         How can I help you today?
                     </span>
                 </h1>
@@ -87,12 +87,12 @@ export default function NewChatPage() {
                             key={i}
                             onClick={() => handleQuickPrompt(prompt.text)}
                             disabled={isCreating}
-                            className="flex items-center gap-2 px-4 py-2.5 bg-slate-800/60 hover:bg-slate-800 
-                                     border border-slate-700/50 hover:border-slate-600 rounded-full 
-                                     text-sm text-slate-300 hover:text-white transition-all
+                            className="flex items-center gap-2 px-4 py-2.5 bg-secondary/60 hover:bg-secondary 
+                                     border border-border/50 hover:border-border rounded-full 
+                                     text-sm text-muted-foreground hover:text-foreground transition-all
                                      disabled:opacity-50 disabled:cursor-not-allowed"
                         >
-                            <prompt.icon className="w-4 h-4 text-slate-400" />
+                            <prompt.icon className="w-4 h-4 text-muted-foreground" />
                             {prompt.text}
                         </button>
                     ))}

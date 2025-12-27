@@ -76,8 +76,8 @@ export default function MessageBubble({ message, onFeedback, onViewDocument, isN
             <div className={`flex gap-4 ${isUser ? 'justify-end' : 'justify-start'} mb-6`}>
                 {/* Avatar for assistant */}
                 {!isUser && (
-                    <div className="flex-shrink-0 w-9 h-9 rounded-xl bg-gradient-to-br from-primary-400 to-primary-600 flex items-center justify-center shadow-lg shadow-primary-500/20">
-                        <Sparkles className="w-5 h-5 text-white" />
+                    <div className="flex-shrink-0 w-9 h-9 rounded-xl bg-primary flex items-center justify-center shadow-lg shadow-primary/20">
+                        <Sparkles className="w-5 h-5 text-primary-foreground" />
                     </div>
                 )}
 
@@ -86,8 +86,8 @@ export default function MessageBubble({ message, onFeedback, onViewDocument, isN
                     <div className={`
                         rounded-2xl px-5 py-4
                         ${isUser
-                            ? 'bg-primary-600 text-white rounded-br-md'
-                            : 'bg-slate-800/80 text-slate-200 rounded-bl-md border border-slate-700/50'
+                            ? 'bg-primary text-primary-foreground rounded-br-md shadow-sm'
+                            : 'bg-muted/80 text-foreground rounded-bl-md border border-border/50'
                         }
                     `}>
                         <div className="text-[15px] markdown-content">
@@ -125,25 +125,25 @@ export default function MessageBubble({ message, onFeedback, onViewDocument, isN
                                                     </span>
                                                 );
                                             }
-                                            return <a href={href} className="text-primary-400 hover:underline" target="_blank" rel="noopener noreferrer" {...props}>{children}</a>;
+                                            return <a href={href} className="text-primary hover:underline" target="_blank" rel="noopener noreferrer" {...props}>{children}</a>;
                                         },
                                         // Styling for other elements
                                         p: ({ node, children }) => <p className="mb-3 last:mb-0 leading-7">{children}</p>,
                                         ul: ({ node, children }) => <ul className="list-disc list-outside ml-4 mb-4 space-y-1">{children}</ul>,
                                         ol: ({ node, children }) => <ol className="list-decimal list-outside ml-4 mb-4 space-y-1">{children}</ol>,
-                                        li: ({ node, children }) => <li className="pl-1 text-slate-300">{children}</li>,
-                                        h1: ({ node, children }) => <h1 className="text-xl font-bold text-white mb-3 mt-4 first:mt-0">{children}</h1>,
-                                        h2: ({ node, children }) => <h2 className="text-lg font-bold text-white mb-2 mt-4">{children}</h2>,
-                                        h3: ({ node, children }) => <h3 className="text-base font-bold text-white mb-2 mt-3">{children}</h3>,
-                                        blockquote: ({ node, children }) => <blockquote className="border-l-4 border-slate-600 pl-4 py-1 my-4 text-slate-400 italic bg-slate-900/30 rounded-r">{children}</blockquote>,
+                                        li: ({ node, children }) => <li className="pl-1 text-muted-foreground">{children}</li>,
+                                        h1: ({ node, children }) => <h1 className="text-xl font-bold text-foreground mb-3 mt-4 first:mt-0">{children}</h1>,
+                                        h2: ({ node, children }) => <h2 className="text-lg font-bold text-foreground mb-2 mt-4">{children}</h2>,
+                                        h3: ({ node, children }) => <h3 className="text-base font-bold text-foreground mb-2 mt-3">{children}</h3>,
+                                        blockquote: ({ node, children }) => <blockquote className="border-l-4 border-primary/40 pl-4 py-1 my-4 text-muted-foreground italic bg-secondary/30 rounded-r">{children}</blockquote>,
                                         code: ({ node, inline, className, children, ...props }) => {
                                             return inline ? (
-                                                <code className="bg-slate-900 px-1.5 py-0.5 rounded text-sm font-mono text-primary-200 border border-slate-700/50" {...props}>
+                                                <code className="bg-secondary px-1.5 py-0.5 rounded text-sm font-mono text-primary-600 dark:text-primary-300 border border-border/50" {...props}>
                                                     {children}
                                                 </code>
                                             ) : (
                                                 <div className="relative group my-4">
-                                                    <pre className="bg-slate-950 p-4 rounded-lg overflow-x-auto border border-slate-800 text-sm font-mono text-slate-300 scrollbar-thin scrollbar-thumb-slate-700 scrollbar-track-transparent">
+                                                    <pre className="bg-card p-4 rounded-lg overflow-x-auto border border-border text-sm font-mono text-foreground scrollbar-thin">
                                                         <code {...props}>{children}</code>
                                                     </pre>
                                                 </div>
@@ -190,7 +190,7 @@ export default function MessageBubble({ message, onFeedback, onViewDocument, isN
 
                         {/* Attachments */}
                         {message.attachments?.length > 0 && (
-                            <div className="flex flex-wrap gap-2 mt-3 pt-2 border-t border-white/10">
+                            <div className="flex flex-wrap gap-2 mt-3 pt-2 border-t border-border/40">
                                 {message.attachments.map((file, i) => (
                                     <button
                                         key={i}
@@ -199,10 +199,8 @@ export default function MessageBubble({ message, onFeedback, onViewDocument, isN
                                             flex items-center gap-2 p-2 rounded-lg text-sm text-left
                                             transition-colors border
                                             ${file.source === 'reference'
-                                                ? 'bg-blue-500/10 hover:bg-blue-500/20 border-blue-500/30'
-                                                : isUser
-                                                    ? 'bg-black/20 hover:bg-black/30 border-white/10'
-                                                    : 'bg-black/20 hover:bg-black/30 border-slate-600/50'
+                                                ? 'bg-primary/10 hover:bg-primary/20 border-primary/30'
+                                                : 'bg-secondary/50 hover:bg-secondary border-border'
                                             }
                                         `}
                                     >
@@ -227,7 +225,7 @@ export default function MessageBubble({ message, onFeedback, onViewDocument, isN
                     {/* Sources for assistant messages - only show after typing complete */}
                     {!isUser && isComplete && message.citations?.length > 0 && (
                         <div className="mt-3">
-                            <p className="text-xs text-slate-500 mb-2">📎 Sources ({message.citations.length})</p>
+                            <p className="text-xs text-muted-foreground mb-2">📎 Sources ({message.citations.length})</p>
                             <div className="flex flex-wrap gap-2">
                                 {/* Deduplicate citations by documentId for the buttons list */}
                                 {(() => {
@@ -243,12 +241,12 @@ export default function MessageBubble({ message, onFeedback, onViewDocument, isN
                                             key={citation.originalIndex}
                                             onClick={() => setSelectedCitation({ ...citation, sourceNum: citation.originalIndex + 1 })}
                                             className="group flex items-center gap-2 px-3 py-2 
-                                                       bg-slate-800/60 hover:bg-slate-700 
+                                                       bg-secondary hover:bg-secondary/80 
                                                        rounded-lg text-xs transition-all
-                                                       border border-slate-700/50 hover:border-primary-500/50
-                                                       hover:shadow-lg hover:shadow-primary-500/10"
+                                                       border border-border hover:border-primary/50
+                                                       hover:shadow-lg hover:shadow-primary/10"
                                         >
-                                            <span className="w-5 h-5 rounded bg-primary-500/20 text-primary-400 flex items-center justify-center text-[10px] font-bold group-hover:bg-primary-500 group-hover:text-white transition-colors">
+                                            <span className="w-5 h-5 rounded bg-primary/20 text-primary flex items-center justify-center text-[10px] font-bold group-hover:bg-primary group-hover:text-primary-foreground transition-colors">
                                                 {citation.originalIndex + 1}
                                             </span>
                                             <span className="text-slate-300 truncate max-w-[140px] group-hover:text-white">
@@ -263,10 +261,10 @@ export default function MessageBubble({ message, onFeedback, onViewDocument, isN
 
                     {/* Actions for assistant messages - only show after typing complete */}
                     {!isUser && isComplete && (
-                        <div className="flex items-center gap-2 mt-3 pt-2 border-t border-slate-700/30">
+                        <div className={`flex items-center gap-2 px-1 ${message.citations?.length > 0 ? 'mt-3 pt-2 border-t border-border/50' : 'mt-2'}`}>
                             <button
                                 onClick={handleCopy}
-                                className="flex items-center gap-1.5 px-2 py-1 text-xs text-slate-400 hover:text-white hover:bg-slate-700/50 rounded transition-colors"
+                                className="flex items-center gap-1.5 px-2 py-1 text-xs text-muted-foreground hover:text-foreground hover:bg-secondary rounded transition-colors"
                             >
                                 {copied ? (
                                     <>
@@ -284,7 +282,7 @@ export default function MessageBubble({ message, onFeedback, onViewDocument, isN
                             <div className="flex items-center gap-1 ml-auto">
                                 <button
                                     onClick={() => onFeedback?.(message._id, 'positive')}
-                                    className={`p-1.5 rounded hover:bg-slate-700/50 transition-colors ${message.feedback === 'positive' ? 'text-primary-400 bg-primary-400/10' : 'text-slate-500'
+                                    className={`p-1.5 rounded hover:bg-secondary transition-colors ${message.feedback === 'positive' ? 'text-primary bg-primary/10' : 'text-muted-foreground'
                                         }`}
                                     title="Good response"
                                 >
@@ -292,7 +290,7 @@ export default function MessageBubble({ message, onFeedback, onViewDocument, isN
                                 </button>
                                 <button
                                     onClick={() => onFeedback?.(message._id, 'negative')}
-                                    className={`p-1.5 rounded hover:bg-slate-700/50 transition-colors ${message.feedback === 'negative' ? 'text-red-400 bg-red-400/10' : 'text-slate-500'
+                                    className={`p-1.5 rounded hover:bg-secondary transition-colors ${message.feedback === 'negative' ? 'text-destructive bg-destructive/10' : 'text-muted-foreground'
                                         }`}
                                     title="Bad response"
                                 >
@@ -320,8 +318,8 @@ export default function MessageBubble({ message, onFeedback, onViewDocument, isN
 
                 {/* Avatar for user */}
                 {isUser && (
-                    <div className="flex-shrink-0 w-9 h-9 rounded-xl bg-slate-700 flex items-center justify-center">
-                        <span className="text-slate-300 text-sm font-semibold">U</span>
+                    <div className="flex-shrink-0 w-9 h-9 rounded-xl bg-secondary flex items-center justify-center border border-border">
+                        <span className="text-muted-foreground text-sm font-semibold">U</span>
                     </div>
                 )}
             </div>
@@ -346,17 +344,17 @@ function CitationModal({ citation, onClose, onViewDocument }) {
             onClick={onClose}
         >
             <div
-                className="bg-slate-900 border border-slate-700 rounded-2xl w-full max-w-2xl max-h-[80vh] overflow-hidden shadow-2xl animate-scale-in"
+                className="bg-card border border-border rounded-2xl w-full max-w-2xl max-h-[80vh] overflow-hidden shadow-2xl animate-scale-in"
                 onClick={e => e.stopPropagation()}
             >
                 {/* Header */}
-                <div className="flex items-center justify-between p-4 border-b border-slate-800">
+                <div className="flex items-center justify-between p-4 border-b border-border">
                     <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 rounded-lg bg-primary-500/20 flex items-center justify-center">
-                            <FileText className="w-4 h-4 text-primary-400" />
+                        <div className="w-8 h-8 rounded-lg bg-primary/20 flex items-center justify-center">
+                            <FileText className="w-4 h-4 text-primary" />
                         </div>
                         <div>
-                            <h3 className="font-semibold text-white">Source {citation.sourceNum}</h3>
+                            <h3 className="font-semibold text-foreground">Source {citation.sourceNum}</h3>
                             <p className="text-sm text-slate-400 truncate max-w-[300px]">
                                 {citation.documentTitle || 'Document'}
                             </p>
@@ -407,7 +405,7 @@ function CitationModal({ citation, onClose, onViewDocument }) {
                 </div>
 
                 {/* Footer */}
-                <div className="flex items-center justify-between p-4 border-t border-slate-800 bg-slate-800/50">
+                <div className="flex items-center justify-between p-4 border-t border-border bg-secondary/50">
                     <p className="text-xs text-slate-500">
                         Click "Download Document" to save the full source
                     </p>

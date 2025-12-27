@@ -212,8 +212,8 @@ const ChatInput = forwardRef(function ChatInput({
             >
                 {/* Mention Suggestions */}
                 {showSuggestions && suggestions.length > 0 && (
-                    <div className="absolute bottom-full left-0 mb-2 w-full max-w-md bg-slate-800 border border-slate-700 rounded-lg shadow-xl overflow-hidden z-50">
-                        <div className="text-xs text-slate-400 px-3 py-2 bg-slate-900/50 border-b border-slate-700">
+                    <div className="absolute bottom-full left-0 mb-2 w-full max-w-md bg-card border border-border rounded-lg shadow-xl overflow-hidden z-50">
+                        <div className="text-xs text-muted-foreground px-3 py-2 bg-secondary/50 border-b border-border">
                             Select a document to attach
                         </div>
                         <div className="max-h-48 overflow-y-auto">
@@ -224,22 +224,22 @@ const ChatInput = forwardRef(function ChatInput({
                                     onClick={() => selectSuggestion(doc)}
                                     className={`
                                         w-full text-left px-3 py-2 flex items-center gap-3
-                                        hover:bg-slate-700 transition-colors
-                                        ${index === mentionIndex ? 'bg-slate-700' : ''}
+                                        hover:bg-secondary transition-colors
+                                        ${index === mentionIndex ? 'bg-secondary' : ''}
                                     `}
                                 >
-                                    <div className="bg-slate-900 p-1.5 rounded text-primary-400">
+                                    <div className="bg-secondary p-1.5 rounded text-primary">
                                         <File className="w-4 h-4" />
                                     </div>
                                     <div className="flex-1 min-w-0">
-                                        <div className="text-sm text-white truncate">{doc.title || doc.originalName}</div>
-                                        <div className="text-xs text-slate-400 flex gap-2">
+                                        <div className="text-sm text-foreground truncate">{doc.title || doc.originalName}</div>
+                                        <div className="text-xs text-muted-foreground flex gap-2">
                                             <span>{doc.mimeType?.split('/')[1] || 'file'}</span>
                                             {doc.size && <span>• {(doc.size / 1024).toFixed(0)} KB</span>}
                                         </div>
                                     </div>
                                     {index === mentionIndex && (
-                                        <div className="text-xs text-slate-500">Enter</div>
+                                        <div className="text-xs text-muted-foreground">Enter</div>
                                     )}
                                 </button>
                             ))}
@@ -255,26 +255,26 @@ const ChatInput = forwardRef(function ChatInput({
                                 key={index}
                                 className={`
                                     flex items-center gap-2 px-3 py-2 rounded-lg
-                                    ${file.status === 'error' ? 'bg-red-500/20 border border-red-500/30' :
-                                        file.status === 'uploading' ? 'bg-slate-700/50 border border-slate-600' :
-                                            'bg-slate-700 border border-slate-600'}
+                                    ${file.status === 'error' ? 'bg-destructive/10 border border-destructive/20' :
+                                        file.status === 'uploading' ? 'bg-secondary/50 border border-border' :
+                                            'bg-secondary border border-border'}
                                 `}
                             >
                                 {file.status === 'uploading' ? (
-                                    <Loader2 className="w-4 h-4 text-primary-400 animate-spin" />
+                                    <Loader2 className="w-4 h-4 text-primary animate-spin" />
                                 ) : (
-                                    <FileText className={`w-4 h-4 ${file.status === 'error' ? 'text-red-400' : 'text-primary-400'}`} />
+                                    <FileText className={`w-4 h-4 ${file.status === 'error' ? 'text-destructive' : 'text-primary'}`} />
                                 )}
                                 <div className="flex flex-col">
-                                    <span className="text-sm text-white truncate max-w-[150px]">{file.name}</span>
-                                    <span className="text-xs text-slate-400">{formatFileSize(file.size)}</span>
+                                    <span className="text-sm text-foreground truncate max-w-[150px]">{file.name}</span>
+                                    <span className="text-xs text-muted-foreground">{formatFileSize(file.size)}</span>
                                 </div>
                                 <button
                                     type="button"
                                     onClick={() => removeFile(file.name)}
-                                    className="p-1 hover:bg-slate-600 rounded"
+                                    className="p-1 hover:bg-card/50 rounded"
                                 >
-                                    <X className="w-3 h-3 text-slate-400" />
+                                    <X className="w-3 h-3 text-muted-foreground" />
                                 </button>
                             </div>
                         ))}
@@ -282,9 +282,9 @@ const ChatInput = forwardRef(function ChatInput({
                 )}
 
                 <div className={`
-                    flex items-end gap-2 p-2 bg-slate-800/80 backdrop-blur
-                    border border-slate-700 rounded-2xl
-                    focus-within:border-slate-600 focus-within:ring-1 focus-within:ring-slate-600
+                    flex items-end gap-2 p-2 bg-card/80 backdrop-blur
+                    border border-border rounded-2xl
+                    focus-within:border-primary/50 focus-within:ring-1 focus-within:ring-primary/20
                     transition-all
                 `}>
                     {/* Attachment button - only show if user has permission */}
@@ -305,8 +305,8 @@ const ChatInput = forwardRef(function ChatInput({
                                 className={`
                                     p-2 rounded-lg transition-colors
                                     ${uploading
-                                        ? 'text-slate-600 cursor-not-allowed'
-                                        : 'text-slate-400 hover:text-white hover:bg-slate-700'}
+                                        ? 'text-muted-foreground/30 cursor-not-allowed'
+                                        : 'text-muted-foreground hover:text-foreground hover:bg-secondary'}
                                 `}
                                 title="Attach file (PDF, Word, TXT)"
                             >
@@ -328,8 +328,8 @@ const ChatInput = forwardRef(function ChatInput({
                         placeholder={placeholder}
                         disabled={disabled}
                         rows={1}
-                        className="flex-1 px-2 py-2 bg-transparent text-white 
-                                 placeholder-slate-500 resize-none
+                        className="flex-1 px-2 py-2 bg-transparent text-foreground 
+                                 placeholder-muted-foreground resize-none
                                  focus:outline-none
                                  disabled:opacity-50 disabled:cursor-not-allowed"
                         style={{ minHeight: '44px', maxHeight: '200px' }}
@@ -339,7 +339,7 @@ const ChatInput = forwardRef(function ChatInput({
                     {isTyping ? (
                         <button
                             type="button"
-                            className="p-2 text-red-400 hover:text-red-300 hover:bg-red-500/10 rounded-lg transition-colors"
+                            className="p-2 text-destructive hover:text-destructive/80 hover:bg-destructive/10 rounded-lg transition-colors"
                             title="Stop generating"
                         >
                             <Square className="w-5 h-5 fill-current" />
@@ -351,8 +351,8 @@ const ChatInput = forwardRef(function ChatInput({
                             className={`
                                 p-2 rounded-lg transition-all
                                 ${(message.trim() || attachedFiles.length > 0) && !uploading
-                                    ? 'bg-white text-slate-900 hover:bg-slate-200'
-                                    : 'bg-slate-700 text-slate-500 cursor-not-allowed'
+                                    ? 'bg-primary text-primary-foreground hover:opacity-90'
+                                    : 'bg-secondary text-muted-foreground cursor-not-allowed'
                                 }
                             `}
                         >
@@ -363,18 +363,18 @@ const ChatInput = forwardRef(function ChatInput({
 
                 {/* Typing indicator */}
                 {isTyping && (
-                    <div className="absolute -top-8 left-4 flex items-center gap-2 text-sm text-slate-400">
+                    <div className="absolute -top-8 left-4 flex items-center gap-2 text-sm text-muted-foreground">
                         <div className="flex gap-1">
-                            <span className="w-2 h-2 bg-slate-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
-                            <span className="w-2 h-2 bg-slate-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
-                            <span className="w-2 h-2 bg-slate-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+                            <span className="w-2 h-2 bg-muted-foreground rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
+                            <span className="w-2 h-2 bg-muted-foreground rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
+                            <span className="w-2 h-2 bg-muted-foreground rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
                         </div>
                         <span>AI is thinking...</span>
                     </div>
                 )}
 
                 {/* Disclaimer */}
-                <p className="text-xs text-slate-500 text-center mt-2">
+                <p className="text-xs text-muted-foreground text-center mt-2">
                     KnowledgeAI can make mistakes. Verify important information.
                 </p>
             </form>

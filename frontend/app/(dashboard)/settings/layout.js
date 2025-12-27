@@ -41,22 +41,22 @@ export default function SettingsLayout({ children }) {
         <div className="flex flex-col h-full overflow-hidden">
             {/* Mobile Header - simple title bar (hamburger menu is provided by DashboardLayout) */}
             <div className="md:hidden">
-                <header className="flex items-center gap-3 px-3 py-4 border-b border-slate-800 pl-14">
-                    <h1 className="text-lg font-semibold text-white">Settings</h1>
+                <header className="flex items-center gap-3 px-3 py-4 border-b border-border pl-14">
+                    <h1 className="text-lg font-semibold text-foreground">Settings</h1>
                 </header>
             </div>
 
             {/* Desktop Header */}
-            <header className="hidden md:flex items-center justify-between px-6 py-4 border-b border-slate-800">
+            <header className="hidden md:flex items-center justify-between px-6 py-4 border-b border-border">
                 <div>
-                    <h1 className="text-xl font-semibold text-white">Settings</h1>
-                    <p className="text-sm text-slate-500">Manage account and system preferences</p>
+                    <h1 className="text-xl font-semibold text-foreground">Settings</h1>
+                    <p className="text-sm text-muted-foreground">Manage account and system preferences</p>
                 </div>
             </header>
 
             <div className="flex-1 flex overflow-hidden">
                 {/* Desktop Tabs Sidebar - Hidden on mobile */}
-                <nav className="hidden md:flex w-56 flex-col border-r border-slate-800 p-3 flex-shrink-0 overflow-y-auto">
+                <nav className="hidden md:flex w-56 flex-col border-r border-border p-3 flex-shrink-0 overflow-y-auto bg-card">
                     {navItems.map(item => {
                         const isActive = pathname === item.href;
                         return (
@@ -64,7 +64,7 @@ export default function SettingsLayout({ children }) {
                                 key={item.href}
                                 href={item.href}
                                 className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg mb-1 transition-colors text-left
-                                    ${isActive ? 'bg-slate-800 text-white' : 'text-slate-400 hover:text-white hover:bg-slate-800/50'}`}
+                                    ${isActive ? 'bg-secondary text-foreground' : 'text-muted-foreground hover:text-foreground hover:bg-secondary/50'}`}
                             >
                                 <item.icon className="w-4 h-4" />
                                 <span className="text-sm font-medium">{item.label}</span>
@@ -72,8 +72,8 @@ export default function SettingsLayout({ children }) {
                         );
                     })}
 
-                    <div className="mt-8 pt-4 border-t border-slate-800">
-                        <button onClick={handleLogout} className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-red-400 hover:bg-red-500/10 transition-colors text-left">
+                    <div className="mt-8 pt-4 border-t border-border">
+                        <button onClick={handleLogout} className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-destructive hover:bg-destructive/10 transition-colors text-left">
                             <LogOut className="w-4 h-4" />
                             <span className="text-sm font-medium">Logout</span>
                         </button>
@@ -81,7 +81,7 @@ export default function SettingsLayout({ children }) {
                 </nav>
 
                 {/* Content Area */}
-                <div className="flex-1 bg-slate-950 overflow-y-auto">
+                <div className="flex-1 bg-background overflow-y-auto">
                     {children}
                 </div>
             </div>

@@ -5,7 +5,7 @@ import Link from 'next/link';
 import {
     Plus, MessageSquare, FileText, BarChart3, Settings,
     ChevronLeft, ChevronRight, Pin, Trash2, MoreHorizontal,
-    Search, LogOut, User
+    Search, LogOut, User, Sparkles
 } from 'lucide-react';
 import { useAuth } from '@/lib/auth-context';
 
@@ -31,18 +31,18 @@ export default function Sidebar({
 
     return (
         <aside className={`
-      flex flex-col bg-slate-900 border-r border-slate-800 
+      flex flex-col bg-card border-r border-border 
       transition-all duration-300 ease-out
       ${collapsed ? 'w-16' : 'w-72'}
     `}>
             {/* Header */}
-            <div className="flex items-center justify-between p-4 border-b border-slate-800">
+            <div className="flex items-center justify-between p-4 border-b border-border">
                 {!collapsed && (
-                    <div className="flex items-center gap-2">
-                        <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-primary-400 to-primary-600 flex items-center justify-center">
-                            <span className="text-white font-bold text-sm">K</span>
+                    <div className="flex items-center gap-3">
+                        <div className="w-9 h-9 rounded-xl bg-primary flex items-center justify-center shadow-lg shadow-primary/30 ring-1 ring-primary/20">
+                            <Sparkles className="w-5 h-5 text-primary-foreground fill-primary-foreground/10" />
                         </div>
-                        <span className="font-semibold text-white">KnowledgeAI</span>
+                        <span className="font-bold text-foreground">KnowledgeAI</span>
                     </div>
                 )}
                 <button onClick={onToggle} className="btn-icon">
@@ -65,15 +65,15 @@ export default function Sidebar({
             {!collapsed && (
                 <div className="px-3 pb-3">
                     <div className="relative">
-                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
+                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                         <input
                             type="text"
                             placeholder="Search chats..."
                             value={searchQuery}
                             onChange={(e) => setSearchQuery(e.target.value)}
-                            className="w-full pl-9 pr-3 py-2 bg-slate-800 border border-slate-700 rounded-lg
-                         text-sm text-slate-100 placeholder-slate-500
-                         focus:outline-none focus:ring-1 focus:ring-primary-500"
+                            className="w-full pl-9 pr-3 py-2 bg-secondary/50 border border-border rounded-lg
+                         text-sm text-foreground placeholder-muted-foreground
+                         focus:outline-none focus:ring-1 focus:ring-primary"
                         />
                     </div>
                 </div>
@@ -85,7 +85,7 @@ export default function Sidebar({
                 {pinnedConversations.length > 0 && (
                     <>
                         {!collapsed && (
-                            <div className="px-2 py-1.5 text-xs font-medium text-slate-500 uppercase tracking-wider">
+                            <div className="px-2 py-1.5 text-xs font-medium text-muted-foreground uppercase tracking-wider">
                                 Pinned
                             </div>
                         )}
@@ -105,7 +105,7 @@ export default function Sidebar({
 
                 {/* Recent Section */}
                 {!collapsed && regularConversations.length > 0 && (
-                    <div className="px-2 py-1.5 text-xs font-medium text-slate-500 uppercase tracking-wider mt-4">
+                    <div className="px-2 py-1.5 text-xs font-medium text-muted-foreground uppercase tracking-wider mt-4">
                         Recent
                     </div>
                 )}
@@ -123,26 +123,26 @@ export default function Sidebar({
             </nav>
 
             {/* Bottom Navigation */}
-            <div className="border-t border-slate-800 p-2 space-y-1">
+            <div className="border-t border-border p-2 space-y-1">
                 <NavItem icon={FileText} label="Documents" collapsed={collapsed} href="/documents" />
                 <NavItem icon={BarChart3} label="Analytics" collapsed={collapsed} href="/analytics" />
                 <NavItem icon={Settings} label="Settings" collapsed={collapsed} href="/settings" />
             </div>
 
             {/* User Profile */}
-            <div className="border-t border-slate-800 p-3">
+            <div className="border-t border-border p-3">
                 <div className={`flex items-center gap-3 ${collapsed ? 'justify-center' : ''}`}>
-                    <div className="w-9 h-9 rounded-full bg-slate-700 flex items-center justify-center flex-shrink-0">
+                    <div className="w-9 h-9 rounded-full bg-secondary flex items-center justify-center flex-shrink-0">
                         {user?.avatar ? (
                             <img src={user.avatar} alt="" className="w-full h-full rounded-full object-cover" />
                         ) : (
-                            <User className="w-5 h-5 text-slate-400" />
+                            <User className="w-5 h-5 text-muted-foreground" />
                         )}
                     </div>
                     {!collapsed && (
                         <div className="flex-1 min-w-0">
-                            <p className="text-sm font-medium text-white truncate">{user?.name || 'User'}</p>
-                            <p className="text-xs text-slate-500 truncate">{user?.email}</p>
+                            <p className="text-sm font-medium text-foreground truncate">{user?.name || 'User'}</p>
+                            <p className="text-xs text-muted-foreground truncate">{user?.email}</p>
                         </div>
                     )}
                     {!collapsed && (
@@ -166,8 +166,8 @@ function ConversationItem({ conversation, active, collapsed, onSelect, onDelete,
         group relative flex items-center gap-2 px-3 py-2.5 rounded-lg cursor-pointer
         transition-colors
         ${active
-                    ? 'bg-slate-800 text-white'
-                    : 'text-slate-400 hover:bg-slate-800/50 hover:text-white'
+                    ? 'bg-secondary text-foreground'
+                    : 'text-muted-foreground hover:bg-secondary/50 hover:text-foreground'
                 }
       `}
             onClick={() => onSelect(conversation._id)}
@@ -179,48 +179,46 @@ function ConversationItem({ conversation, active, collapsed, onSelect, onDelete,
                     <span className="flex-1 truncate text-sm">{conversation.title}</span>
 
                     {conversation.isPinned && (
-                        <Pin className="w-3 h-3 text-primary-400 flex-shrink-0" />
+                        <Pin className="w-3 h-3 text-primary flex-shrink-0" />
                     )}
 
                     {/* Actions menu */}
-                    <div className="opacity-0 group-hover:opacity-100 transition-opacity">
-                        <button
-                            onClick={(e) => {
-                                e.stopPropagation();
-                                setShowMenu(!showMenu);
-                            }}
-                            className="p-1 hover:bg-slate-700 rounded"
-                        >
-                            <MoreHorizontal className="w-4 h-4" />
-                        </button>
+                    <button
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            setShowMenu(!showMenu);
+                        }}
+                        className="p-1 hover:bg-secondary rounded text-muted-foreground hover:text-foreground"
+                    >
+                        <MoreHorizontal className="w-4 h-4" />
+                    </button>
 
-                        {showMenu && (
-                            <div className="absolute right-0 top-full mt-1 w-36 bg-slate-800 border border-slate-700 rounded-lg shadow-xl z-10 py-1">
-                                <button
-                                    onClick={(e) => {
-                                        e.stopPropagation();
-                                        onPin(conversation._id);
-                                        setShowMenu(false);
-                                    }}
-                                    className="w-full px-3 py-2 text-left text-sm text-slate-300 hover:bg-slate-700 flex items-center gap-2"
-                                >
-                                    <Pin className="w-4 h-4" />
-                                    {conversation.isPinned ? 'Unpin' : 'Pin'}
-                                </button>
-                                <button
-                                    onClick={(e) => {
-                                        e.stopPropagation();
-                                        onDelete(conversation._id);
-                                        setShowMenu(false);
-                                    }}
-                                    className="w-full px-3 py-2 text-left text-sm text-red-400 hover:bg-slate-700 flex items-center gap-2"
-                                >
-                                    <Trash2 className="w-4 h-4" />
-                                    Delete
-                                </button>
-                            </div>
-                        )}
-                    </div>
+                    {showMenu && (
+                        <div className="absolute right-0 top-full mt-1 w-36 bg-card border border-border rounded-lg shadow-xl z-20 py-1">
+                            <button
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    onPin(conversation._id);
+                                    setShowMenu(false);
+                                }}
+                                className="w-full px-3 py-2 text-left text-sm text-foreground hover:bg-secondary flex items-center gap-2"
+                            >
+                                <Pin className="w-4 h-4" />
+                                {conversation.isPinned ? 'Unpin' : 'Pin'}
+                            </button>
+                            <button
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    onDelete(conversation._id);
+                                    setShowMenu(false);
+                                }}
+                                className="w-full px-3 py-2 text-left text-sm text-destructive hover:bg-secondary flex items-center gap-2"
+                            >
+                                <Trash2 className="w-4 h-4" />
+                                Delete
+                            </button>
+                        </div>
+                    )}
                 </>
             )}
         </div>
@@ -234,7 +232,7 @@ function NavItem({ icon: Icon, label, collapsed, href }) {
             href={href}
             className={`
         flex items-center gap-3 px-3 py-2.5 rounded-lg
-        text-slate-400 hover:text-white hover:bg-slate-800 transition-colors
+        text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors
         ${collapsed ? 'justify-center' : ''}
       `}
         >

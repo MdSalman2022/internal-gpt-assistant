@@ -155,48 +155,48 @@ export default function DashboardLayout({ children }) {
 
     if (loading || !user) {
         return (
-            <div className="min-h-screen flex items-center justify-center bg-slate-950">
-                <div className="animate-spin w-8 h-8 border-2 border-primary-500 border-t-transparent rounded-full" />
+            <div className="min-h-screen flex items-center justify-center bg-background">
+                <div className="animate-spin w-8 h-8 border-2 border-primary border-t-transparent rounded-full" />
             </div>
         );
     }
 
     return (
-        <div className="flex h-screen bg-slate-950 overflow-hidden">
+        <div className="flex h-screen bg-background overflow-hidden">
             {/* Desktop Sidebar */}
             <aside className={`
-                hidden md:flex flex-col bg-slate-900 border-r border-slate-800 
+                hidden md:flex flex-col bg-card border-r border-border 
                 transition-all duration-300 ease-in-out
                 ${sidebarOpen ? 'w-64' : 'w-20'}
             `}>
                 {/* Logo */}
-                <div className={`flex items-center h-16 px-4 border-b border-slate-800 ${sidebarOpen ? 'justify-between' : 'justify-center'}`}>
+                <div className={`flex items-center h-16 px-4 border-b border-border ${sidebarOpen ? 'justify-between' : 'justify-center'}`}>
                     <Link href="/chat" className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary-400 to-primary-600 flex items-center justify-center shadow-lg shadow-primary-500/20">
-                            <Sparkles className="w-5 h-5 text-white" />
+                        <div className="w-10 h-10 rounded-xl bg-primary flex items-center justify-center shadow-lg shadow-primary/40 ring-1 ring-primary/20">
+                            <Sparkles className="w-6 h-6 text-primary-foreground fill-primary-foreground/10" />
                         </div>
                         {sidebarOpen && (
-                            <span className="font-bold text-white text-lg">KnowledgeAI</span>
+                            <span className="font-bold text-foreground text-lg">KnowledgeAI</span>
                         )}
                     </Link>
                     {sidebarOpen && (
                         <button
                             onClick={() => setSidebarOpen(!sidebarOpen)}
-                            className="p-2 hover:bg-slate-800 rounded-lg transition-colors"
+                            className="p-2 hover:bg-secondary rounded-lg transition-colors"
                         >
-                            <ChevronLeft className="w-5 h-5 text-slate-400" />
+                            <ChevronLeft className="w-5 h-5 text-muted-foreground" />
                         </button>
                     )}
                 </div>
 
                 {/* Expand button when collapsed - positioned below logo */}
                 {!sidebarOpen && (
-                    <div className="flex justify-center p-2 border-b border-slate-800">
+                    <div className="flex justify-center p-2 border-b border-border">
                         <button
                             onClick={() => setSidebarOpen(!sidebarOpen)}
-                            className="p-2 hover:bg-slate-800 rounded-lg transition-colors"
+                            className="p-2 hover:bg-secondary rounded-lg transition-colors"
                         >
-                            <ChevronLeft className="w-5 h-5 text-slate-400 rotate-180" />
+                            <ChevronLeft className="w-5 h-5 text-muted-foreground rotate-180" />
                         </button>
                     </div>
                 )}
@@ -207,8 +207,8 @@ export default function DashboardLayout({ children }) {
                         onClick={handleNewChat}
                         className={`
                             flex items-center gap-3 w-full px-4 py-3 rounded-xl
-                            bg-slate-800 hover:bg-slate-700 text-white font-medium
-                            border border-slate-700 hover:border-slate-600
+                            bg-primary hover:bg-primary/90 text-primary-foreground font-medium
+                            border border-primary/20 hover:border-primary/40
                             transition-all
                             ${!sidebarOpen ? 'justify-center px-3' : ''}
                         `}
@@ -221,7 +221,7 @@ export default function DashboardLayout({ children }) {
                 {/* Recent Conversations (when sidebar is open) */}
                 {sidebarOpen && recentChats.length > 0 && (
                     <div className="flex-1 overflow-y-auto px-3 pb-3">
-                        <p className="px-3 py-2 text-xs font-medium text-slate-500 uppercase tracking-wider">
+                        <p className="px-3 py-2 text-xs font-medium text-muted-foreground uppercase tracking-wider">
                             Recent
                         </p>
                         <div className="space-y-1">
@@ -247,20 +247,20 @@ export default function DashboardLayout({ children }) {
                                                         if (e.key === 'Enter') handleSaveRename(e, chat._id);
                                                         if (e.key === 'Escape') handleCancelRename(e);
                                                     }}
-                                                    className="flex-1 px-2 py-1 bg-slate-700 border border-slate-600 
-                                                             rounded text-sm text-white focus:outline-none focus:border-primary-500"
+                                                    className="flex-1 px-2 py-1 bg-secondary border border-border 
+                                                             rounded text-sm text-foreground focus:outline-none focus:border-primary"
                                                     autoFocus
                                                     onClick={(e) => e.preventDefault()}
                                                 />
                                                 <button
                                                     onClick={(e) => handleSaveRename(e, chat._id)}
-                                                    className="p-1 text-green-400 hover:bg-slate-700 rounded"
+                                                    className="p-1 text-success hover:bg-secondary rounded"
                                                 >
                                                     <Check className="w-4 h-4" />
                                                 </button>
                                                 <button
                                                     onClick={handleCancelRename}
-                                                    className="p-1 text-slate-400 hover:bg-slate-700 rounded"
+                                                    className="p-1 text-muted-foreground hover:bg-secondary rounded"
                                                 >
                                                     <XIcon className="w-4 h-4" />
                                                 </button>
@@ -271,8 +271,8 @@ export default function DashboardLayout({ children }) {
                                                 className={`
                                                     flex items-center gap-2 px-3 py-2 text-sm rounded-lg transition-colors
                                                     ${isActive
-                                                        ? 'bg-slate-800 text-white'
-                                                        : 'text-slate-400 hover:text-white hover:bg-slate-800'
+                                                        ? 'bg-secondary text-foreground'
+                                                        : 'text-muted-foreground hover:text-foreground hover:bg-secondary'
                                                     }
                                                 `}
                                             >
@@ -284,14 +284,14 @@ export default function DashboardLayout({ children }) {
                                                     <div className="flex items-center gap-0.5">
                                                         <button
                                                             onClick={(e) => handleStartRename(e, chat)}
-                                                            className="p-1 text-slate-400 hover:text-white hover:bg-slate-700 rounded"
+                                                            className="p-1 text-muted-foreground hover:text-foreground hover:bg-secondary rounded"
                                                             title="Rename"
                                                         >
                                                             <Pencil className="w-3.5 h-3.5" />
                                                         </button>
                                                         <button
                                                             onClick={(e) => handleDeleteChat(e, chat._id)}
-                                                            className="p-1 text-slate-400 hover:text-red-400 hover:bg-slate-700 rounded"
+                                                            className="p-1 text-muted-foreground hover:text-destructive hover:bg-secondary rounded"
                                                             title="Delete"
                                                         >
                                                             <Trash2 className="w-3.5 h-3.5" />
@@ -308,7 +308,7 @@ export default function DashboardLayout({ children }) {
                 )}
 
                 {/* Nav Items */}
-                <nav className="p-3 space-y-1 border-t border-slate-800">
+                <nav className="p-3 space-y-1 border-t border-border">
                     {visibleNavItems.map((item) => {
                         const isActive = pathname === item.href || pathname.startsWith(item.href + '/');
                         return (
@@ -318,8 +318,8 @@ export default function DashboardLayout({ children }) {
                                 className={`
                                     flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all
                                     ${isActive
-                                        ? 'bg-primary-500/10 text-primary-400'
-                                        : 'text-slate-400 hover:text-white hover:bg-slate-800'
+                                        ? 'bg-primary/10 text-primary'
+                                        : 'text-muted-foreground hover:text-foreground hover:bg-secondary'
                                     }
                                     ${!sidebarOpen ? 'justify-center' : ''}
                                 `}
@@ -332,23 +332,23 @@ export default function DashboardLayout({ children }) {
                 </nav>
 
                 {/* User Profile */}
-                <div className="p-3 border-t border-slate-800">
+                <div className="p-3 border-t border-border">
                     <div className={`flex items-center gap-3 p-2 rounded-lg ${sidebarOpen ? '' : 'justify-center'}`}>
-                        <div className="w-9 h-9 rounded-full bg-gradient-to-br from-slate-600 to-slate-700 flex items-center justify-center flex-shrink-0">
-                            <span className="text-white text-sm font-medium">
+                        <div className="w-9 h-9 rounded-full bg-secondary flex items-center justify-center flex-shrink-0 border border-border">
+                            <span className="text-foreground text-sm font-medium">
                                 {user?.name?.charAt(0)?.toUpperCase() || 'U'}
                             </span>
                         </div>
                         {sidebarOpen && (
                             <div className="flex-1 min-w-0">
-                                <p className="text-sm font-medium text-white truncate">{user?.name}</p>
+                                <p className="text-sm font-medium text-foreground truncate">{user?.name}</p>
                                 <div className="flex items-center gap-2">
-                                    <p className="text-xs text-slate-500 truncate">{user?.email}</p>
+                                    <p className="text-xs text-muted-foreground truncate">{user?.email}</p>
                                     {user?.role && (
                                         <span className={`text-[10px] px-1.5 py-0.5 rounded font-medium uppercase
-                                            ${(user.role === 'admin' || user.role === 'visitor') ? 'bg-red-500/20 text-red-400' :
-                                                user.role === 'employee' ? 'bg-blue-500/20 text-blue-400' :
-                                                    'bg-slate-600/50 text-slate-400'}`}>
+                                            ${(user.role === 'admin' || user.role === 'visitor') ? 'bg-destructive/20 text-destructive' :
+                                                user.role === 'employee' ? 'bg-info/20 text-info' :
+                                                    'bg-secondary text-muted-foreground'}`}>
                                             {(user.role === 'admin' || user.role === 'visitor') ? 'ADMIN' : user.role}
                                         </span>
                                     )}
@@ -360,7 +360,7 @@ export default function DashboardLayout({ children }) {
                         onClick={handleLogout}
                         className={`
                             flex items-center gap-3 w-full px-3 py-2.5 mt-2 rounded-lg
-                            text-slate-400 hover:text-red-400 hover:bg-red-500/10 transition-all
+                            text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-all
                             ${!sidebarOpen ? 'justify-center' : ''}
                         `}
                     >
@@ -372,15 +372,15 @@ export default function DashboardLayout({ children }) {
 
             {/* Mobile Slide-Out Drawer using shadcn Sheet */}
             <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
-                <SheetContent side="left" className="w-80 p-0 bg-slate-900 border-slate-800 flex flex-col">
+                <SheetContent side="left" className="w-80 p-0 bg-card border-border flex flex-col">
                     {pathname.startsWith('/settings') ? (
                         /* Settings Page Sidebar */
                         <>
                             {/* Header with back to chat */}
-                            <div className="flex items-center gap-3 h-14 px-4 border-b border-slate-800">
+                            <div className="flex items-center gap-3 h-14 px-4 border-b border-border">
                                 <button
                                     onClick={() => { router.push('/chat'); setMobileMenuOpen(false); }}
-                                    className="flex items-center gap-2 text-slate-400 hover:text-white transition-colors"
+                                    className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors"
                                 >
                                     <ArrowLeft className="w-5 h-5" />
                                     <span className="font-medium">Back to Chat</span>
@@ -388,9 +388,9 @@ export default function DashboardLayout({ children }) {
                             </div>
 
                             {/* Settings Title */}
-                            <div className="px-4 py-3 border-b border-slate-800">
-                                <h2 className="text-lg font-semibold text-white">Settings</h2>
-                                <p className="text-xs text-slate-500">Manage your preferences</p>
+                            <div className="px-4 py-3 border-b border-border">
+                                <h2 className="text-lg font-semibold text-foreground">Settings</h2>
+                                <p className="text-xs text-muted-foreground">Manage your preferences</p>
                             </div>
 
                             {/* Settings Tabs */}
@@ -407,8 +407,8 @@ export default function DashboardLayout({ children }) {
                                                 }}
                                                 className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors text-left
                                                     ${isActive
-                                                        ? 'bg-slate-800 text-white'
-                                                        : 'text-slate-400 hover:text-white hover:bg-slate-800/50'
+                                                        ? 'bg-secondary text-foreground'
+                                                        : 'text-muted-foreground hover:text-foreground hover:bg-secondary/50'
                                                     }`}
                                             >
                                                 <tab.icon className="w-4 h-4" />
@@ -420,10 +420,10 @@ export default function DashboardLayout({ children }) {
                             </div>
 
                             {/* Logout at bottom */}
-                            <div className="p-3 border-t border-slate-800">
+                            <div className="p-3 border-t border-border">
                                 <button
                                     onClick={handleLogout}
-                                    className="flex items-center gap-3 w-full px-3 py-2.5 rounded-lg text-red-400 hover:bg-red-500/10 transition-colors text-left"
+                                    className="flex items-center gap-3 w-full px-3 py-2.5 rounded-lg text-destructive hover:bg-destructive/10 transition-colors text-left"
                                 >
                                     <LogOut className="w-4 h-4" />
                                     <span className="text-sm font-medium">Logout</span>
@@ -434,18 +434,18 @@ export default function DashboardLayout({ children }) {
                         /* Default Chat Sidebar */
                         <>
                             {/* Header */}
-                            <div className="flex items-center gap-3 h-14 px-4 border-b border-slate-800">
-                                <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-primary-400 to-primary-600 flex items-center justify-center">
-                                    <Sparkles className="w-4 h-4 text-white" />
+                            <div className="flex items-center gap-3 h-14 px-4 border-b border-border">
+                                <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-primary/80 to-primary flex items-center justify-center">
+                                    <Sparkles className="w-4 h-4 text-primary-foreground" />
                                 </div>
-                                <span className="font-bold text-white">KnowledgeAI</span>
+                                <span className="font-bold text-foreground">KnowledgeAI</span>
                             </div>
 
                             {/* New Chat */}
                             <div className="p-3">
                                 <button
                                     onClick={() => { handleNewChat(); setMobileMenuOpen(false); }}
-                                    className="flex items-center gap-3 w-full px-4 py-3 rounded-lg bg-slate-800 hover:bg-slate-700 text-white font-medium border border-slate-700 transition-colors"
+                                    className="flex items-center gap-3 w-full px-4 py-3 rounded-lg bg-primary text-primary-foreground font-medium border border-primary/20 transition-colors"
                                 >
                                     <Plus className="w-5 h-5" />
                                     <span>New chat</span>
@@ -454,9 +454,9 @@ export default function DashboardLayout({ children }) {
 
                             {/* Search Chats */}
                             <div className="px-3 pb-2">
-                                <div className="flex items-center gap-2 px-3 py-2 bg-slate-800/50 rounded-lg border border-slate-700/50">
-                                    <Search className="w-4 h-4 text-slate-500" />
-                                    <span className="text-sm text-slate-500">Search chats</span>
+                                <div className="flex items-center gap-2 px-3 py-2 bg-secondary/50 rounded-lg border border-border">
+                                    <Search className="w-4 h-4 text-muted-foreground" />
+                                    <span className="text-sm text-muted-foreground">Search chats</span>
                                 </div>
                             </div>
 
@@ -464,7 +464,7 @@ export default function DashboardLayout({ children }) {
                             <div className="flex-1 overflow-y-auto px-3">
                                 {recentChats.length > 0 && (
                                     <>
-                                        <p className="px-2 py-2 text-xs font-medium text-slate-500">Your chats</p>
+                                        <p className="px-2 py-2 text-xs font-medium text-muted-foreground">Your chats</p>
                                         <div className="space-y-0.5">
                                             {recentChats.map((chat) => (
                                                 <div key={chat._id} className="group flex items-center">
@@ -472,16 +472,16 @@ export default function DashboardLayout({ children }) {
                                                         href={`/chat/${chat._id}`}
                                                         onClick={() => setMobileMenuOpen(false)}
                                                         className={`flex-1 flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors ${currentConversationId === chat._id
-                                                            ? 'bg-slate-800 text-white'
-                                                            : 'text-slate-300 hover:bg-slate-800/50'
+                                                            ? 'bg-secondary text-foreground'
+                                                            : 'text-muted-foreground hover:bg-secondary/50'
                                                             }`}
                                                     >
-                                                        <MessageCircle className="w-4 h-4 flex-shrink-0 text-slate-500" />
+                                                        <MessageCircle className="w-4 h-4 flex-shrink-0 text-muted-foreground" />
                                                         <span className="truncate text-sm">{chat.title || 'New chat'}</span>
                                                     </Link>
                                                     <button
                                                         onClick={(e) => handleDeleteChat(e, chat._id)}
-                                                        className="opacity-0 group-hover:opacity-100 p-2 text-slate-500 hover:text-red-400 transition-opacity"
+                                                        className="opacity-0 group-hover:opacity-100 p-2 text-muted-foreground hover:text-destructive transition-opacity"
                                                     >
                                                         <MoreHorizontal className="w-4 h-4" />
                                                     </button>
@@ -493,7 +493,7 @@ export default function DashboardLayout({ children }) {
                             </div>
 
                             {/* Bottom Section */}
-                            <div className="mt-auto border-t border-slate-800">
+                            <div className="mt-auto border-t border-border">
                                 {/* Menu Items */}
                                 <div className="p-2">
                                     {visibleNavItems.map((item) => (
@@ -502,8 +502,8 @@ export default function DashboardLayout({ children }) {
                                             href={item.href}
                                             onClick={() => setMobileMenuOpen(false)}
                                             className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors ${pathname === item.href
-                                                ? 'bg-slate-800 text-white'
-                                                : 'text-slate-300 hover:bg-slate-800/50'
+                                                ? 'bg-secondary text-foreground'
+                                                : 'text-muted-foreground hover:bg-secondary/50'
                                                 }`}
                                         >
                                             <item.icon className="w-5 h-5" />
@@ -513,19 +513,19 @@ export default function DashboardLayout({ children }) {
                                 </div>
 
                                 {/* User Profile */}
-                                <div className="p-2 border-t border-slate-800">
-                                    <div className="flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-slate-800/50 cursor-pointer">
-                                        <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-purple-500 flex items-center justify-center">
-                                            <span className="text-xs font-bold text-white">{user?.name?.slice(0, 2).toUpperCase() || 'U'}</span>
+                                <div className="p-2 border-t border-border">
+                                    <div className="flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-secondary/50 cursor-pointer">
+                                        <div className="w-8 h-8 rounded-full bg-secondary flex items-center justify-center border border-border">
+                                            <span className="text-xs font-bold text-foreground">{user?.name?.slice(0, 2).toUpperCase() || 'U'}</span>
                                         </div>
                                         <div className="flex-1 min-w-0">
-                                            <p className="text-sm font-medium text-white truncate">{user?.name}</p>
-                                            <p className="text-xs text-slate-500 truncate">{user?.email}</p>
+                                            <p className="text-sm font-medium text-foreground truncate">{user?.name}</p>
+                                            <p className="text-xs text-muted-foreground truncate">{user?.email}</p>
                                         </div>
                                     </div>
                                     <button
                                         onClick={handleLogout}
-                                        className="flex items-center gap-3 w-full px-3 py-2.5 text-slate-400 hover:bg-slate-800/50 rounded-lg transition-colors"
+                                        className="flex items-center gap-3 w-full px-3 py-2.5 text-muted-foreground hover:bg-secondary/50 rounded-lg transition-colors"
                                     >
                                         <LogOut className="w-5 h-5" />
                                         <span className="text-sm">Log out</span>
@@ -538,7 +538,7 @@ export default function DashboardLayout({ children }) {
             </Sheet>
 
             {/* Main Content */}
-            <main className="flex-1 flex flex-col min-w-0 overflow-hidden">
+            <main className="flex-1 flex flex-col min-w-0 overflow-hidden bg-background">
                 {children}
             </main>
 
@@ -546,9 +546,9 @@ export default function DashboardLayout({ children }) {
             {(pathname.startsWith('/chat') || pathname.startsWith('/settings')) && (
                 <button
                     onClick={() => setMobileMenuOpen(true)}
-                    className="md:hidden fixed top-2 left-2 z-30 p-2.5 bg-slate-800/90 backdrop-blur-sm rounded-xl border border-slate-700 shadow-lg"
+                    className="md:hidden fixed top-2 left-2 z-30 p-2.5 bg-secondary/90 backdrop-blur-sm rounded-xl border border-border shadow-lg"
                 >
-                    <Menu className="w-5 h-5 text-white" />
+                    <Menu className="w-5 h-5 text-foreground" />
                 </button>
             )}
         </div>

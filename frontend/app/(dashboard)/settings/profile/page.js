@@ -112,14 +112,14 @@ export default function ProfilePage() {
     const StatusBadge = ({ status }) => {
         if (status === 'approved') {
             return (
-                <span className="inline-flex items-center p-1 bg-green-500/10 rounded-full" title="Approved">
-                    <CheckCircle className="w-3.5 h-3.5 text-green-400" />
+                <span className="inline-flex items-center p-1 bg-primary/10 rounded-full" title="Approved">
+                    <CheckCircle className="w-3.5 h-3.5 text-primary" />
                 </span>
             );
         }
         if (status === 'pending') {
             return (
-                <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-amber-500/10 border border-amber-500/30 rounded-full text-xs text-amber-400">
+                <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-amber-500/10 border border-amber-500/20 rounded-full text-xs text-amber-500">
                     <Clock className="w-3 h-3" />
                     Pending
                 </span>
@@ -145,42 +145,42 @@ export default function ProfilePage() {
     return (
         <div className="h-full overflow-y-auto">
             <div className="p-6 pb-12 max-w-2xl mx-auto space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
-                <h2 className="text-xl font-semibold text-white">Profile Settings</h2>
+                <h2 className="text-xl font-semibold text-foreground">Profile Settings</h2>
 
                 {/* Avatar Section */}
                 <div className="flex items-center gap-4">
-                    <div className="w-16 h-16 rounded-full bg-gradient-to-br from-primary-500 to-primary-600 flex items-center justify-center shadow-lg">
-                        <span className="text-2xl font-bold text-white">
+                    <div className="w-16 h-16 rounded-full bg-primary flex items-center justify-center shadow-lg shadow-primary/20">
+                        <span className="text-2xl font-bold text-primary-foreground">
                             {profile.name?.charAt(0)?.toUpperCase() || user?.name?.charAt(0)?.toUpperCase() || 'U'}
                         </span>
                     </div>
                     <div>
-                        <p className="text-white font-medium">{profile.name || user?.name}</p>
-                        <p className="text-sm text-slate-400">{profile.email || user?.email}</p>
+                        <p className="text-foreground font-medium">{profile.name || user?.name}</p>
+                        <p className="text-sm text-muted-foreground">{profile.email || user?.email}</p>
                     </div>
                 </div>
 
                 {/* Basic Info */}
-                <div className="bg-slate-900/50 border border-slate-800 rounded-xl p-5 space-y-4">
+                <div className="bg-card/50 border border-border/50 rounded-xl p-5 space-y-4">
                     <div>
-                        <label className="block text-sm text-slate-400 mb-1.5">Full Name</label>
+                        <label className="block text-sm text-muted-foreground mb-1.5">Full Name</label>
                         <input
                             type="text"
                             value={profile.name}
                             onChange={(e) => setProfile({ ...profile, name: e.target.value })}
-                            className="input"
+                            className="input bg-secondary/50"
                             placeholder="Enter your full name"
                         />
                     </div>
                     <div>
-                        <label className="block text-sm text-slate-400 mb-1.5">Email</label>
+                        <label className="block text-sm text-muted-foreground mb-1.5">Email</label>
                         <input
                             type="email"
                             value={profile.email}
                             disabled
-                            className="input opacity-50 cursor-not-allowed"
+                            className="input bg-secondary/30 opacity-70 cursor-not-allowed"
                         />
-                        <p className="text-xs text-slate-500 mt-1">Email cannot be changed</p>
+                        <p className="text-xs text-muted-foreground/60 mt-1">Email cannot be changed</p>
                     </div>
 
                     <button
@@ -194,28 +194,28 @@ export default function ProfilePage() {
                 </div>
 
                 {/* Departments Section */}
-                <div className="bg-slate-900/50 border border-slate-800 rounded-xl p-5 space-y-4">
-                    <h3 className="font-medium text-white flex items-center gap-2">
-                        <Building2 className="w-4 h-4 text-blue-400" />
+                <div className="bg-card/50 border border-border/50 rounded-xl p-5 space-y-4">
+                    <h3 className="font-medium text-foreground flex items-center gap-2">
+                        <Building2 className="w-4 h-4 text-primary" />
                         Departments
                     </h3>
 
                     {/* Current Departments */}
                     <div className="flex flex-wrap gap-2">
                         {approvedDepts.map(dept => (
-                            <div key={dept} className="flex items-center gap-2 px-3 py-1.5 bg-blue-500/10 border border-blue-500/30 rounded-lg">
-                                <span className="text-sm text-blue-300">{dept}</span>
+                            <div key={dept} className="flex items-center gap-2 px-3 py-1.5 bg-primary/10 border border-primary/20 rounded-lg">
+                                <span className="text-sm text-primary/80">{dept}</span>
                                 <StatusBadge status="approved" />
                             </div>
                         ))}
                         {pendingDepts.map(dept => (
-                            <div key={dept} className="flex items-center gap-2 px-3 py-1.5 bg-amber-500/10 border border-amber-500/30 rounded-lg">
-                                <span className="text-sm text-amber-300">{dept}</span>
+                            <div key={dept} className="flex items-center gap-3 px-3 py-1.5 bg-amber-500/5 border border-amber-500/20 rounded-lg">
+                                <span className="text-sm text-amber-500/80">{dept}</span>
                                 <StatusBadge status="pending" />
                             </div>
                         ))}
                         {approvedDepts.length === 0 && pendingDepts.length === 0 && (
-                            <p className="text-sm text-slate-500">No departments assigned</p>
+                            <p className="text-sm text-muted-foreground">No departments assigned</p>
                         )}
                     </div>
 
@@ -245,28 +245,28 @@ export default function ProfilePage() {
                 </div>
 
                 {/* Teams Section */}
-                <div className="bg-slate-900/50 border border-slate-800 rounded-xl p-5 space-y-4">
-                    <h3 className="font-medium text-white flex items-center gap-2">
-                        <Users2 className="w-4 h-4 text-purple-400" />
+                <div className="bg-card/50 border border-border/50 rounded-xl p-5 space-y-4">
+                    <h3 className="font-medium text-foreground flex items-center gap-2">
+                        <Users2 className="w-4 h-4 text-primary" />
                         Teams
                     </h3>
 
                     {/* Current Teams */}
                     <div className="flex flex-wrap gap-2">
                         {approvedTeams.map(team => (
-                            <div key={team} className="flex items-center gap-2 px-3 py-1.5 bg-purple-500/10 border border-purple-500/30 rounded-lg">
-                                <span className="text-sm text-purple-300">{team}</span>
+                            <div key={team} className="flex items-center gap-2 px-3 py-1.5 bg-primary/10 border border-primary/20 rounded-lg">
+                                <span className="text-sm text-primary/80">{team}</span>
                                 <StatusBadge status="approved" />
                             </div>
                         ))}
                         {pendingTeams.map(team => (
-                            <div key={team} className="flex items-center gap-2 px-3 py-1.5 bg-amber-500/10 border border-amber-500/30 rounded-lg">
-                                <span className="text-sm text-amber-300">{team}</span>
+                            <div key={team} className="flex items-center gap-3 px-3 py-1.5 bg-amber-500/5 border border-amber-500/20 rounded-lg">
+                                <span className="text-sm text-amber-500/80">{team}</span>
                                 <StatusBadge status="pending" />
                             </div>
                         ))}
                         {approvedTeams.length === 0 && pendingTeams.length === 0 && (
-                            <p className="text-sm text-slate-500">No teams assigned</p>
+                            <p className="text-sm text-muted-foreground">No teams assigned</p>
                         )}
                     </div>
 
