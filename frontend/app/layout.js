@@ -9,6 +9,7 @@ const inter = Inter({
 });
 
 export const metadata = {
+  metadataBase: new URL('https://corporate-gpt-client.vercel.app'),
   title: 'InsightAI - Internal Knowledge Assistant',
   description: 'AI-powered knowledge assistant for finding answers from internal documents. Transform static data into Active Intelligence.',
   icons: {
@@ -21,7 +22,7 @@ export const metadata = {
     siteName: 'InsightAI',
     images: [
       {
-        url: '/cover.jpg',
+        url: 'https://corporate-gpt-client.vercel.app/cover.jpg',
         width: 1200,
         height: 630,
         alt: 'InsightAI - AI Document Intelligence Platform',
@@ -34,7 +35,7 @@ export const metadata = {
     card: 'summary_large_image',
     title: 'InsightAI - Transform Data into Active Intelligence',
     description: 'Enterprise AI document intelligence platform. Deploy AI that actually understands your data.',
-    images: ['/cover.jpg'],
+    images: ['https://corporate-gpt-client.vercel.app/cover.jpg'],
   },
 };
 
