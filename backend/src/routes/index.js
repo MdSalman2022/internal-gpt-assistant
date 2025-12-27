@@ -6,4 +6,5 @@ export { default as usersRoutes } from './users.routes.js';
 export { default as auditRoutes } from './audit.routes.js';
 export { default as usageRoutes } from './usage.routes.js';
 export { default as departmentsRoutes } from './departments.routes.js';
+export { default as integrationsRoutes } from './integrations.routes.js';
 

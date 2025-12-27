@@ -321,3 +321,26 @@ export const departmentsApi = {
             body: JSON.stringify({ departmentName, teamName })
         }),
 };
+
+// Integrations API (Google Calendar, etc.)
+export const integrationsApi = {
+    // Google Calendar
+    googleCalendar: {
+        // Get auth URL (redirect user to this for OAuth)
+        getAuthUrl: () => `${API_URL}/api/integrations/google-calendar/auth`,
+
+        // Check connection status
+        getStatus: () => fetcher('/api/integrations/google-calendar/status'),
+
+        // Disconnect Google Calendar
+        disconnect: () =>
+            fetcher('/api/integrations/google-calendar/disconnect', { method: 'POST' }),
+
+        // Get upcoming events
+        getEvents: (limit = 10) =>
+            fetcher(`/api/integrations/google-calendar/events?limit=${limit}`),
+
+        // Get today's events
+        getToday: () => fetcher('/api/integrations/google-calendar/today'),
+    }
+};

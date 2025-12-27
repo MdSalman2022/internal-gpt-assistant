@@ -94,6 +94,16 @@ const userSchema = new mongoose.Schema({
     uiPreferences: {
         baseTheme: { type: String, default: 'emerald' },
         primaryColor: { type: String, default: '#10B981' }
+    },
+    // Third-party Integrations
+    integrations: {
+        googleCalendar: {
+            connected: { type: Boolean, default: false },
+            accessToken: { type: String, default: null },
+            refreshToken: { type: String, default: null },
+            expiryDate: { type: Number, default: null },
+            connectedAt: { type: Date, default: null }
+        }
     }
 }, {
     timestamps: true,
