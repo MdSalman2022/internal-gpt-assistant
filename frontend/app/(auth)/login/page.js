@@ -18,8 +18,8 @@ export default function LoginPage() {
 
     const [formData, setFormData] = useState({
         name: '',
-        email: '',
-        password: '',
+        email: 'visitor@example.com',
+        password: '123456',
     });
 
     // Redirect if already logged in
