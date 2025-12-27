@@ -1,8 +1,8 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import Link from 'next/link';
-import { usePathname, useRouter, useSearchParams } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { useAuth } from '@/lib/auth-context';
 import { chatApi } from '@/lib/api';
 import {
@@ -37,11 +37,10 @@ const getSettingsTabs = (isAdminOrVisitor) => [
     { href: '/settings/integrations', label: 'Integrations', icon: Database },
 ];
 
-export default function DashboardLayout({ children }) {
+function DashboardLayoutInner({ children }) {
     const { user, logout, loading, hasPermission, isAdmin, isVisitor, isEmployee, isAdminOrVisitor } = useAuth();
     const pathname = usePathname();
     const router = useRouter();
-    const searchParams = useSearchParams();
     // Extract conversation ID from pathname for route-based URLs
     const currentConversationId = pathname.startsWith('/chat/') ? pathname.split('/chat/')[1] : null;
 
@@ -176,7 +175,7 @@ export default function DashboardLayout({ children }) {
                             <Sparkles className="w-6 h-6 text-primary-foreground fill-primary-foreground/10" />
                         </div>
                         {sidebarOpen && (
-                            <span className="font-bold text-foreground text-lg">KnowledgeAI</span>
+                            <span className="font-bold text-foreground text-lg">InsightAI</span>
                         )}
                     </Link>
                     {sidebarOpen && (
@@ -438,7 +437,7 @@ export default function DashboardLayout({ children }) {
                                 <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-primary/80 to-primary flex items-center justify-center">
                                     <Sparkles className="w-4 h-4 text-primary-foreground" />
                                 </div>
-                                <span className="font-bold text-foreground">KnowledgeAI</span>
+                                <span className="font-bold text-foreground">InsightAI</span>
                             </div>
 
                             {/* New Chat */}
@@ -555,3 +554,11 @@ export default function DashboardLayout({ children }) {
     );
 }
 
+// Wrapper with Suspense for useSearchParams compatibility
+export default function DashboardLayout({ children }) {
+    return (
+        <Suspense fallback={<div className="min-h-screen bg-background" />}>
+            <DashboardLayoutInner>{children}</DashboardLayoutInner>
+        </Suspense>
+    );
+}

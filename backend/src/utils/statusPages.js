@@ -9,7 +9,7 @@ export function getLandingPageHtml(env) {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>KnowledgeAI API</title>
+    <title>InsightAI API</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
@@ -24,35 +24,35 @@ export function getLandingPageHtml(env) {
         .container { text-align: center; padding: 3rem; }
         .logo {
             width: 80px; height: 80px;
-            background: linear-gradient(135deg, #10b981, #059669);
+            background: linear-gradient(135deg, #6366f1, #4f46e5);
             border-radius: 20px;
             margin: 0 auto 2rem;
             display: flex; align-items: center; justify-content: center;
             font-size: 2.5rem;
-            box-shadow: 0 20px 40px rgba(16, 185, 129, 0.3);
+            box-shadow: 0 20px 40px rgba(99, 102, 241, 0.3);
         }
         h1 {
             font-size: 2.5rem; font-weight: 700; margin-bottom: 0.5rem;
-            background: linear-gradient(135deg, #10b981, #34d399);
+            background: linear-gradient(135deg, #fff, #a5b4fc);
             -webkit-background-clip: text; -webkit-text-fill-color: transparent;
         }
         .subtitle { color: #94a3b8; font-size: 1.1rem; margin-bottom: 2rem; }
         .btn {
             display: inline-flex; align-items: center; gap: 8px;
-            background: linear-gradient(135deg, #10b981, #059669);
+            background: linear-gradient(135deg, #6366f1, #4f46e5);
             color: white; padding: 1rem 2rem; border-radius: 12px;
             text-decoration: none; font-weight: 600;
-            box-shadow: 0 10px 30px rgba(16, 185, 129, 0.3);
+            box-shadow: 0 10px 30px rgba(99, 102, 241, 0.3);
             transition: transform 0.2s, box-shadow 0.2s;
         }
-        .btn:hover { transform: translateY(-2px); box-shadow: 0 15px 40px rgba(16, 185, 129, 0.4); }
+        .btn:hover { transform: translateY(-2px); box-shadow: 0 15px 40px rgba(99, 102, 241, 0.4); }
         .footer { margin-top: 2rem; color: #475569; font-size: 0.85rem; }
     </style>
 </head>
 <body>
     <div class="container">
         <div class="logo">🧠</div>
-        <h1>KnowledgeAI API</h1>
+        <h1>InsightAI API</h1>
         <p class="subtitle">Internal Knowledge Assistant Backend</p>
         <a href="/health" class="btn">View System Health →</a>
         <p class="footer">Version 1.0.0 • ${env}</p>
@@ -67,7 +67,7 @@ export function getHealthPageHtml(uptime, env, memUsed, memTotal, timestamp) {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Health Check - KnowledgeAI</title>
+    <title>Health Check - InsightAI</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
@@ -115,7 +115,7 @@ export function getHealthPageHtml(uptime, env, memUsed, memTotal, timestamp) {
         .footer { display: flex; justify-content: space-between; align-items: center; margin-top: 1.5rem; }
         .timestamp { color: #475569; font-size: 0.8rem; }
         .back { color: #64748b; text-decoration: none; font-size: 0.85rem; }
-        .back:hover { color: #10b981; }
+        .back:hover { color: #818cf8; }
     </style>
 </head>
 <body>

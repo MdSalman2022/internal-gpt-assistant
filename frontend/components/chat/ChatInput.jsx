@@ -10,7 +10,7 @@ const ChatInput = forwardRef(function ChatInput({
     onFileUpload,
     disabled,
     isTyping,
-    placeholder = "Message KnowledgeAI...",
+    placeholder = "Message InsightAI...",
     centered = false,
     conversationId = null
 }, ref) {
@@ -375,7 +375,7 @@ const ChatInput = forwardRef(function ChatInput({
 
                 {/* Disclaimer */}
                 <p className="text-xs text-muted-foreground text-center mt-2">
-                    KnowledgeAI can make mistakes. Verify important information.
+                    InsightAI can make mistakes. Verify important information.
                 </p>
             </form>
         </div>

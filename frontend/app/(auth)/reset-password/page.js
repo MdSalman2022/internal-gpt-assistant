@@ -222,7 +222,7 @@ export default function ResetPasswordPage() {
                         <div className="w-12 h-12 rounded-xl bg-primary flex items-center justify-center shadow-lg shadow-primary/40 ring-1 ring-primary/20">
                             <Sparkles className="w-7 h-7 text-primary-foreground fill-primary-foreground/10" />
                         </div>
-                        <span className="text-2xl font-bold text-foreground">KnowledgeAI</span>
+                        <span className="text-2xl font-bold text-foreground">InsightAI</span>
                     </Link>
                 </div>
 

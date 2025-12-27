@@ -106,7 +106,7 @@ export default function NewChatPage() {
                 onFileUpload={handleFileUpload}
                 disabled={isCreating}
                 isTyping={isCreating}
-                placeholder="Message KnowledgeAI..."
+                placeholder="Message InsightAI..."
                 centered
             />
         </div>

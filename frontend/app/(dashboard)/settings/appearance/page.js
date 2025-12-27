@@ -12,7 +12,7 @@ export default function AppearancePage() {
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 animate-in fade-in slide-in-from-bottom-4 duration-500">
                 <div>
                     <h2 className="text-xl font-bold text-foreground">Appearance</h2>
-                    <p className="text-muted-foreground text-sm mt-1">Customize how KnowledgeAI looks on your device.</p>
+                    <p className="text-muted-foreground text-sm mt-1">Customize how InsightAI looks on your device.</p>
                 </div>
 
                 {isThemeDirty && (

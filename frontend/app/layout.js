@@ -9,7 +9,7 @@ const inter = Inter({
 });
 
 export const metadata = {
-  title: 'KnowledgeAI - Internal Knowledge Assistant',
+  title: 'InsightAI - Internal Knowledge Assistant',
   description: 'AI-powered knowledge assistant for finding answers from internal documents',
 };
 

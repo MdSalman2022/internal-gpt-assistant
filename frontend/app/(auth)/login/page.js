@@ -62,7 +62,7 @@ export default function LoginPage() {
                         <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary to-primary/80 flex items-center justify-center shadow-lg shadow-primary/20">
                             <Sparkles className="w-5 h-5 text-primary-foreground" />
                         </div>
-                        <span className="text-xl font-bold text-foreground">KnowledgeAI</span>
+                        <span className="text-xl font-bold text-foreground">InsightAI</span>
                     </div>
 
                     {/* Header */}

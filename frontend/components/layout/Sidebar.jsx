@@ -42,7 +42,7 @@ export default function Sidebar({
                         <div className="w-9 h-9 rounded-xl bg-primary flex items-center justify-center shadow-lg shadow-primary/30 ring-1 ring-primary/20">
                             <Sparkles className="w-5 h-5 text-primary-foreground fill-primary-foreground/10" />
                         </div>
-                        <span className="font-bold text-foreground">KnowledgeAI</span>
+                        <span className="font-bold text-foreground">InsightAI</span>
                     </div>
                 )}
                 <button onClick={onToggle} className="btn-icon">
