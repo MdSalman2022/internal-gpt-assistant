@@ -167,6 +167,33 @@
       transform: translateY(0);
     }
   }
+
+  /* Auto-scrolling testimonials animation */
+  .animate-scroll-up {
+    animation: scrollUp 30s linear infinite;
+  }
+
+  @keyframes scrollUp {
+    0% {
+      transform: translateY(0);
+    }
+    100% {
+      transform: translateY(-50%);
+    }
+  }
+
+  /* Neural network data flow animation */
+  @keyframes dash {
+    0% {
+      stroke-dashoffset: 200;
+    }
+    50% {
+      stroke-dashoffset: 0;
+    }
+    100% {
+      stroke-dashoffset: -200;
+    }
+  }
 }
 
 

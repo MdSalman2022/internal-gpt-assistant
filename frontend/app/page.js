@@ -1,651 +1,606 @@
-﻿import Link from 'next/link';
+﻿'use client';
+
+import { useState, useEffect, useRef } from 'react';
+import Link from 'next/link';
 import {
-  Sparkles, ArrowRight, Shield, Lock, Cpu, Database, Globe, Layers,
-  Check, ChevronRight, Building2, Users, FileSearch, Brain, Workflow,
-  BarChart3, MessagesSquare, Calendar, Fingerprint, Cloud, Server,
-  Zap, FileText, Search, Target, TrendingUp, Clock, Award, Star,
-  CheckCircle, ArrowUpRight, Play, Quote, HelpCircle, ChevronDown,
-  Briefcase, GraduationCap, Stethoscope, Scale, Building, Landmark,
-  Menu, X
+  ArrowRight, Shield, Lock, Cpu, Globe, Layers,
+  Check, Building2, Users, FileSearch, Brain, Workflow,
+  BarChart3, MessagesSquare, Fingerprint, Cloud, Server,
+  Zap, FileText, Search, Target, Star, Sparkles,
+  ChevronDown, Upload, Database, MessageSquare, Calendar,
+  Languages, Bot, BookOpen, TrendingUp, ArrowUpRight,
+  Mic, Image as ImageIcon, Code, GitBranch, History, Share2
 } from 'lucide-react';
 
-export default function LandingPage() {
+// Intersection Observer hook for scroll animations
+function useInView(options = {}) {
+  const ref = useRef(null);
+  const [isInView, setIsInView] = useState(false);
+
+  useEffect(() => {
+    const observer = new IntersectionObserver(([entry]) => {
+      if (entry.isIntersecting) setIsInView(true);
+    }, { threshold: 0.1, ...options });
+
+    if (ref.current) observer.observe(ref.current);
+    return () => observer.disconnect();
+  }, []);
+
+  return [ref, isInView];
+}
+
+// Animated wrapper
+function FadeIn({ children, className = '', delay = 0 }) {
+  const [ref, isInView] = useInView();
+
   return (
-    <div className="min-h-screen bg-[#09090b] text-white overflow-x-hidden antialiased">
+    <div
+      ref={ref}
+      className={className}
+      style={{
+        opacity: isInView ? 1 : 0,
+        transform: isInView ? 'translateY(0)' : 'translateY(30px)',
+        transition: `all 0.7s cubic-bezier(0.16, 1, 0.3, 1) ${delay}ms`,
+      }}
+    >
+      {children}
+    </div>
+  );
+}
+
+export default function LandingPage() {
+  const [scrolled, setScrolled] = useState(false);
+
+  useEffect(() => {
+    const handleScroll = () => setScrolled(window.scrollY > 20);
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
+  return (
+    <div className="min-h-screen bg-white text-zinc-900 antialiased">
       {/* Navigation */}
-      <nav className="fixed top-0 left-0 right-0 z-50 bg-[#09090b]/90 backdrop-blur-2xl border-b border-white/5">
-        <div className="max-w-7xl mx-auto px-4 md:px-6 h-14 md:h-16 flex items-center justify-between">
-          {/* Logo */}
-          <Link href="/" className="flex items-center gap-2 md:gap-3">
-            <div className="relative">
-              <div className="w-8 h-8 md:w-9 md:h-9 rounded-lg bg-gradient-to-br from-violet-500 via-purple-500 to-fuchsia-500 flex items-center justify-center">
-                <Brain className="w-4 h-4 md:w-5 md:h-5 text-white" />
-              </div>
-              <div className="absolute -inset-1 bg-gradient-to-br from-violet-500 to-fuchsia-500 rounded-lg blur-lg opacity-30" />
+      <nav className={`fixed top-0 left-0 right-0 z-50 transition-all duration-500 ${scrolled ? 'bg-white/95 backdrop-blur-xl border-b border-zinc-200' : 'bg-transparent'}`}>
+        <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
+          <Link href="/" className="flex items-center gap-2.5">
+            <div className="w-8 h-8 rounded-lg bg-black flex items-center justify-center">
+              <Brain className="w-4 h-4 text-white" />
             </div>
-            <span className="font-semibold text-base md:text-lg tracking-tight">InsightAI</span>
-            <span className="hidden sm:inline-flex text-[10px] font-medium px-2 py-0.5 bg-violet-500/10 text-violet-400 rounded-full border border-violet-500/20">Enterprise</span>
+            <span className="font-semibold text-lg">InsightAI</span>
           </Link>
 
-          {/* Desktop Nav */}
           <div className="hidden lg:flex items-center gap-8 text-sm">
-            <a href="#platform" className="text-zinc-400 hover:text-white transition-colors">Platform</a>
-            <a href="#features" className="text-zinc-400 hover:text-white transition-colors">Features</a>
-            <a href="#security" className="text-zinc-400 hover:text-white transition-colors">Security</a>
-            <a href="#use-cases" className="text-zinc-400 hover:text-white transition-colors">Use Cases</a>
-            <a href="#pricing" className="text-zinc-400 hover:text-white transition-colors">Pricing</a>
+            <a href="#platform" className="text-zinc-500 hover:text-black transition-colors">Platform</a>
+            <a href="#features" className="text-zinc-500 hover:text-black transition-colors">Features</a>
+            <a href="#security" className="text-zinc-500 hover:text-black transition-colors">Security</a>
+            <a href="#pricing" className="text-zinc-500 hover:text-black transition-colors">Pricing</a>
           </div>
 
-          {/* Desktop CTA */}
-          <div className="hidden md:flex items-center gap-3">
-            <Link href="/login" className="px-4 py-2 text-sm text-zinc-300 hover:text-white transition-colors">
-              Sign in
-            </Link>
-            <Link href="/login" className="group px-4 py-2 text-sm bg-white text-black font-medium rounded-lg hover:bg-zinc-200 transition-all flex items-center gap-2">
-              Request Demo
-              <ArrowRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
-            </Link>
-          </div>
-
-          {/* Mobile CTA */}
-          <div className="flex md:hidden items-center gap-2">
-            <Link href="/login" className="px-3 py-1.5 text-xs bg-white text-black font-medium rounded-lg">
+          <div className="flex items-center gap-3">
+            <Link href="/login" className="hidden sm:block px-4 py-2 text-sm text-zinc-600 hover:text-black font-medium transition-colors">Login</Link>
+            <Link href="/login" className="group px-5 py-2.5 text-sm bg-black text-white font-medium rounded-full hover:bg-zinc-800 transition-all flex items-center gap-2">
               Get Started
+              <span className="w-5 h-5 rounded-full bg-cyan-400 flex items-center justify-center">
+                <ArrowRight className="w-3 h-3 text-black" />
+              </span>
             </Link>
           </div>
         </div>
       </nav>
 
-      {/* Hero Section */}
-      <section className="relative pt-32 pb-24 px-6 overflow-hidden">
-        {/* Advanced background */}
-        <div className="absolute inset-0 pointer-events-none">
-          <div className="absolute top-20 left-1/2 -translate-x-1/2 w-[1000px] h-[600px] bg-gradient-to-b from-violet-600/20 via-purple-600/10 to-transparent rounded-full blur-[100px]" />
-          <div className="absolute top-40 left-1/4 w-[400px] h-[400px] bg-fuchsia-600/10 rounded-full blur-[80px]" />
-          <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHZpZXdCb3g9IjAgMCA2MCA2MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZyBmaWxsPSJub25lIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiPjxnIGZpbGw9IiNmZmZmZmYiIGZpbGwtb3BhY2l0eT0iMC4wMiI+PHBhdGggZD0iTTM2IDM0di00aC0ydjRoLTR2Mmg0djRoMnYtNGg0di0yaC00em0wLTMwVjBoLTJ2NGgtNHYyaDR2NGgyVjZoNFY0aC00ek02IDM0di00SDR2NEgwdjJoNHY0aDJ2LTRoNHYtMkg2ek02IDRWMEI0djRIMHYyaDR2NGgyVjZoNFY0SDZ6Ii8+PC9nPjwvZz48L3N2Zz4=')] opacity-40" />
-        </div>
+      {/* Hero Section - White */}
+      <section className="relative min-h-[90vh] flex items-center pt-16 bg-white">
+        <div className="max-w-7xl mx-auto px-6 py-12 grid lg:grid-cols-2 gap-12 items-center">
+          <div>
+            <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold leading-[1.1] tracking-tight mb-6">
+              The intelligent<br />
+              knowledge layer<br />
+              <span className="text-zinc-400">for modern teams</span>
+            </h1>
 
-        <div className="relative max-w-6xl mx-auto">
-          {/* Enterprise badge */}
-          <div className="flex justify-center mb-8">
-            <div className="inline-flex items-center gap-3 px-4 py-2 bg-zinc-900/80 border border-zinc-800 rounded-full">
-              <div className="flex items-center gap-1.5">
-                <Shield className="w-4 h-4 text-emerald-400" />
-                <span className="text-xs text-emerald-400 font-medium">SOC 2 Compliant</span>
-              </div>
-              <div className="w-px h-4 bg-zinc-700" />
-              <div className="flex items-center gap-1.5">
-                <Lock className="w-4 h-4 text-violet-400" />
-                <span className="text-xs text-violet-400 font-medium">End-to-End Encrypted</span>
-              </div>
-              <div className="w-px h-4 bg-zinc-700" />
-              <div className="flex items-center gap-1.5">
-                <Award className="w-4 h-4 text-amber-400" />
-                <span className="text-xs text-amber-400 font-medium">G2 Leader 2024</span>
-              </div>
+            <p className="text-lg text-zinc-500 leading-relaxed mb-8 max-w-md">
+              Context-aware document intelligence with production-grade RAG infrastructure. Deploy enterprise AI that actually understands your data.
+            </p>
+
+            <div className="flex flex-wrap items-center gap-4 mb-8">
+              <Link href="/login" className="group inline-flex items-center gap-3 px-6 py-3 bg-black text-white font-medium rounded-full hover:bg-zinc-800 transition-all">
+                Start Free Trial
+                <span className="w-6 h-6 rounded-full bg-cyan-400 flex items-center justify-center group-hover:scale-110 transition-transform">
+                  <ArrowRight className="w-3.5 h-3.5 text-black" />
+                </span>
+              </Link>
+              <a href="#platform" className="px-6 py-3 text-zinc-600 font-medium hover:text-black transition-colors flex items-center gap-2">
+                See how it works <ArrowUpRight className="w-4 h-4" />
+              </a>
+            </div>
+
+            <div className="flex flex-wrap items-center gap-4 text-sm text-zinc-400">
+              <span className="flex items-center gap-1.5"><Check className="w-4 h-4 text-cyan-500" />No credit card</span>
+              <span className="flex items-center gap-1.5"><Check className="w-4 h-4 text-cyan-500" />Free 14-day trial</span>
+              <span className="flex items-center gap-1.5"><Check className="w-4 h-4 text-cyan-500" />SOC 2 compliant</span>
             </div>
           </div>
 
-          {/* Headline */}
-          <h1 className="text-center text-5xl md:text-6xl lg:text-7xl font-bold leading-[1.1] tracking-tight mb-6">
-            <span className="text-zinc-300">Enterprise Knowledge</span>
-            <br />
-            <span className="bg-gradient-to-r from-violet-400 via-purple-400 to-fuchsia-400 bg-clip-text text-transparent">
-              Intelligence Platform
-            </span>
-          </h1>
+          {/* Right - 3D AI Brain Visual */}
+          <div className="relative flex items-center justify-center">
+            <div className="relative w-full max-w-lg aspect-square">
+              {/* 3D AI Brain Neural Network SVG */}
+              <svg viewBox="0 0 400 400" className="relative w-full h-full">
+                <defs>
+                  <linearGradient id="nodeGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                    <stop offset="0%" stopColor="#06b6d4" />
+                    <stop offset="100%" stopColor="#0e7490" />
+                  </linearGradient>
+                </defs>
 
-          {/* Subheadline */}
-          <p className="text-center text-lg md:text-xl text-zinc-500 max-w-3xl mx-auto mb-10 leading-relaxed">
-            Transform your organization&apos;s documents into an intelligent knowledge system.
-            <span className="text-zinc-400"> Advanced RAG architecture, multi-model AI, and enterprise-grade security.</span>
-          </p>
+                {/* Neural network connections */}
+                <g stroke="#06b6d4" strokeWidth="1.5" opacity="0.3">
+                  <line x1="200" y1="100" x2="120" y2="160" />
+                  <line x1="200" y1="100" x2="280" y2="160" />
+                  <line x1="120" y1="160" x2="80" y2="240" />
+                  <line x1="120" y1="160" x2="160" y2="240" />
+                  <line x1="280" y1="160" x2="240" y2="240" />
+                  <line x1="280" y1="160" x2="320" y2="240" />
+                  <line x1="80" y1="240" x2="120" y2="320" />
+                  <line x1="160" y1="240" x2="200" y2="320" />
+                  <line x1="240" y1="240" x2="200" y2="320" />
+                  <line x1="320" y1="240" x2="280" y2="320" />
+                </g>
 
-          {/* CTA */}
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-16">
-            <Link href="/login" className="group relative px-8 py-4 bg-gradient-to-r from-violet-600 to-purple-600 text-white font-semibold rounded-xl transition-all shadow-2xl shadow-violet-600/25 hover:shadow-violet-600/40 flex items-center gap-3">
-              <span>Start Free Trial</span>
-              <ArrowRight className="w-5 h-5 group-hover:translate-x-0.5 transition-transform" />
-              <div className="absolute inset-0 rounded-xl bg-gradient-to-r from-violet-600 to-purple-600 blur-xl opacity-50 group-hover:opacity-70 transition-opacity -z-10" />
-            </Link>
-            <button className="px-8 py-4 text-zinc-400 hover:text-white font-medium transition-colors flex items-center gap-2 group">
-              <Play className="w-5 h-5 group-hover:scale-110 transition-transform" />
-              Watch Demo
-            </button>
+                {/* Neural nodes */}
+                <circle cx="200" cy="100" r="14" fill="url(#nodeGrad)" />
+                <circle cx="120" cy="160" r="10" fill="#0891b2" />
+                <circle cx="280" cy="160" r="10" fill="#0891b2" />
+                <circle cx="80" cy="240" r="8" fill="#06b6d4" opacity="0.7" />
+                <circle cx="160" cy="240" r="8" fill="#06b6d4" opacity="0.7" />
+                <circle cx="240" cy="240" r="8" fill="#06b6d4" opacity="0.7" />
+                <circle cx="320" cy="240" r="8" fill="#06b6d4" opacity="0.7" />
+                <circle cx="120" cy="320" r="6" fill="#22d3ee" />
+                <circle cx="200" cy="320" r="12" fill="url(#nodeGrad)" />
+                <circle cx="280" cy="320" r="6" fill="#22d3ee" />
+
+                {/* Center brain icon */}
+                <circle cx="200" cy="200" r="45" fill="white" stroke="#06b6d4" strokeWidth="2" />
+                <g transform="translate(175, 175)">
+                  <path d="M25 10 C15 10 10 18 10 25 C10 32 15 38 20 40 L20 42 L30 42 L30 40 C35 38 40 32 40 25 C40 18 35 10 25 10 Z" fill="none" stroke="#0891b2" strokeWidth="2" />
+                  <circle cx="18" cy="22" r="3" fill="#06b6d4" />
+                  <circle cx="32" cy="22" r="3" fill="#06b6d4" />
+                  <circle cx="25" cy="30" r="3" fill="#0891b2" />
+                </g>
+              </svg>
+            </div>
           </div>
+        </div>
+      </section>
 
-          {/* Stats */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-8 max-w-4xl mx-auto mb-16">
-            {[
-              { value: '500+', label: 'Enterprise clients' },
-              { value: '10M+', label: 'Documents processed' },
-              { value: '99.99%', label: 'Uptime SLA' },
-              { value: '<2s', label: 'Avg response time' },
-            ].map((stat, i) => (
-              <div key={i} className="text-center">
-                <div className="text-3xl md:text-4xl font-bold text-white mb-1">{stat.value}</div>
-                <div className="text-sm text-zinc-500">{stat.label}</div>
-              </div>
+      {/* Trusted By */}
+      <section className="py-12 px-6 border-y border-zinc-100">
+        <div className="max-w-7xl mx-auto">
+          <div className="flex flex-wrap items-center justify-center gap-x-16 gap-y-6">
+            {['TechCorp', 'LegalFirm', 'HealthPlus', 'FinanceHQ', 'EduTech'].map((name) => (
+              <div key={name} className="text-zinc-300 font-semibold text-lg hover:text-zinc-500 transition-colors cursor-pointer">{name}</div>
             ))}
           </div>
+        </div>
+      </section>
 
-          {/* Logos */}
-          <div className="text-center">
-            <p className="text-xs text-zinc-600 uppercase tracking-wider mb-6">Trusted by leading organizations</p>
-            <div className="flex flex-wrap items-center justify-center gap-12 opacity-40">
-              {['Fortune 500', 'TechCorp', 'GlobalBank', 'HealthCare+', 'LegalFirm', 'ConsultCo'].map((name) => (
-                <div key={name} className="text-zinc-500 font-semibold text-lg">{name}</div>
+      {/* Business Results - Dark section */}
+      <section className="min-h-[80vh] py-40 px-6 bg-black text-white flex items-center">
+        <div className="max-w-7xl mx-auto w-full">
+          <div className="grid lg:grid-cols-2 gap-20 items-start">
+            {/* Left - Sticky Title */}
+            <div className="lg:sticky lg:top-32 lg:self-start">
+              <FadeIn>
+                <p className="text-cyan-400 text-sm font-medium uppercase tracking-wider mb-4">Why Teams Choose Us</p>
+                <h2 className="text-4xl lg:text-5xl font-bold leading-tight mb-6">
+                  Built for speed,<br />accuracy, and scale
+                </h2>
+                <p className="text-white/60 text-lg max-w-md">
+                  Join thousands of teams who have transformed their document workflows with our AI-powered platform.
+                </p>
+              </FadeIn>
+            </div>
+
+            {/* Right - Stats */}
+            <div className="grid grid-cols-2 gap-6">
+              {[
+                { stat: '85%', label: 'Faster research' },
+                { stat: '10x', label: 'Productivity boost' },
+                { stat: '99.2%', label: 'Accuracy rate' },
+                { stat: '50+', label: 'File formats' },
+              ].map((item, i) => (
+                <FadeIn key={i} delay={i * 100}>
+                  <div className="p-6 rounded-2xl bg-white/5 border border-white/10 hover:bg-white/10 hover:border-cyan-500/30 transition-all cursor-default">
+                    <div className="text-4xl lg:text-5xl font-bold mb-2 text-white">{item.stat}</div>
+                    <p className="text-white/50">{item.label}</p>
+                  </div>
+                </FadeIn>
               ))}
             </div>
           </div>
         </div>
       </section>
 
-      {/* How It Works */}
-      <section className="py-24 px-6 border-t border-zinc-900">
-        <div className="max-w-6xl mx-auto">
-          <div className="text-center mb-16">
-            <div className="inline-flex items-center gap-2 px-3 py-1 bg-violet-500/10 border border-violet-500/20 rounded-full text-xs text-violet-400 font-medium mb-4">
-              <Workflow className="w-3 h-3" />
-              HOW IT WORKS
+      {/* Core Capabilities - White */}
+      <section id="use-cases" className="py-32 px-6 bg-white relative">
+        <div className="max-w-7xl mx-auto">
+          <div className="grid lg:grid-cols-[1fr_1.5fr] gap-16 items-start">
+            {/* Left - Sticky */}
+            <div className="lg:sticky lg:top-32 lg:self-start">
+              <FadeIn>
+                <p className="text-cyan-600 text-sm font-medium uppercase tracking-wider mb-4">Core Capabilities</p>
+                <h2 className="text-4xl lg:text-5xl font-bold leading-tight tracking-tight mb-6">
+                  Everything you need to unlock your data
+                </h2>
+                <p className="text-zinc-500 text-lg mb-8">
+                  From document upload to AI-powered insights — all in one platform.
+                </p>
+                <Link href="/login" className="inline-flex items-center gap-2 text-cyan-600 font-medium hover:text-cyan-700 transition-colors">
+                  Explore all features <ArrowRight className="w-4 h-4" />
+                </Link>
+              </FadeIn>
             </div>
-            <h2 className="text-4xl md:text-5xl font-bold mb-4 tracking-tight">From Documents to Answers in Minutes</h2>
-            <p className="text-zinc-500 text-lg max-w-2xl mx-auto">Our intelligent pipeline transforms your unstructured data into actionable knowledge</p>
-          </div>
 
-          <div className="grid md:grid-cols-4 gap-6">
-            {[
-              { step: '01', icon: FileText, title: 'Upload Documents', desc: 'Drag & drop PDFs, Word, Excel, PowerPoint, Markdown, or connect to cloud storage' },
-              { step: '02', icon: Cpu, title: 'AI Processing', desc: 'Advanced chunking, embedding generation, and semantic indexing in our vector database' },
-              { step: '03', icon: Search, title: 'Ask Questions', desc: 'Natural language queries with contextual understanding and query expansion' },
-              { step: '04', icon: Target, title: 'Get Answers', desc: 'Accurate responses with source citations, confidence scores, and follow-up suggestions' },
-            ].map((item, i) => (
-              <div key={i} className="relative group">
-                {i < 3 && (
-                  <div className="hidden md:block absolute top-12 left-full w-full h-px bg-gradient-to-r from-violet-500/50 to-transparent -translate-x-4" />
-                )}
-                <div className="p-6 bg-zinc-900/50 border border-zinc-800 rounded-2xl hover:border-violet-500/30 transition-all h-full">
-                  <div className="text-xs text-violet-400 font-mono mb-4">{item.step}</div>
-                  <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-violet-500/20 to-purple-500/20 border border-violet-500/20 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
-                    <item.icon className="w-6 h-6 text-violet-400" />
+            {/* Right - Features grid */}
+            <div className="grid sm:grid-cols-2 gap-6">
+              {[
+                { icon: Upload, title: 'Multi-Format Upload', desc: 'PDF, Word, Excel, PowerPoint, images, and 50+ more formats supported.' },
+                { icon: MessageSquare, title: 'Natural Language Chat', desc: 'Ask questions like you would ask a colleague. Context-aware responses.' },
+                { icon: BookOpen, title: 'Cited Answers', desc: 'Every response includes source citations for verification.' },
+                { icon: Database, title: 'Knowledge Collections', desc: 'Organize documents into team or project-specific collections.' },
+                { icon: Calendar, title: 'Calendar Integration', desc: 'Connect Google Calendar and Outlook for scheduling queries.' },
+                { icon: Languages, title: '50+ Languages', desc: 'Ask and receive answers in any language you prefer.' },
+                { icon: Mic, title: 'Voice Queries', desc: 'Speak your questions naturally with voice input support.' },
+                { icon: History, title: 'Query History', desc: 'Access your complete conversation history anytime.' },
+              ].map((item, i) => (
+                <FadeIn key={i} delay={i * 60}>
+                  <div className="group p-6 rounded-2xl border border-zinc-200 hover:border-cyan-300 hover:shadow-lg transition-all bg-white">
+                    <div className="w-12 h-12 rounded-xl bg-zinc-100 flex items-center justify-center mb-5 group-hover:bg-cyan-50 transition-colors">
+                      <item.icon className="w-6 h-6 text-zinc-700 group-hover:text-cyan-600 transition-colors" />
+                    </div>
+                    <h3 className="text-lg font-semibold mb-2">{item.title}</h3>
+                    <p className="text-zinc-500 text-sm leading-relaxed">{item.desc}</p>
                   </div>
-                  <h3 className="text-lg font-semibold mb-2">{item.title}</h3>
-                  <p className="text-zinc-500 text-sm">{item.desc}</p>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Platform Architecture */}
-      <section id="platform" className="py-24 px-6 bg-gradient-to-b from-zinc-950 to-transparent">
-        <div className="max-w-6xl mx-auto">
-          <div className="text-center mb-16">
-            <div className="inline-flex items-center gap-2 px-3 py-1 bg-purple-500/10 border border-purple-500/20 rounded-full text-xs text-purple-400 font-medium mb-4">
-              <Cpu className="w-3 h-3" />
-              PLATFORM ARCHITECTURE
-            </div>
-            <h2 className="text-4xl md:text-5xl font-bold mb-4 tracking-tight">Built for Enterprise Scale</h2>
-            <p className="text-zinc-500 text-lg max-w-2xl mx-auto">State-of-the-art infrastructure designed to handle millions of documents and thousands of concurrent users</p>
-          </div>
-
-          <div className="grid lg:grid-cols-3 gap-6 mb-12">
-            {/* RAG Engine */}
-            <div className="group relative p-8 bg-gradient-to-b from-zinc-900/80 to-zinc-900/40 border border-zinc-800/50 rounded-2xl hover:border-violet-500/30 transition-all">
-              <div className="absolute inset-0 bg-gradient-to-b from-violet-600/5 to-transparent rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity" />
-              <div className="relative">
-                <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-violet-500/20 to-purple-500/20 border border-violet-500/20 flex items-center justify-center mb-6">
-                  <Layers className="w-7 h-7 text-violet-400" />
-                </div>
-                <h3 className="text-xl font-semibold mb-3">Advanced RAG Engine</h3>
-                <p className="text-zinc-500 text-sm leading-relaxed mb-6">
-                  Our proprietary Retrieval-Augmented Generation engine combines hybrid vector + keyword search with cross-encoder reranking for maximum accuracy.
-                </p>
-                <ul className="space-y-3">
-                  {['Semantic document chunking', 'Multi-modal embeddings (text, images, tables)', 'Contextual compression & expansion', 'Real-time query rewriting', 'Confidence scoring & ranking'].map((item, i) => (
-                    <li key={i} className="flex items-center gap-2 text-sm text-zinc-400">
-                      <Check className="w-4 h-4 text-violet-400 flex-shrink-0" />
-                      {item}
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            </div>
-
-            {/* Multi-Model AI */}
-            <div className="group relative p-8 bg-gradient-to-b from-zinc-900/80 to-zinc-900/40 border border-zinc-800/50 rounded-2xl hover:border-purple-500/30 transition-all">
-              <div className="absolute inset-0 bg-gradient-to-b from-purple-600/5 to-transparent rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity" />
-              <div className="relative">
-                <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-purple-500/20 to-fuchsia-500/20 border border-purple-500/20 flex items-center justify-center mb-6">
-                  <Brain className="w-7 h-7 text-purple-400" />
-                </div>
-                <h3 className="text-xl font-semibold mb-3">Multi-Model Intelligence</h3>
-                <p className="text-zinc-500 text-sm leading-relaxed mb-6">
-                  Access multiple LLM providers through a unified API. Intelligent routing automatically selects the optimal model for each query type.
-                </p>
-                <ul className="space-y-3">
-                  {['OpenAI GPT-4o & GPT-4 Turbo', 'Anthropic Claude 3.5 Sonnet', 'Google Gemini 2.0 Flash', 'Custom fine-tuned models', 'Automatic fallback & load balancing'].map((item, i) => (
-                    <li key={i} className="flex items-center gap-2 text-sm text-zinc-400">
-                      <Check className="w-4 h-4 text-purple-400 flex-shrink-0" />
-                      {item}
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            </div>
-
-            {/* Analytics */}
-            <div className="group relative p-8 bg-gradient-to-b from-zinc-900/80 to-zinc-900/40 border border-zinc-800/50 rounded-2xl hover:border-fuchsia-500/30 transition-all">
-              <div className="absolute inset-0 bg-gradient-to-b from-fuchsia-600/5 to-transparent rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity" />
-              <div className="relative">
-                <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-fuchsia-500/20 to-pink-500/20 border border-fuchsia-500/20 flex items-center justify-center mb-6">
-                  <BarChart3 className="w-7 h-7 text-fuchsia-400" />
-                </div>
-                <h3 className="text-xl font-semibold mb-3">Knowledge Analytics</h3>
-                <p className="text-zinc-500 text-sm leading-relaxed mb-6">
-                  Understand how knowledge flows through your organization. Identify gaps, optimize documentation, and measure the ROI of your knowledge base.
-                </p>
-                <ul className="space-y-3">
-                  {['Query analytics & usage heatmaps', 'Knowledge gap detection', 'Document health scoring', 'User adoption metrics', 'ROI & productivity tracking'].map((item, i) => (
-                    <li key={i} className="flex items-center gap-2 text-sm text-zinc-400">
-                      <Check className="w-4 h-4 text-fuchsia-400 flex-shrink-0" />
-                      {item}
-                    </li>
-                  ))}
-                </ul>
-              </div>
+                </FadeIn>
+              ))}
             </div>
           </div>
         </div>
       </section>
 
-      {/* Features Grid */}
-      <section id="features" className="py-24 px-6">
-        <div className="max-w-6xl mx-auto">
-          <div className="text-center mb-16">
-            <div className="inline-flex items-center gap-2 px-3 py-1 bg-blue-500/10 border border-blue-500/20 rounded-full text-xs text-blue-400 font-medium mb-4">
-              <Zap className="w-3 h-3" />
-              FEATURES
+      {/* Enterprise Platform - Dark section */}
+      <section id="platform" className="min-h-[90vh] py-40 px-6 bg-black text-white flex items-center">
+        <div className="max-w-7xl mx-auto w-full">
+          <div className="grid lg:grid-cols-2 gap-20 items-start">
+            {/* Left - Sticky title */}
+            <div className="lg:sticky lg:top-32 lg:self-start">
+              <FadeIn>
+                <p className="text-cyan-400 text-sm font-medium uppercase tracking-wider mb-4">Enterprise Platform</p>
+                <h2 className="text-4xl lg:text-5xl font-bold leading-tight mb-6">
+                  Built for admins who need control
+                </h2>
+                <p className="text-white/60 text-lg mb-8">
+                  Manage teams, control access, monitor usage, and ensure compliance — all from one powerful dashboard.
+                </p>
+                <Link href="/login" className="inline-flex items-center gap-2 text-cyan-400 font-medium hover:text-cyan-300 transition-colors">
+                  See admin features <ArrowRight className="w-4 h-4" />
+                </Link>
+              </FadeIn>
             </div>
-            <h2 className="text-4xl md:text-5xl font-bold mb-4 tracking-tight">Everything You Need</h2>
-            <p className="text-zinc-500 text-lg max-w-2xl mx-auto">Comprehensive features designed for enterprise knowledge management</p>
-          </div>
 
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {[
-              { icon: MessagesSquare, title: 'Natural Language Chat', desc: 'Conversational interface that understands context, follow-ups, and complex queries' },
-              { icon: FileSearch, title: 'Semantic Search', desc: 'Find information by meaning, not just keywords. Understands synonyms, concepts, and intent' },
-              { icon: FileText, title: '50+ File Formats', desc: 'PDF, Word, Excel, PowerPoint, Markdown, HTML, images, and more—all automatically parsed' },
-              { icon: Calendar, title: 'Calendar Integration', desc: 'Connect Google Calendar, Outlook. Ask about schedules, meetings, and availability' },
-              { icon: Users, title: 'Team Workspaces', desc: 'Organize knowledge by department, project, or team with granular access controls' },
-              { icon: TrendingUp, title: 'Usage Analytics', desc: 'Track queries, popular documents, knowledge gaps, and user adoption metrics' },
-              { icon: Clock, title: 'Version History', desc: 'Full audit trail of document changes, queries, and answers for compliance' },
-              { icon: Globe, title: 'Multi-Language', desc: 'Support for 50+ languages with automatic translation and cross-language search' },
-              { icon: Workflow, title: 'API & Webhooks', desc: 'RESTful API, webhooks, and SDKs for seamless integration with your tech stack' },
-            ].map((feature, i) => (
-              <div key={i} className="group p-6 bg-zinc-900/30 border border-zinc-800/50 rounded-2xl hover:border-zinc-700 hover:bg-zinc-900/50 transition-all">
-                <div className="w-12 h-12 rounded-xl bg-zinc-800/50 flex items-center justify-center mb-4 group-hover:bg-zinc-800 transition-colors">
-                  <feature.icon className="w-6 h-6 text-zinc-400 group-hover:text-violet-400 transition-colors" />
-                </div>
-                <h3 className="text-lg font-semibold mb-2">{feature.title}</h3>
-                <p className="text-zinc-500 text-sm leading-relaxed">{feature.desc}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Security & Compliance */}
-      <section id="security" className="py-24 px-6 bg-gradient-to-b from-zinc-950 to-transparent">
-        <div className="max-w-6xl mx-auto">
-          <div className="grid lg:grid-cols-2 gap-16 items-center">
-            <div>
-              <div className="inline-flex items-center gap-2 px-3 py-1 bg-emerald-500/10 border border-emerald-500/20 rounded-full text-xs text-emerald-400 font-medium mb-4">
-                <Shield className="w-3 h-3" />
-                ENTERPRISE SECURITY
-              </div>
-              <h2 className="text-4xl md:text-5xl font-bold mb-6 tracking-tight">
-                Security-First<br />
-                <span className="text-zinc-500">Architecture</span>
-              </h2>
-              <p className="text-zinc-500 text-lg mb-8 leading-relaxed">
-                Built to meet the strictest enterprise security and compliance requirements. Your data never leaves your control, and every access is logged and auditable.
-              </p>
-              <div className="grid grid-cols-2 gap-4 mb-8">
-                {[
-                  { icon: Lock, label: 'AES-256 Encryption' },
-                  { icon: Fingerprint, label: 'SSO & SAML 2.0' },
-                  { icon: Server, label: 'On-Premise Option' },
-                  { icon: Cloud, label: 'Private Cloud Deploy' },
-                  { icon: Shield, label: 'Role-Based Access' },
-                  { icon: FileSearch, label: 'Audit Logging' },
-                ].map((item, i) => (
-                  <div key={i} className="flex items-center gap-3 p-4 bg-zinc-900/50 border border-zinc-800/50 rounded-xl">
-                    <item.icon className="w-5 h-5 text-emerald-400" />
-                    <span className="text-sm text-zinc-300">{item.label}</span>
+            {/* Right - Admin features */}
+            <div className="space-y-5">
+              {[
+                { icon: Users, title: 'Team Management', desc: 'Invite members, assign roles, create departments. Control who can access what with granular permissions.' },
+                { icon: Database, title: 'Knowledge Base Organization', desc: 'Create multiple knowledge bases for different teams or projects. Set visibility and access rules per collection.' },
+                { icon: BarChart3, title: 'Usage Analytics', desc: 'Track queries, popular documents, and user activity. Measure ROI and identify knowledge gaps across your organization.' },
+                { icon: Shield, title: 'Compliance & Audit Logs', desc: 'Complete audit trail of all activities. Export logs for compliance. Meet regulatory requirements with confidence.' },
+                { icon: Workflow, title: 'Custom Workflows', desc: 'Set up approval workflows for sensitive queries. Route questions to subject matter experts automatically.' },
+                { icon: Share2, title: 'SSO & Directory Sync', desc: 'Connect with Okta, Azure AD, Google Workspace. Auto-provision users and sync groups from your identity provider.' },
+              ].map((item, i) => (
+                <FadeIn key={i} delay={i * 80}>
+                  <div className="flex gap-5 p-5 rounded-2xl bg-white/5 border border-white/10 hover:bg-white/10 hover:border-cyan-500/30 transition-all group cursor-default">
+                    <div className="w-12 h-12 rounded-xl bg-white/5 flex items-center justify-center flex-shrink-0 group-hover:bg-cyan-500/10 transition-colors">
+                      <item.icon className="w-6 h-6 text-white/60 group-hover:text-cyan-400 transition-colors" />
+                    </div>
+                    <div>
+                      <h3 className="font-semibold mb-1 group-hover:text-cyan-400 transition-colors">{item.title}</h3>
+                      <p className="text-white/50 text-sm leading-relaxed">{item.desc}</p>
+                    </div>
                   </div>
-                ))}
-              </div>
+                </FadeIn>
+              ))}
             </div>
-            <div className="relative">
-              <div className="absolute inset-0 bg-gradient-to-r from-emerald-500/10 to-violet-500/10 rounded-3xl blur-3xl" />
-              <div className="relative p-8 bg-zinc-900/50 border border-zinc-800 rounded-3xl">
-                <h4 className="text-lg font-semibold mb-6 text-center">Compliance Certifications</h4>
-                <div className="grid grid-cols-2 gap-4">
-                  {[
-                    { title: 'SOC 2 Type II', desc: 'Certified', color: 'emerald' },
-                    { title: 'GDPR', desc: 'Compliant', color: 'blue' },
-                    { title: 'HIPAA', desc: 'Ready', color: 'purple' },
-                    { title: 'ISO 27001', desc: 'Certified', color: 'amber' },
-                  ].map((cert, i) => (
-                    <div key={i} className="p-4 bg-zinc-950/50 border border-zinc-800 rounded-xl text-center">
-                      <div className="text-lg font-semibold text-white">{cert.title}</div>
-                      <div className={`text-sm text-${cert.color}-400`}>{cert.desc}</div>
+          </div>
+        </div>
+      </section>
+
+      {/* AI Models - White */}
+      <section id="features" className="py-32 px-6 bg-white">
+        <div className="max-w-7xl mx-auto">
+          <div className="grid lg:grid-cols-2 gap-16 items-start">
+            {/* Left - Sticky */}
+            <div className="lg:sticky lg:top-32 lg:self-start">
+              <FadeIn>
+                <p className="text-cyan-600 text-sm font-medium uppercase tracking-wider mb-4">AI Models</p>
+                <h2 className="text-4xl lg:text-5xl font-bold leading-tight tracking-tight mb-6">
+                  Powered by the best AI models
+                </h2>
+                <p className="text-zinc-500 text-lg mb-8">
+                  Access multiple AI providers through one unified interface. Switch models based on your needs.
+                </p>
+              </FadeIn>
+            </div>
+
+            {/* Right - Model cards */}
+            <div className="space-y-4">
+              {[
+                { name: 'GPT-4o', provider: 'OpenAI', desc: 'Most capable model for complex reasoning and analysis.', tag: 'Recommended' },
+                { name: 'Claude 3.5 Sonnet', provider: 'Anthropic', desc: 'Excellent for long-form content and nuanced understanding.' },
+                { name: 'Gemini 2.0 Flash', provider: 'Google', desc: 'Fast responses with strong multilingual capabilities.' },
+                { name: 'GPT-4o Mini', provider: 'OpenAI', desc: 'Cost-effective for everyday queries and quick tasks.' },
+              ].map((model, i) => (
+                <FadeIn key={i} delay={i * 100}>
+                  <div className="p-6 bg-white rounded-2xl border border-zinc-200 hover:border-cyan-300 hover:shadow-lg transition-all flex items-start justify-between group cursor-default">
+                    <div>
+                      <div className="flex items-center gap-3 mb-2">
+                        <h3 className="font-semibold text-lg">{model.name}</h3>
+                        {model.tag && <span className="px-2 py-0.5 bg-cyan-100 text-cyan-700 text-xs font-medium rounded">{model.tag}</span>}
+                      </div>
+                      <p className="text-sm text-zinc-400 mb-1">{model.provider}</p>
+                      <p className="text-zinc-500">{model.desc}</p>
+                    </div>
+                    <ArrowUpRight className="w-5 h-5 text-zinc-300 group-hover:text-cyan-500 transition-colors" />
+                  </div>
+                </FadeIn>
+              ))}
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Security - Dark section */}
+      <section id="security" className="min-h-[90vh] py-40 px-6 bg-black text-white flex items-center">
+        <div className="max-w-7xl mx-auto w-full">
+          <div className="grid lg:grid-cols-2 gap-20 items-start">
+            {/* Left - Sticky title */}
+            <div className="lg:sticky lg:top-32 lg:self-start">
+              <FadeIn>
+                <p className="text-cyan-400 text-sm font-medium uppercase tracking-wider mb-4">Security & Privacy</p>
+                <h2 className="text-4xl lg:text-5xl font-bold leading-tight mb-6">
+                  Enterprise-grade protection for your data
+                </h2>
+                <p className="text-white/60 text-lg mb-8">
+                  Your documents and conversations are protected with industry-leading security. We never train on your data.
+                </p>
+
+                {/* Compliance badges */}
+                <div className="flex flex-wrap gap-3 mb-8">
+                  {['SOC 2 Type II', 'GDPR Compliant', 'HIPAA Ready'].map((cert, i) => (
+                    <div key={i} className="px-4 py-2 bg-white/5 border border-white/10 rounded-full text-sm font-medium flex items-center gap-2">
+                      <Check className="w-4 h-4 text-cyan-400" />
+                      {cert}
                     </div>
                   ))}
                 </div>
-                <div className="mt-6 p-4 bg-emerald-500/5 border border-emerald-500/20 rounded-xl">
-                  <p className="text-sm text-emerald-400 text-center">
-                    Annual penetration testing by third-party security firms
-                  </p>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
 
-      {/* Use Cases */}
-      <section id="use-cases" className="py-24 px-6">
-        <div className="max-w-6xl mx-auto">
-          <div className="text-center mb-16">
-            <div className="inline-flex items-center gap-2 px-3 py-1 bg-amber-500/10 border border-amber-500/20 rounded-full text-xs text-amber-400 font-medium mb-4">
-              <Building2 className="w-3 h-3" />
-              USE CASES
-            </div>
-            <h2 className="text-4xl md:text-5xl font-bold mb-4 tracking-tight">Built for Every Industry</h2>
-            <p className="text-zinc-500 text-lg max-w-2xl mx-auto">From legal to healthcare, InsightAI adapts to your industry&apos;s unique knowledge management needs</p>
-          </div>
-
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {[
-              { icon: Scale, title: 'Legal', desc: 'Case law research, contract analysis, regulatory compliance, and precedent discovery', example: '"What precedents exist for intellectual property disputes in our jurisdiction?"' },
-              { icon: Stethoscope, title: 'Healthcare', desc: 'Clinical guidelines, drug interactions, medical literature, and patient care protocols', example: '"What are the latest treatment guidelines for Type 2 Diabetes management?"' },
-              { icon: Landmark, title: 'Finance', desc: 'Regulatory filings, market research, risk assessments, and compliance documentation', example: '"Summarize the key changes in the latest SEC reporting requirements."' },
-              { icon: Building, title: 'Enterprise', desc: 'Internal policies, HR documentation, training materials, and company knowledge', example: '"What is our vacation policy for employees in the APAC region?"' },
-              { icon: GraduationCap, title: 'Education', desc: 'Research papers, curriculum materials, academic resources, and institutional knowledge', example: '"Find research papers on machine learning in educational assessment."' },
-              { icon: Briefcase, title: 'Consulting', desc: 'Project documentation, industry reports, methodologies, and client knowledge bases', example: '"What frameworks have we used for digital transformation projects?"' },
-            ].map((useCase, i) => (
-              <div key={i} className="group p-6 bg-zinc-900/30 border border-zinc-800/50 rounded-2xl hover:border-amber-500/30 transition-all">
-                <div className="w-12 h-12 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center mb-4">
-                  <useCase.icon className="w-6 h-6 text-amber-400" />
-                </div>
-                <h3 className="text-lg font-semibold mb-2">{useCase.title}</h3>
-                <p className="text-zinc-500 text-sm mb-4">{useCase.desc}</p>
-                <div className="p-3 bg-zinc-950/50 border border-zinc-800 rounded-lg">
-                  <p className="text-xs text-zinc-400 italic">{useCase.example}</p>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Testimonials */}
-      <section className="py-24 px-6 bg-gradient-to-b from-zinc-950 to-transparent">
-        <div className="max-w-6xl mx-auto">
-          <div className="text-center mb-16">
-            <div className="inline-flex items-center gap-2 px-3 py-1 bg-pink-500/10 border border-pink-500/20 rounded-full text-xs text-pink-400 font-medium mb-4">
-              <Star className="w-3 h-3" />
-              TESTIMONIALS
-            </div>
-            <h2 className="text-4xl md:text-5xl font-bold mb-4 tracking-tight">Loved by Teams Worldwide</h2>
-          </div>
-
-          <div className="grid md:grid-cols-3 gap-6">
-            {[
-              { quote: "InsightAI reduced our document search time by 80%. What used to take hours now takes seconds.", author: "Sarah Chen", role: "VP of Operations", company: "TechCorp" },
-              { quote: "The accuracy of answers with source citations has transformed how our legal team does research.", author: "Michael Roberts", role: "General Counsel", company: "GlobalBank" },
-              { quote: "Finally, a knowledge platform that actually understands context. Our support team loves it.", author: "Emily Watson", role: "Head of Support", company: "SaaS Co" },
-            ].map((testimonial, i) => (
-              <div key={i} className="p-6 bg-zinc-900/30 border border-zinc-800/50 rounded-2xl">
-                <Quote className="w-8 h-8 text-violet-400/30 mb-4" />
-                <p className="text-zinc-300 mb-6 leading-relaxed">&ldquo;{testimonial.quote}&rdquo;</p>
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-full bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center text-sm font-semibold">
-                    {testimonial.author.split(' ').map(n => n[0]).join('')}
-                  </div>
-                  <div>
-                    <div className="font-medium text-sm">{testimonial.author}</div>
-                    <div className="text-xs text-zinc-500">{testimonial.role}, {testimonial.company}</div>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Integrations */}
-      <section className="py-24 px-6">
-        <div className="max-w-6xl mx-auto text-center">
-          <div className="inline-flex items-center gap-2 px-3 py-1 bg-blue-500/10 border border-blue-500/20 rounded-full text-xs text-blue-400 font-medium mb-4">
-            <Workflow className="w-3 h-3" />
-            INTEGRATIONS
-          </div>
-          <h2 className="text-4xl md:text-5xl font-bold mb-4 tracking-tight">Connects to Your Stack</h2>
-          <p className="text-zinc-500 text-lg max-w-2xl mx-auto mb-12">
-            Seamlessly integrate with your existing tools. Productivity, communication, and storage—all connected.
-          </p>
-          <div className="flex flex-wrap justify-center gap-4">
-            {[
-              { name: 'Google Calendar' },
-              { name: 'Slack' },
-              { name: 'Microsoft Teams' },
-              { name: 'Notion' },
-              { name: 'Google Drive' },
-              { name: 'SharePoint' },
-              { name: 'Confluence' },
-              { name: 'Dropbox' },
-              { name: 'OneDrive' },
-              { name: 'Jira' },
-            ].map((integration, i) => (
-              <div key={i} className="flex items-center gap-3 px-5 py-3 bg-zinc-900/50 border border-zinc-800 rounded-xl hover:border-zinc-700 transition-colors">
-                <span className="text-sm text-zinc-300">{integration.name}</span>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Pricing */}
-      <section id="pricing" className="py-24 px-6 bg-gradient-to-b from-transparent to-zinc-950">
-        <div className="max-w-6xl mx-auto">
-          <div className="text-center mb-16">
-            <div className="inline-flex items-center gap-2 px-3 py-1 bg-violet-500/10 border border-violet-500/20 rounded-full text-xs text-violet-400 font-medium mb-4">
-              <Sparkles className="w-3 h-3" />
-              PRICING
-            </div>
-            <h2 className="text-4xl md:text-5xl font-bold mb-4 tracking-tight">Simple, Transparent Pricing</h2>
-            <p className="text-zinc-500 text-lg">Start free, scale as you grow. No hidden fees.</p>
-          </div>
-
-          <div className="grid lg:grid-cols-3 gap-6 max-w-5xl mx-auto">
-            {/* Team */}
-            <div className="relative p-8 bg-zinc-900/50 border border-zinc-800 rounded-2xl">
-              <h3 className="text-xl font-semibold mb-1">Team</h3>
-              <p className="text-zinc-500 text-sm mb-6">For growing teams</p>
-              <div className="flex items-baseline gap-1 mb-6">
-                <span className="text-4xl font-bold">$49</span>
-                <span className="text-zinc-500">/user/mo</span>
-              </div>
-              <ul className="space-y-3 mb-8">
-                {['Up to 20 users', '10,000 documents', '50,000 queries/mo', 'Standard AI models', 'Email support', '5 integrations'].map((f, i) => (
-                  <li key={i} className="flex items-center gap-3 text-sm text-zinc-400">
-                    <Check className="w-4 h-4 text-violet-400 flex-shrink-0" />
-                    {f}
-                  </li>
-                ))}
-              </ul>
-              <Link href="/login" className="block w-full py-3 text-center font-medium bg-zinc-800 hover:bg-zinc-700 rounded-xl transition-colors">
-                Start Free Trial
-              </Link>
-            </div>
-
-            {/* Business */}
-            <div className="relative p-8 bg-gradient-to-b from-violet-950/50 to-purple-950/30 border border-violet-500/30 rounded-2xl">
-              <div className="absolute -top-3 left-1/2 -translate-x-1/2 px-4 py-1 bg-gradient-to-r from-violet-500 to-purple-500 text-white text-xs font-semibold rounded-full">
-                Most Popular
-              </div>
-              <h3 className="text-xl font-semibold mb-1">Business</h3>
-              <p className="text-zinc-500 text-sm mb-6">For scaling organizations</p>
-              <div className="flex items-baseline gap-1 mb-6">
-                <span className="text-4xl font-bold">$99</span>
-                <span className="text-zinc-500">/user/mo</span>
-              </div>
-              <ul className="space-y-3 mb-8">
-                {['Unlimited users', 'Unlimited documents', 'Unlimited queries', 'All AI models', 'All integrations', 'Analytics dashboard', 'Priority support', 'Custom branding'].map((f, i) => (
-                  <li key={i} className="flex items-center gap-3 text-sm text-zinc-300">
-                    <Check className="w-4 h-4 text-violet-400 flex-shrink-0" />
-                    {f}
-                  </li>
-                ))}
-              </ul>
-              <Link href="/login" className="block w-full py-3 text-center font-medium bg-gradient-to-r from-violet-600 to-purple-600 hover:from-violet-500 hover:to-purple-500 rounded-xl transition-all shadow-lg shadow-violet-600/20">
-                Start Free Trial
-              </Link>
-            </div>
-
-            {/* Enterprise */}
-            <div className="relative p-8 bg-zinc-900/50 border border-zinc-800 rounded-2xl">
-              <h3 className="text-xl font-semibold mb-1">Enterprise</h3>
-              <p className="text-zinc-500 text-sm mb-6">For large organizations</p>
-              <div className="flex items-baseline gap-1 mb-6">
-                <span className="text-4xl font-bold">Custom</span>
-              </div>
-              <ul className="space-y-3 mb-8">
-                {['Everything in Business', 'SSO & SAML', 'Custom AI models', 'On-premise deployment', 'Dedicated success manager', '99.99% SLA guarantee', 'Custom integrations', 'Security review'].map((f, i) => (
-                  <li key={i} className="flex items-center gap-3 text-sm text-zinc-400">
-                    <Check className="w-4 h-4 text-violet-400 flex-shrink-0" />
-                    {f}
-                  </li>
-                ))}
-              </ul>
-              <Link href="/login" className="block w-full py-3 text-center font-medium bg-zinc-800 hover:bg-zinc-700 rounded-xl transition-colors">
-                Contact Sales
-              </Link>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* FAQ */}
-      <section className="py-24 px-6">
-        <div className="max-w-3xl mx-auto">
-          <div className="text-center mb-16">
-            <div className="inline-flex items-center gap-2 px-3 py-1 bg-cyan-500/10 border border-cyan-500/20 rounded-full text-xs text-cyan-400 font-medium mb-4">
-              <HelpCircle className="w-3 h-3" />
-              FAQ
-            </div>
-            <h2 className="text-4xl md:text-5xl font-bold mb-4 tracking-tight">Frequently Asked Questions</h2>
-          </div>
-
-          <div className="space-y-4">
-            {[
-              { q: 'How does InsightAI ensure data security?', a: 'All data is encrypted at rest (AES-256) and in transit (TLS 1.3). We offer on-premise deployment, private cloud options, and are SOC 2 Type II certified. Your data is never used to train models.' },
-              { q: 'What file formats are supported?', a: 'We support 50+ formats including PDF, Word (.docx), Excel (.xlsx), PowerPoint (.pptx), Markdown, HTML, plain text, images with OCR, and more. Custom format parsers available for Enterprise.' },
-              { q: 'Can I use my own AI models?', a: 'Yes! Enterprise customers can deploy custom fine-tuned models, private LLMs, or on-premise models. We also support Azure OpenAI and AWS Bedrock.' },
-              { q: 'How accurate are the answers?', a: 'Our advanced RAG architecture achieves 95%+ accuracy on benchmark tests. Every answer includes source citations so you can verify. Confidence scores help you assess reliability.' },
-              { q: 'What integrations are available?', a: 'We integrate with Google Workspace, Microsoft 365, Slack, Notion, Confluence, SharePoint, Dropbox, and more. Custom integrations available via our API.' },
-            ].map((faq, i) => (
-              <details key={i} className="group p-6 bg-zinc-900/30 border border-zinc-800/50 rounded-2xl">
-                <summary className="flex items-center justify-between cursor-pointer list-none">
-                  <span className="font-medium pr-6">{faq.q}</span>
-                  <ChevronDown className="w-5 h-5 text-zinc-500 group-open:rotate-180 transition-transform" />
-                </summary>
-                <p className="mt-4 text-zinc-400 text-sm leading-relaxed">{faq.a}</p>
-              </details>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Final CTA */}
-      <section className="py-24 px-6">
-        <div className="max-w-4xl mx-auto">
-          <div className="relative p-12 md:p-16 text-center rounded-3xl overflow-hidden">
-            <div className="absolute inset-0 bg-gradient-to-br from-violet-950 via-purple-950 to-fuchsia-950" />
-            <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHZpZXdCb3g9IjAgMCA2MCA2MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZyBmaWxsPSJub25lIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiPjxnIGZpbGw9IiNmZmZmZmYiIGZpbGwtb3BhY2l0eT0iMC4wMyI+PHBhdGggZD0iTTM2IDM0di00aC0ydjRoLTR2Mmg0djRoMnYtNGg0di0yaC00em0wLTMwVjBoLTJ2NGgtNHYyaDR2NGgyVjZoNFY0aC00ek02IDM0di00SDR2NEgwdjJoNHY0aDJ2LTRoNHYtMkg2ek02IDRWMEI0djRIMHYyaDR2NGgyVjZoNFY0SDZ6Ii8+PC9nPjwvZz48L3N2Zz4=')] opacity-50" />
-            <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[500px] h-[300px] bg-violet-500/20 rounded-full blur-[100px]" />
-            <div className="relative">
-              <h2 className="text-3xl md:text-5xl font-bold mb-4">Ready to Transform Your Knowledge Management?</h2>
-              <p className="text-zinc-400 mb-8 max-w-xl mx-auto text-lg">
-                Join 500+ enterprise teams using InsightAI to unlock organizational intelligence and make faster, better decisions.
-              </p>
-              <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-                <Link href="/login" className="px-8 py-4 bg-white text-black font-semibold rounded-xl hover:bg-zinc-200 transition-all flex items-center gap-2 shadow-2xl">
-                  Start Free Trial
-                  <ArrowRight className="w-5 h-5" />
+                <Link href="/login" className="inline-flex items-center gap-2 text-cyan-400 font-medium hover:text-cyan-300 transition-colors">
+                  Read our security whitepaper <ArrowRight className="w-4 h-4" />
                 </Link>
-                <a href="#" className="px-8 py-4 text-zinc-300 hover:text-white font-medium transition-colors flex items-center gap-2">
-                  <Calendar className="w-5 h-5" />
-                  Schedule Demo
-                </a>
-              </div>
-              <p className="text-sm text-zinc-500 mt-6">14-day free trial • No credit card required • Cancel anytime</p>
+              </FadeIn>
+            </div>
+
+            {/* Right - Security features */}
+            <div className="space-y-5">
+              {[
+                { icon: Lock, title: 'AES-256 Encryption', desc: 'All API keys and sensitive data are encrypted using AES-256 with unique initialization vectors. Data encrypted at rest and in transit via TLS 1.3.' },
+                { icon: Fingerprint, title: 'OAuth2 Authentication', desc: 'Secure authentication via Google OAuth2, session-based access control, and JWT tokens. Support for enterprise SSO with SAML 2.0.' },
+                { icon: Shield, title: 'Role-Based Access Control', desc: 'Granular permissions system with Admin and User roles. Department and team-level access controls for document collections.' },
+                { icon: History, title: 'Complete Audit Logging', desc: 'Every action is logged with user ID, timestamp, and IP address. Export audit trails for compliance audits and security reviews.' },
+                { icon: Server, title: 'Secure Session Management', desc: 'HTTP-only cookies, secure session tokens, and automatic session expiration. Protection against XSS and CSRF attacks.' },
+                { icon: Globe, title: 'Data Residency Options', desc: 'Choose your data storage region. On-premise deployment available for organizations requiring full data sovereignty.' },
+              ].map((item, i) => (
+                <FadeIn key={i} delay={i * 80}>
+                  <div className="flex gap-5 p-5 rounded-2xl bg-white/5 border border-white/10 hover:bg-white/10 hover:border-cyan-500/30 transition-all group cursor-default">
+                    <div className="w-12 h-12 rounded-xl bg-white/5 flex items-center justify-center flex-shrink-0 group-hover:bg-cyan-500/10 transition-colors">
+                      <item.icon className="w-6 h-6 text-white/60 group-hover:text-cyan-400 transition-colors" />
+                    </div>
+                    <div>
+                      <h3 className="font-semibold mb-1 group-hover:text-cyan-400 transition-colors">{item.title}</h3>
+                      <p className="text-white/50 text-sm leading-relaxed">{item.desc}</p>
+                    </div>
+                  </div>
+                </FadeIn>
+              ))}
             </div>
           </div>
+        </div>
+      </section>
+
+      {/* Testimonials - White section */}
+      <section className="py-32 px-6 bg-white overflow-hidden">
+        <div className="max-w-7xl mx-auto">
+          <div className="grid lg:grid-cols-2 gap-16 items-start">
+            {/* Left - Sticky */}
+            <div className="lg:sticky lg:top-32 lg:self-start">
+              <FadeIn>
+                <p className="text-cyan-600 text-sm font-medium uppercase tracking-wider mb-4">Testimonials</p>
+                <h2 className="text-4xl lg:text-5xl font-bold leading-tight mb-6">
+                  Loved by teams<br />around the world
+                </h2>
+                <div className="flex gap-1 mb-4">
+                  {[...Array(5)].map((_, i) => (
+                    <Star key={i} className="w-6 h-6 text-amber-400 fill-amber-400" />
+                  ))}
+                </div>
+                <p className="text-zinc-500">4.9/5 from 500+ reviews</p>
+              </FadeIn>
+            </div>
+
+            {/* Right - Auto-scrolling testimonials */}
+            <div className="relative h-[500px] overflow-hidden">
+              {/* Gradient masks */}
+              <div className="absolute top-0 left-0 right-0 h-20 bg-gradient-to-b from-white to-transparent z-10" />
+              <div className="absolute bottom-0 left-0 right-0 h-20 bg-gradient-to-t from-white to-transparent z-10" />
+
+              {/* Scrolling container */}
+              <div className="animate-scroll-up space-y-4">
+                {[
+                  { quote: 'InsightAI cut our research time by 80%. What used to take hours now takes minutes.', author: 'Jennifer Kim', role: 'Head of Research, TechCorp' },
+                  { quote: 'The accuracy and citation features are game-changing for our legal team.', author: 'Michael Chen', role: 'General Counsel, LegalFirm' },
+                  { quote: 'Finally, an AI that understands our complex documents without hallucinating.', author: 'Sarah Johnson', role: 'VP Operations, FinanceHQ' },
+                  { quote: 'We onboarded 500 employees in a week. The SSO integration was flawless.', author: 'David Park', role: 'IT Director, HealthPlus' },
+                  { quote: 'The analytics dashboard helps us understand how knowledge flows in our org.', author: 'Emily Zhang', role: 'Chief of Staff, EduTech' },
+                  { quote: 'Best investment we made this year. ROI was clear within the first month.', author: 'Robert Miller', role: 'CEO, StartupCo' },
+                  { quote: 'Multi-language support means our global team can all use the same platform.', author: 'Maria Garcia', role: 'Global Ops, WorldBank' },
+                  { quote: 'The compliance features saved us during our SOC 2 audit. Highly recommend.', author: 'James Wilson', role: 'Compliance Officer, SecureCorp' },
+                  { quote: 'Our team productivity increased 3x since switching to InsightAI.', author: 'Lisa Thompson', role: 'Product Lead, TechStartup' },
+                ].map((t, i) => (
+                  <div key={i} className="p-5 rounded-2xl bg-zinc-50 border border-zinc-200">
+                    <p className="text-zinc-700 text-base mb-3">&ldquo;{t.quote}&rdquo;</p>
+                    <div className="flex items-center gap-3">
+                      <div className="w-9 h-9 rounded-full bg-zinc-200 flex items-center justify-center font-semibold text-xs text-zinc-600">
+                        {t.author.split(' ').map(n => n[0]).join('')}
+                      </div>
+                      <div>
+                        <p className="font-semibold text-sm text-zinc-900">{t.author}</p>
+                        <p className="text-zinc-500 text-xs">{t.role}</p>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+                {/* Duplicate for seamless loop */}
+                {[
+                  { quote: 'InsightAI cut our research time by 80%. What used to take hours now takes minutes.', author: 'Jennifer Kim', role: 'Head of Research, TechCorp' },
+                  { quote: 'The accuracy and citation features are game-changing for our legal team.', author: 'Michael Chen', role: 'General Counsel, LegalFirm' },
+                  { quote: 'Finally, an AI that understands our complex documents without hallucinating.', author: 'Sarah Johnson', role: 'VP Operations, FinanceHQ' },
+                ].map((t, i) => (
+                  <div key={`dup-${i}`} className="p-5 rounded-2xl bg-zinc-50 border border-zinc-200">
+                    <p className="text-zinc-700 text-base mb-3">&ldquo;{t.quote}&rdquo;</p>
+                    <div className="flex items-center gap-3">
+                      <div className="w-9 h-9 rounded-full bg-zinc-200 flex items-center justify-center font-semibold text-xs text-zinc-600">
+                        {t.author.split(' ').map(n => n[0]).join('')}
+                      </div>
+                      <div>
+                        <p className="font-semibold text-sm text-zinc-900">{t.author}</p>
+                        <p className="text-zinc-500 text-xs">{t.role}</p>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Pricing - Dark */}
+      <section id="pricing" className="py-32 px-6 bg-black text-white">
+        <div className="max-w-7xl mx-auto">
+          <div className="grid lg:grid-cols-2 gap-16 items-start mb-16">
+            <FadeIn>
+              <p className="text-cyan-400 text-sm font-medium uppercase tracking-wider mb-4">Pricing</p>
+              <h2 className="text-4xl lg:text-5xl font-bold leading-tight tracking-tight">
+                Simple pricing,<br />powerful results
+              </h2>
+            </FadeIn>
+            <FadeIn delay={100}>
+              <p className="text-white/60 text-lg lg:mt-12">
+                Start with our free plan and upgrade as your team grows. No hidden fees, no surprises.
+              </p>
+            </FadeIn>
+          </div>
+
+          <div className="grid lg:grid-cols-3 gap-6">
+            {[
+              { name: 'Starter', price: 'Free', desc: 'For individuals', features: ['5 documents', '100 queries/month', 'GPT-4o mini', 'Email support'], cta: 'Get Started' },
+              { name: 'Pro', price: '$29', period: '/mo', desc: 'For small teams', features: ['Unlimited documents', 'Unlimited queries', 'All AI models', 'Priority support', 'Team workspaces'], popular: true, cta: 'Start Free Trial' },
+              { name: 'Enterprise', price: 'Custom', desc: 'For organizations', features: ['Everything in Pro', 'SSO & SAML', 'On-premise deploy', 'Custom SLA', 'Dedicated CSM'], cta: 'Contact Sales' },
+            ].map((p, i) => (
+              <FadeIn key={i} delay={i * 100}>
+                <div className={`relative h-full p-8 rounded-2xl ${p.popular ? 'bg-cyan-400 text-black' : 'bg-white/5 border border-white/10 text-white'}`}>
+                  {p.popular && (
+                    <div className="absolute -top-3 left-6 px-3 py-1 bg-cyan-400 text-black text-xs font-bold rounded-full">
+                      POPULAR
+                    </div>
+                  )}
+                  <h3 className="text-xl font-bold mb-1">{p.name}</h3>
+                  <p className={`text-sm mb-4 ${p.popular ? 'text-black/70' : 'text-white/60'}`}>{p.desc}</p>
+                  <div className="text-4xl font-bold mb-6">
+                    {p.price}
+                    {p.period && <span className={`text-base font-normal ${p.popular ? 'text-black/70' : 'text-white/60'}`}>{p.period}</span>}
+                  </div>
+                  <ul className="space-y-3 mb-8">
+                    {p.features.map((f, j) => (
+                      <li key={j} className={`flex items-center gap-2 text-sm ${p.popular ? 'text-black/80' : 'text-white/70'}`}>
+                        <Check className={`w-4 h-4 ${p.popular ? 'text-black' : 'text-cyan-400'}`} />
+                        {f}
+                      </li>
+                    ))}
+                  </ul>
+                  <Link href="/login" className={`block w-full py-3 text-center font-semibold rounded-full transition-all ${p.popular ? 'bg-black text-white hover:bg-zinc-800' : 'bg-white text-black hover:bg-zinc-100'}`}>
+                    {p.cta}
+                  </Link>
+                </div>
+              </FadeIn>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* CTA - White */}
+      <section className="py-32 px-6 bg-white">
+        <div className="max-w-4xl mx-auto text-center">
+          <FadeIn>
+            <h2 className="text-4xl lg:text-5xl font-bold mb-6 text-black">Ready to get started?</h2>
+            <p className="text-zinc-500 text-lg mb-10 max-w-2xl mx-auto">Join thousands of teams using InsightAI to unlock their document intelligence.</p>
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
+              <Link href="/login" className="group inline-flex items-center gap-3 px-8 py-4 bg-black text-white font-semibold rounded-full hover:bg-zinc-800 transition-all">
+                Start Free Trial
+                <span className="w-6 h-6 rounded-full bg-cyan-400 flex items-center justify-center group-hover:scale-110 transition-transform">
+                  <ArrowRight className="w-3.5 h-3.5 text-black" />
+                </span>
+              </Link>
+              <a href="#" className="px-8 py-4 text-zinc-600 font-medium border border-zinc-300 rounded-full hover:border-zinc-400 hover:bg-zinc-50 transition-all">
+                Schedule Demo
+              </a>
+            </div>
+          </FadeIn>
         </div>
       </section>
 
       {/* Footer */}
-      <footer className="py-16 px-6 border-t border-zinc-900">
-        <div className="max-w-6xl mx-auto">
-          <div className="grid md:grid-cols-4 gap-12 mb-12">
-            <div>
-              <div className="flex items-center gap-3 mb-4">
-                <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center">
+      <footer className="py-16 px-6 bg-black text-white border-t border-white/10">
+        <div className="max-w-7xl mx-auto">
+          <div className="grid md:grid-cols-5 gap-10 mb-12">
+            <div className="md:col-span-2">
+              <div className="flex items-center gap-2.5 mb-4">
+                <div className="w-8 h-8 rounded-lg bg-white/10 flex items-center justify-center">
                   <Brain className="w-4 h-4 text-white" />
                 </div>
-                <span className="font-semibold">InsightAI</span>
+                <span className="font-semibold text-lg">InsightAI</span>
               </div>
-              <p className="text-zinc-500 text-sm">Enterprise Knowledge Intelligence Platform</p>
+              <p className="text-white/50 text-sm max-w-xs">Enterprise document intelligence platform. Deploy AI that actually understands your data.</p>
             </div>
-            <div>
-              <h4 className="font-semibold mb-4">Product</h4>
-              <ul className="space-y-2 text-sm text-zinc-500">
-                <li><a href="#" className="hover:text-white transition-colors">Features</a></li>
-                <li><a href="#" className="hover:text-white transition-colors">Pricing</a></li>
-                <li><a href="#" className="hover:text-white transition-colors">Integrations</a></li>
-                <li><a href="#" className="hover:text-white transition-colors">Security</a></li>
-              </ul>
-            </div>
-            <div>
-              <h4 className="font-semibold mb-4">Company</h4>
-              <ul className="space-y-2 text-sm text-zinc-500">
-                <li><a href="#" className="hover:text-white transition-colors">About</a></li>
-                <li><a href="#" className="hover:text-white transition-colors">Blog</a></li>
-                <li><a href="#" className="hover:text-white transition-colors">Careers</a></li>
-                <li><a href="#" className="hover:text-white transition-colors">Contact</a></li>
-              </ul>
-            </div>
-            <div>
-              <h4 className="font-semibold mb-4">Legal</h4>
-              <ul className="space-y-2 text-sm text-zinc-500">
-                <li><a href="#" className="hover:text-white transition-colors">Privacy Policy</a></li>
-                <li><a href="#" className="hover:text-white transition-colors">Terms of Service</a></li>
-                <li><a href="#" className="hover:text-white transition-colors">Security</a></li>
-                <li><a href="#" className="hover:text-white transition-colors">GDPR</a></li>
-              </ul>
-            </div>
+            {[
+              { title: 'Product', links: ['Platform', 'Features', 'Pricing', 'Integrations'] },
+              { title: 'Company', links: ['About', 'Blog', 'Careers', 'Contact'] },
+              { title: 'Legal', links: ['Privacy', 'Terms', 'Security'] },
+            ].map((section, i) => (
+              <div key={i}>
+                <h4 className="font-semibold mb-4 text-white/80">{section.title}</h4>
+                <ul className="space-y-2 text-sm text-white/50">
+                  {section.links.map((link, j) => (
+                    <li key={j}><a href="#" className="hover:text-white transition-colors">{link}</a></li>
+                  ))}
+                </ul>
+              </div>
+            ))}
           </div>
-          <div className="pt-8 border-t border-zinc-900 flex flex-col md:flex-row items-center justify-between gap-4">
-            <p className="text-zinc-600 text-sm">© 2024 InsightAI Inc. All rights reserved.</p>
-            <div className="flex items-center gap-6 text-sm text-zinc-500">
-              <span>🇺🇸 United States</span>
-              <span>SOC 2 Type II</span>
-              <span>GDPR Compliant</span>
+          <div className="pt-8 border-t border-white/10 flex flex-col md:flex-row items-center justify-between gap-4">
+            <p className="text-white/40 text-sm">© 2024 InsightAI. All rights reserved.</p>
+            <div className="flex items-center gap-4 text-sm text-white/50">
+              <span className="flex items-center gap-1.5"><Shield className="w-4 h-4 text-cyan-400" />SOC 2 Certified</span>
             </div>
           </div>
         </div>
