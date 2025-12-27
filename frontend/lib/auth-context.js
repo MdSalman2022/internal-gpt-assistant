@@ -177,7 +177,7 @@ export function AuthProvider({ children }) {
             // Load both in parallel
             const [meRes, permRes] = await Promise.all([
                 fetch(`${API_URL}/api/auth/me`, { credentials: 'include' }),
-                fetch(`${API_URL}/api/auth/permissions`)
+                fetch(`${API_URL}/api/auth/permissions`, { credentials: 'include' })
             ]);
 
             if (meRes.ok) {

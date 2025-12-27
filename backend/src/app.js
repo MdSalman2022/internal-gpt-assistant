@@ -14,16 +14,29 @@ export async function buildApp() {
     });
 
     // CORS
+    console.log('CORS Debug:', { nodeEnv: config.nodeEnv, frontendUrl: config.frontendUrl });
     await fastify.register(cors, {
         origin: (origin, cb) => {
             const allowedOrigins = [
                 'https://corporate-gpt-client.vercel.app',
+                'http://localhost:3000',
+                'http://localhost:3001',
+                'http://localhost:3002',
                 config.frontendUrl
             ].filter(Boolean);
 
-            if (!origin || origin.startsWith('http://localhost') || allowedOrigins.includes(origin)) {
+            // Allow requests with no origin (like mobile apps or curl)
+            // Allow any localhost for development
+            // Allow any vercel.app for production flexibility
+            const isAllowed = !origin ||
+                origin.startsWith('http://localhost') ||
+                origin.endsWith('.vercel.app') ||
+                allowedOrigins.includes(origin);
+
+            if (isAllowed) {
                 cb(null, true);
             } else {
+                console.log('CORS blocked origin:', origin);
                 cb(new Error('Not allowed by CORS'), false);
             }
         },
