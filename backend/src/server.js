@@ -3,18 +3,40 @@ import { connectDatabase } from './db/mongoose.js';
 import { qdrantService } from './services/index.js';
 import config from './config/index.js';
 
+let app;
+let isInitialized = false;
+
+// Initialize services (database, qdrant)
+async function initialize() {
+    if (isInitialized) return;
+
+    await connectDatabase();
+    await qdrantService.initCollection();
+    isInitialized = true;
+}
+
+// Build the app (for both local and Vercel)
+async function getApp() {
+    await initialize();
+    if (!app) {
+        app = await buildApp();
+    }
+    return app;
+}
+
+// Vercel serverless handler
+export default async function handler(req, res) {
+    const fastifyApp = await getApp();
+    await fastifyApp.ready();
+    fastifyApp.server.emit('request', req, res);
+}
+
+// Local development - start the server
 async function start() {
     try {
-        // Connect to MongoDB
-        await connectDatabase();
+        const fastifyApp = await getApp();
 
-        // Initialize Qdrant collection
-        await qdrantService.initCollection();
-
-        // Build and start Fastify
-        const app = await buildApp();
-
-        await app.listen({
+        await fastifyApp.listen({
             port: config.port,
             host: '0.0.0.0',
         });
@@ -30,4 +52,7 @@ async function start() {
     }
 }
 
-start();
+// Only run local server if not in Vercel
+if (!process.env.VERCEL) {
+    start();
+}
