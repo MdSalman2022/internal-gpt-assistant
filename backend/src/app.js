@@ -43,7 +43,7 @@ export async function buildApp() {
         cookie: {
             secure: config.nodeEnv === 'production',
             httpOnly: true,
-            sameSite: 'lax',
+            sameSite: config.nodeEnv === 'production' ? 'none' : 'lax',
             maxAge: 7 * 24 * 60 * 60 * 1000,
         },
         saveUninitialized: false,
