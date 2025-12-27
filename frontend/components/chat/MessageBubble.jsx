@@ -1,6 +1,6 @@
 'use client';
 
-import { ThumbsUp, ThumbsDown, Copy, Check, FileText, Clock, Sparkles, X, ExternalLink } from 'lucide-react';
+import { ThumbsUp, ThumbsDown, Copy, Check, FileText, Clock, Sparkles, X, ExternalLink, Database } from 'lucide-react';
 import { useState, useEffect, useRef } from 'react';
 
 // Typing animation hook
@@ -198,16 +198,24 @@ export default function MessageBubble({ message, onFeedback, onViewDocument, isN
                                         className={`
                                             flex items-center gap-2 p-2 rounded-lg text-sm text-left
                                             transition-colors border
-                                            ${isUser
-                                                ? 'bg-black/20 hover:bg-black/30 border-white/10'
-                                                : 'bg-black/20 hover:bg-black/30 border-slate-600/50'
+                                            ${file.source === 'reference'
+                                                ? 'bg-blue-500/10 hover:bg-blue-500/20 border-blue-500/30'
+                                                : isUser
+                                                    ? 'bg-black/20 hover:bg-black/30 border-white/10'
+                                                    : 'bg-black/20 hover:bg-black/30 border-slate-600/50'
                                             }
                                         `}
                                     >
-                                        <FileText className="w-4 h-4 opacity-70" />
+                                        {file.source === 'reference' ? (
+                                            <Database className="w-4 h-4 opacity-70 text-blue-400" />
+                                        ) : (
+                                            <FileText className="w-4 h-4 opacity-70" />
+                                        )}
                                         <div className="flex flex-col">
                                             <span className="font-medium truncate max-w-[150px]">{file.name}</span>
-                                            <span className="text-xs opacity-60">{(file.size / 1024).toFixed(1)} KB</span>
+                                            <span className="text-xs opacity-60">
+                                                {file.source === 'reference' ? 'Referenced' : (file.size / 1024).toFixed(1) + ' KB'}
+                                            </span>
                                         </div>
                                     </button>
                                 ))}

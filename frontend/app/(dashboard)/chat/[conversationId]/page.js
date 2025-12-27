@@ -42,23 +42,39 @@ export default function ConversationPage() {
         }
     };
 
-    const handleSendMessage = async (content, fileIds = []) => {
-        if (!content.trim() && fileIds.length === 0) return;
-        await sendMessage(conversationId, content, fileIds);
+    const handleSendMessage = async (content, files = []) => {
+        if (!content.trim() && files.length === 0) return;
+        await sendMessage(conversationId, content, files);
     };
 
-    const sendMessage = async (convId, content, fileIds = []) => {
+    const sendMessage = async (convId, content, files = []) => {
+        // Extract IDs/Source for API (send full object if available, otherwise just ID string for legacy)
+        const apiPayload = files.map(f => ({
+            id: f.id,
+            source: f.source || 'upload'
+        }));
+
+        // Format attachments for optimistic UI
+        const optimisticAttachments = files.map(f => ({
+            documentId: f.id,
+            name: f.name,
+            size: f.size,
+            mimeType: 'application/pdf', // Default fallback
+            source: f.source || 'upload'
+        }));
+
         const tempUserMsg = {
             _id: `temp-${Date.now()}`,
             role: 'user',
-            content: content || (fileIds.length > 0 ? 'Sent attachments' : ''),
+            content: content || (files.length > 0 ? 'Sent attachments' : ''),
             createdAt: new Date().toISOString(),
+            attachments: optimisticAttachments // Show attachments immediately
         };
         setMessages(prev => [...prev, tempUserMsg]);
         setIsTyping(true);
 
         try {
-            const data = await chatApi.sendMessage(convId, content, null, fileIds);
+            const data = await chatApi.sendMessage(convId, content, null, apiPayload);
 
             setMessages(prev => {
                 const filtered = prev.filter(m =>

@@ -230,6 +230,7 @@ export default function DocumentsManager() {
                     onClose={() => setShowUploadModal(false)}
                     onUpload={handleUpload}
                     uploading={uploading}
+                    isAdmin={isAdmin}
                 />
             )}
 
@@ -419,7 +420,7 @@ function DocumentPreviewModal({ document, onClose, onUpdate }) {
     );
 }
 
-function UploadModal({ onClose, onUpload, uploading }) {
+function UploadModal({ onClose, onUpload, uploading, isAdmin }) {
     const [dragOver, setDragOver] = useState(false);
     const [files, setFiles] = useState([]);
 
@@ -494,18 +495,21 @@ function UploadModal({ onClose, onUpload, uploading }) {
                         </div>
                     )}
 
-                    <div className="h-px bg-slate-800 my-4" />
-
-                    <AccessControlSettings
-                        accessLevel={accessLevel}
-                        setAccessLevel={setAccessLevel}
-                        selectedDepartments={selectedDepartments}
-                        setSelectedDepartments={setSelectedDepartments}
-                        selectedTeams={selectedTeams}
-                        setSelectedTeams={setSelectedTeams}
-                        selectedUsers={selectedUsers}
-                        setSelectedUsers={setSelectedUsers}
-                    />
+                    {isAdmin && (
+                        <>
+                            <div className="h-px bg-slate-800 my-4" />
+                            <AccessControlSettings
+                                accessLevel={accessLevel}
+                                setAccessLevel={setAccessLevel}
+                                selectedDepartments={selectedDepartments}
+                                setSelectedDepartments={setSelectedDepartments}
+                                selectedTeams={selectedTeams}
+                                setSelectedTeams={setSelectedTeams}
+                                selectedUsers={selectedUsers}
+                                setSelectedUsers={setSelectedUsers}
+                            />
+                        </>
+                    )}
 
                 </div>
 

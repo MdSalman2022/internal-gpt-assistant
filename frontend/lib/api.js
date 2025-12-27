@@ -101,11 +101,18 @@ export const chatApi = {
 
 // Documents API
 export const documentsApi = {
-    // List documents
-    getDocuments: (page = 1, status = null) => {
-        let url = `/api/documents?page=${page}`;
-        if (status) url += `&status=${status}`;
-        return fetcher(url);
+    // List documents (admin/visitor)
+    getDocuments: (page = 1, status = '', search = '') => {
+        const params = new URLSearchParams({ page: page.toString() });
+        if (status) params.append('status', status);
+        if (search) params.append('search', search);
+        return fetcher(`/api/documents?${params.toString()}`);
+    },
+
+    // Search documents for auto-complete (lighter version if needed, but reusing getDocuments for now)
+    searchDocuments: (query) => {
+        const params = new URLSearchParams({ search: query, limit: 5 }); // Limit to 5 for dropdown
+        return fetcher(`/api/documents?${params.toString()}`);
     },
 
     // Get single document

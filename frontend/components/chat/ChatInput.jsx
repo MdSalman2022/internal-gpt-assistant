@@ -1,8 +1,9 @@
 'use client';
 
 import { useState, forwardRef, useImperativeHandle, useRef } from 'react';
-import { Send, Paperclip, Square, ArrowUp, X, FileText, Loader2 } from 'lucide-react';
+import { Send, Paperclip, Square, ArrowUp, X, FileText, Loader2, File } from 'lucide-react';
 import { useAuth } from '@/lib/auth-context';
+import { documentsApi } from '@/lib/api';
 
 const ChatInput = forwardRef(function ChatInput({
     onSend,
@@ -17,6 +18,14 @@ const ChatInput = forwardRef(function ChatInput({
     const [message, setMessage] = useState('');
     const [attachedFiles, setAttachedFiles] = useState([]);
     const [uploading, setUploading] = useState(false);
+
+    // Mention state
+    const [showSuggestions, setShowSuggestions] = useState(false);
+    const [suggestions, setSuggestions] = useState([]);
+    const [mentionQuery, setMentionQuery] = useState('');
+    const [mentionIndex, setMentionIndex] = useState(0);
+    const searchTimeout = useRef(null);
+
     const textareaRef = useRef(null);
     const fileInputRef = useRef(null);
 
@@ -27,18 +36,65 @@ const ChatInput = forwardRef(function ChatInput({
         focus: () => textareaRef.current?.focus(),
     }));
 
+    const selectSuggestion = (doc) => {
+        // Add file if not already attached
+        if (!attachedFiles.some(f => f.id === doc._id)) {
+            setAttachedFiles(prev => [...prev, {
+                id: doc._id,
+                name: doc.title || doc.originalName,
+                size: doc.size,
+                status: 'ready',
+                source: 'reference'
+            }]);
+        }
+
+        // Remove the @mention text
+        const newValue = message.replace(/(?:^|\s)@(\w*)$/, '');
+        setMessage(newValue);
+        setShowSuggestions(false);
+        setSuggestions([]);
+
+        // Refocus
+        textareaRef.current?.focus();
+    };
+
     const handleSubmit = async (e) => {
         e.preventDefault();
         if ((!message.trim() && attachedFiles.length === 0) || disabled) return;
 
-        // Send message with attached file IDs
-        const fileIds = attachedFiles.map(f => f.id).filter(Boolean);
-        await onSend(message.trim(), fileIds);
+        // Send message with full file objects (parent will handle ID extraction)
+        await onSend(message.trim(), attachedFiles);
+
         setMessage('');
         setAttachedFiles([]);
+        setShowSuggestions(false);
     };
 
     const handleKeyDown = (e) => {
+        // Mention navigation
+        if (showSuggestions && suggestions.length > 0) {
+            if (e.key === 'ArrowUp') {
+                e.preventDefault();
+                setMentionIndex(prev => (prev > 0 ? prev - 1 : suggestions.length - 1));
+                return;
+            }
+            if (e.key === 'ArrowDown') {
+                e.preventDefault();
+                setMentionIndex(prev => (prev < suggestions.length - 1 ? prev + 1 : 0));
+                return;
+            }
+            if (e.key === 'Enter' || e.key === 'Tab') {
+                e.preventDefault();
+                selectSuggestion(suggestions[mentionIndex]);
+                return;
+            }
+            if (e.key === 'Escape') {
+                e.preventDefault();
+                setShowSuggestions(false);
+                return;
+            }
+        }
+
         if (e.key === 'Enter' && !e.shiftKey) {
             e.preventDefault();
             handleSubmit(e);
@@ -46,9 +102,36 @@ const ChatInput = forwardRef(function ChatInput({
     };
 
     const handleInput = (e) => {
-        setMessage(e.target.value);
+        const value = e.target.value;
+        setMessage(value);
         e.target.style.height = 'auto';
         e.target.style.height = Math.min(e.target.scrollHeight, 200) + 'px';
+
+        // Detect @ mention
+        const match = value.match(/(?:^|\s)@(\w*)$/);
+
+        if (match) {
+            const query = match[1];
+            setMentionQuery(query);
+            // Don't show immediately empty, wait for search results unless query is empty (show recent?)
+            // We'll show loading or allow empty search
+            setMentionIndex(0);
+
+            // Debounce search
+            if (searchTimeout.current) clearTimeout(searchTimeout.current);
+            searchTimeout.current = setTimeout(async () => {
+                try {
+                    const res = await documentsApi.searchDocuments(query);
+                    const docs = res.documents || [];
+                    setSuggestions(docs);
+                    setShowSuggestions(docs.length > 0);
+                } catch (err) {
+                    console.error('Mention search failed', err);
+                }
+            }, 300);
+        } else {
+            setShowSuggestions(false);
+        }
     };
 
     const handleFileSelect = async (e) => {
@@ -77,6 +160,7 @@ const ChatInput = forwardRef(function ChatInput({
                 name: file.name,
                 size: file.size,
                 status: 'uploading',
+                source: 'upload'
             };
             setAttachedFiles(prev => [...prev, tempFile]);
             setUploading(true);
@@ -126,6 +210,43 @@ const ChatInput = forwardRef(function ChatInput({
                 onSubmit={handleSubmit}
                 className={`relative ${centered ? 'max-w-3xl mx-auto' : ''}`}
             >
+                {/* Mention Suggestions */}
+                {showSuggestions && suggestions.length > 0 && (
+                    <div className="absolute bottom-full left-0 mb-2 w-full max-w-md bg-slate-800 border border-slate-700 rounded-lg shadow-xl overflow-hidden z-50">
+                        <div className="text-xs text-slate-400 px-3 py-2 bg-slate-900/50 border-b border-slate-700">
+                            Select a document to attach
+                        </div>
+                        <div className="max-h-48 overflow-y-auto">
+                            {suggestions.map((doc, index) => (
+                                <button
+                                    key={doc._id}
+                                    type="button"
+                                    onClick={() => selectSuggestion(doc)}
+                                    className={`
+                                        w-full text-left px-3 py-2 flex items-center gap-3
+                                        hover:bg-slate-700 transition-colors
+                                        ${index === mentionIndex ? 'bg-slate-700' : ''}
+                                    `}
+                                >
+                                    <div className="bg-slate-900 p-1.5 rounded text-primary-400">
+                                        <File className="w-4 h-4" />
+                                    </div>
+                                    <div className="flex-1 min-w-0">
+                                        <div className="text-sm text-white truncate">{doc.title || doc.originalName}</div>
+                                        <div className="text-xs text-slate-400 flex gap-2">
+                                            <span>{doc.mimeType?.split('/')[1] || 'file'}</span>
+                                            {doc.size && <span>• {(doc.size / 1024).toFixed(0)} KB</span>}
+                                        </div>
+                                    </div>
+                                    {index === mentionIndex && (
+                                        <div className="text-xs text-slate-500">Enter</div>
+                                    )}
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+                )}
+
                 {/* Attached Files Preview */}
                 {attachedFiles.length > 0 && (
                     <div className="mb-2 flex flex-wrap gap-2">

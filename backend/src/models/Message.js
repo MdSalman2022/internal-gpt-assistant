@@ -56,6 +56,11 @@ const messageSchema = new mongoose.Schema({
         name: { type: String, required: true },
         mimeType: { type: String, required: true },
         size: { type: Number, required: true },
+        source: {
+            type: String,
+            enum: ['upload', 'reference'],
+            default: 'upload'
+        }
     }],
 
     // Token tracking for billing/analytics

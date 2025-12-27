@@ -62,7 +62,9 @@ export default async function chatRoutes(fastify) {
             data.filename,
             data.mimetype,
             request.session.userId,
-            { conversationId } // Mark as conversation-specific
+            {
+                accessLevel: 'private' // Force private "My Document" (no conversation scope)
+            }
         );
 
         // Process document in background
@@ -148,24 +150,77 @@ export default async function chatRoutes(fastify) {
         }
 
         // Fetch attachments metadata if fileIds provided
+        // Fetch user context primarily for ACL (moved up from below)
+        const user = await User.findById(request.session.userId).select('role department departments teams name email');
+
+        // Fetch attachments metadata if fileIds provided
+        // Fetch attachments metadata if fileIds provided
+        // Normalize fileIds (handle legacy array of strings vs new array of objects)
+        const fileInputs = fileIds.map(f => {
+            return typeof f === 'string' ? { id: f, source: 'upload' } : { id: f.id, source: f.source || 'upload' };
+        });
+        const inputIds = fileInputs.map(f => f.id);
+
+        // Fetch attachments metadata if fileIds provided
         const attachments = [];
         if (fileIds.length > 0) {
-            const docs = await Document.find({
-                _id: { $in: fileIds },
-                // Ensure user can only attach their own docs or conversation docs
-                $or: [
-                    { uploadedBy: request.session.userId },
-                    { conversationId: conversation._id }
-                ]
+            // Check which of the requested files the user actually has access to
+            const accessibleDocIds = await documentService.filterAccessibleDocuments({
+                userId: request.session.userId,
+                userRole: user.role,
+                userEmail: user.email,
+                departments: user.departments,
+                teams: user.teams,
+                documentIds: inputIds
             });
 
-            for (const doc of docs) {
-                attachments.push({
-                    documentId: doc._id,
-                    name: doc.originalName,
-                    mimeType: doc.mimeType,
-                    size: doc.size
+            if (accessibleDocIds.length > 0) {
+                const docs = await Document.find({
+                    _id: { $in: accessibleDocIds } // Only fetch accessible docs
                 });
+
+                // Create lookup for sources
+                const sourceMap = fileInputs.reduce((acc, item) => {
+                    acc[item.id] = item.source;
+                    return acc;
+                }, {});
+
+                for (const doc of docs) {
+                    attachments.push({
+                        documentId: doc._id,
+                        name: doc.originalName || doc.title, // Fallback to title if originalName missing
+                        mimeType: doc.mimeType,
+                        size: doc.size,
+                        source: sourceMap[doc._id.toString()] || 'upload'
+                    });
+                }
+            }
+        }
+
+        // POLLING: Wait for documents to be processed if any are new uploads
+        if (inputIds.length > 0) {
+            const startStr = Date.now();
+            const POLL_TIMEOUT = 30000; // 30s timeout
+            const POLL_INTERVAL = 2000;
+
+            let allReady = false;
+            while (Date.now() - startStr < POLL_TIMEOUT) {
+                const pendingDocs = await Document.find({
+                    _id: { $in: inputIds },
+                    status: { $in: ['pending', 'processing'] }
+                }).select('_id status');
+
+                if (pendingDocs.length === 0) {
+                    allReady = true;
+                    break;
+                }
+
+                // Wait before next check
+                await new Promise(resolve => setTimeout(resolve, POLL_INTERVAL));
+            }
+
+            if (!allReady) {
+                console.warn('⚠️ Some documents still processing after timeout, proceeding anyway.');
             }
         }
 
@@ -184,9 +239,6 @@ export default async function chatRoutes(fastify) {
             .limit(10)
             .lean();
 
-        // Create user context for ACL
-        const user = await User.findById(request.session.userId).select('role department departments teams name email');
-
         // Call RAG pipeline with selected provider
         let response;
         try {
@@ -196,8 +248,8 @@ export default async function chatRoutes(fastify) {
                 conversationId: conversation._id, // Pass conversation ID for scoped RAG
                 conversationHistory: history.reverse(),
                 provider: provider || undefined,
-                // Pass directly attached files to prioritize them
-                targetDocumentIds: fileIds.length > 0 ? fileIds : undefined
+                // Pass directly attached files to prioritize them (Fix: use inputIds string array)
+                targetDocumentIds: inputIds.length > 0 ? inputIds : undefined
             });
         } catch (error) {
             console.error('❌ RAG Service Error:', error);
