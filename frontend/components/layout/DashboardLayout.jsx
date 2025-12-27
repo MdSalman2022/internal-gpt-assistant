@@ -20,20 +20,20 @@ const navItems = [
     { href: '/settings', icon: Settings, label: 'Settings', permission: null }, // Everyone can access
 ];
 
-// Settings tabs configuration for mobile sidebar
+// Settings tabs configuration for mobile sidebar - now using routes
 const getSettingsTabs = (isAdmin) => [
-    { id: 'profile', label: 'Profile', icon: User },
-    { id: 'usage', label: 'Usage', icon: Zap },
-    ...(isAdmin ? [{ id: 'ai-models', label: 'AI Models', icon: Database }] : []),
-    ...(isAdmin ? [{ id: 'cost-controls', label: 'Cost Controls', icon: DollarSign }] : []),
-    { id: 'analytics', label: 'Analytics', icon: Activity },
-    { id: 'documents', label: 'Documents', icon: FileText },
-    { id: 'users', label: 'Users', icon: Users },
-    ...(isAdmin ? [{ id: 'audit', label: 'Audit Logs', icon: Shield }] : []),
-    { id: 'notifications', label: 'Notifications', icon: Bell },
-    { id: 'security', label: 'Security', icon: Key },
-    { id: 'appearance', label: 'Appearance', icon: Palette },
-    { id: 'integrations', label: 'Integrations', icon: Database },
+    { href: '/settings/profile', label: 'Profile', icon: User },
+    { href: '/settings/usage', label: 'Usage', icon: Zap },
+    ...(isAdmin ? [{ href: '/settings/ai-models', label: 'AI Models', icon: Database }] : []),
+    ...(isAdmin ? [{ href: '/settings/cost-controls', label: 'Cost Controls', icon: DollarSign }] : []),
+    { href: '/settings/analytics', label: 'Analytics', icon: Activity },
+    { href: '/settings/documents', label: 'Documents', icon: FileText },
+    { href: '/settings/users', label: 'Users', icon: Users },
+    ...(isAdmin ? [{ href: '/settings/audit', label: 'Audit Logs', icon: Shield }] : []),
+    { href: '/settings/notifications', label: 'Notifications', icon: Bell },
+    { href: '/settings/security', label: 'Security', icon: Key },
+    { href: '/settings/appearance', label: 'Appearance', icon: Palette },
+    { href: '/settings/integrations', label: 'Integrations', icon: Database },
 ];
 
 export default function DashboardLayout({ children }) {
@@ -41,7 +41,8 @@ export default function DashboardLayout({ children }) {
     const pathname = usePathname();
     const router = useRouter();
     const searchParams = useSearchParams();
-    const currentConversationId = searchParams.get('conversation');
+    // Extract conversation ID from pathname for route-based URLs
+    const currentConversationId = pathname.startsWith('/chat/') ? pathname.split('/chat/')[1] : null;
 
     const [sidebarOpen, setSidebarOpen] = useState(true);
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -265,7 +266,7 @@ export default function DashboardLayout({ children }) {
                                             </div>
                                         ) : (
                                             <Link
-                                                href={`/chat?conversation=${chat._id}`}
+                                                href={`/chat/${chat._id}`}
                                                 className={`
                                                     flex items-center gap-2 px-3 py-2 text-sm rounded-lg transition-colors
                                                     ${isActive
@@ -394,13 +395,12 @@ export default function DashboardLayout({ children }) {
                             <div className="flex-1 overflow-y-auto p-3">
                                 <div className="space-y-1">
                                     {getSettingsTabs(isAdmin).map((tab) => {
-                                        const currentTab = searchParams.get('tab') || 'profile';
-                                        const isActive = currentTab === tab.id;
+                                        const isActive = pathname === tab.href;
                                         return (
                                             <button
-                                                key={tab.id}
+                                                key={tab.href}
                                                 onClick={() => {
-                                                    router.push(`/settings?tab=${tab.id}`);
+                                                    router.push(tab.href);
                                                     setMobileMenuOpen(false);
                                                 }}
                                                 className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors text-left
@@ -467,7 +467,7 @@ export default function DashboardLayout({ children }) {
                                             {recentChats.map((chat) => (
                                                 <div key={chat._id} className="group flex items-center">
                                                     <Link
-                                                        href={`/chat?conversation=${chat._id}`}
+                                                        href={`/chat/${chat._id}`}
                                                         onClick={() => setMobileMenuOpen(false)}
                                                         className={`flex-1 flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors ${currentConversationId === chat._id
                                                             ? 'bg-slate-800 text-white'

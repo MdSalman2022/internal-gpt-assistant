@@ -1,0 +1,89 @@
+'use client';
+
+import { usePathname, useRouter } from 'next/navigation';
+import Link from 'next/link';
+import { useAuth } from '@/lib/auth-context';
+import {
+    User, Bell, Shield, Palette, Database, Key,
+    LogOut, FileText, Users, Activity, Zap, DollarSign
+} from 'lucide-react';
+
+// Settings navigation items
+const getSettingsNavItems = (isAdmin) => [
+    { href: '/settings/profile', label: 'Profile', icon: User },
+    { href: '/settings/usage', label: 'Usage', icon: Zap },
+    ...(isAdmin ? [{ href: '/settings/ai-models', label: 'AI Models', icon: Database }] : []),
+    ...(isAdmin ? [{ href: '/settings/cost-controls', label: 'Cost Controls', icon: DollarSign }] : []),
+    { href: '/settings/analytics', label: 'Analytics', icon: Activity },
+    { href: '/settings/documents', label: 'Documents', icon: FileText },
+    { href: '/settings/users', label: 'Users', icon: Users },
+    ...(isAdmin ? [{ href: '/settings/audit', label: 'Audit Logs', icon: Shield }] : []),
+    { href: '/settings/notifications', label: 'Notifications', icon: Bell },
+    { href: '/settings/security', label: 'Security', icon: Key },
+    { href: '/settings/appearance', label: 'Appearance', icon: Palette },
+    { href: '/settings/integrations', label: 'Integrations', icon: Database },
+];
+
+export default function SettingsLayout({ children }) {
+    const pathname = usePathname();
+    const router = useRouter();
+    const { logout, isAdmin } = useAuth();
+
+    const navItems = getSettingsNavItems(isAdmin);
+
+    const handleLogout = async () => {
+        await logout();
+        router.push('/login');
+    };
+
+    return (
+        <div className="flex flex-col h-full overflow-hidden">
+            {/* Mobile Header - simple title bar (hamburger menu is provided by DashboardLayout) */}
+            <div className="md:hidden">
+                <header className="flex items-center gap-3 px-3 py-4 border-b border-slate-800 pl-14">
+                    <h1 className="text-lg font-semibold text-white">Settings</h1>
+                </header>
+            </div>
+
+            {/* Desktop Header */}
+            <header className="hidden md:flex items-center justify-between px-6 py-4 border-b border-slate-800">
+                <div>
+                    <h1 className="text-xl font-semibold text-white">Settings</h1>
+                    <p className="text-sm text-slate-500">Manage account and system preferences</p>
+                </div>
+            </header>
+
+            <div className="flex-1 flex overflow-hidden">
+                {/* Desktop Tabs Sidebar - Hidden on mobile */}
+                <nav className="hidden md:flex w-56 flex-col border-r border-slate-800 p-3 flex-shrink-0 overflow-y-auto">
+                    {navItems.map(item => {
+                        const isActive = pathname === item.href;
+                        return (
+                            <Link
+                                key={item.href}
+                                href={item.href}
+                                className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg mb-1 transition-colors text-left
+                                    ${isActive ? 'bg-slate-800 text-white' : 'text-slate-400 hover:text-white hover:bg-slate-800/50'}`}
+                            >
+                                <item.icon className="w-4 h-4" />
+                                <span className="text-sm font-medium">{item.label}</span>
+                            </Link>
+                        );
+                    })}
+
+                    <div className="mt-8 pt-4 border-t border-slate-800">
+                        <button onClick={handleLogout} className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-red-400 hover:bg-red-500/10 transition-colors text-left">
+                            <LogOut className="w-4 h-4" />
+                            <span className="text-sm font-medium">Logout</span>
+                        </button>
+                    </div>
+                </nav>
+
+                {/* Content Area */}
+                <div className="flex-1 bg-slate-950 overflow-y-auto">
+                    {children}
+                </div>
+            </div>
+        </div>
+    );
+}
