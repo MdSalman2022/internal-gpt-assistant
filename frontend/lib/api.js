@@ -124,6 +124,7 @@ export const documentsApi = {
         if (options.allowedDepartments?.length) formData.append('allowedDepartments', JSON.stringify(options.allowedDepartments));
         if (options.allowedTeams?.length) formData.append('allowedTeams', JSON.stringify(options.allowedTeams));
         if (options.allowedUsers?.length) formData.append('allowedUsers', JSON.stringify(options.allowedUsers));
+        if (options.allowedUserEmails?.length) formData.append('allowedUserEmails', JSON.stringify(options.allowedUserEmails));
 
         const res = await fetch(`${API_URL}/api/documents/upload`, {
             method: 'POST',
@@ -236,4 +237,73 @@ export const usageApi = {
     // Admin: Reset monthly usage
     resetMonthlyUsage: () =>
         fetcher('/api/usage/admin/reset-monthly', { method: 'POST' })
+};
+
+// Profile API
+export const profileApi = {
+    // Update current user's profile (name, department, etc.)
+    updateProfile: (updates) =>
+        fetcher('/api/auth/me', {
+            method: 'PATCH',
+            body: JSON.stringify(updates)
+        }),
+};
+
+// Departments API
+export const departmentsApi = {
+    // List all departments with teams
+    getDepartments: () => fetcher('/api/departments'),
+
+    // Create department (admin)
+    createDepartment: (name, description) =>
+        fetcher('/api/departments', {
+            method: 'POST',
+            body: JSON.stringify({ name, description })
+        }),
+
+    // Update department (admin)
+    updateDepartment: (id, updates) =>
+        fetcher(`/api/departments/${id}`, {
+            method: 'PATCH',
+            body: JSON.stringify(updates)
+        }),
+
+    // Delete department (admin)
+    deleteDepartment: (id) =>
+        fetcher(`/api/departments/${id}`, { method: 'DELETE' }),
+
+    // Add team to department (admin)
+    addTeam: (departmentId, name, description) =>
+        fetcher(`/api/departments/${departmentId}/teams`, {
+            method: 'POST',
+            body: JSON.stringify({ name, description })
+        }),
+
+    // Remove team from department (admin)
+    removeTeam: (departmentId, teamId) =>
+        fetcher(`/api/departments/${departmentId}/teams/${teamId}`, { method: 'DELETE' }),
+
+    // Get pending access requests (admin)
+    getAccessRequests: () => fetcher('/api/departments/requests'),
+
+    // Approve access request (admin)
+    approveRequest: (userId, type, resource) =>
+        fetcher('/api/departments/requests/approve', {
+            method: 'POST',
+            body: JSON.stringify({ userId, type, resource })
+        }),
+
+    // Reject access request (admin)
+    rejectRequest: (userId, type, resource) =>
+        fetcher('/api/departments/requests/reject', {
+            method: 'POST',
+            body: JSON.stringify({ userId, type, resource })
+        }),
+
+    // User requests access to department/team
+    requestAccess: (departmentName, teamName) =>
+        fetcher('/api/departments/request-access', {
+            method: 'POST',
+            body: JSON.stringify({ departmentName, teamName })
+        }),
 };

@@ -44,6 +44,7 @@ class DocumentService {
                 allowedDepartments: options.allowedDepartments || [],
                 allowedTeams: options.allowedTeams || [],
                 allowedUsers: options.allowedUsers || [],
+                allowedUserEmails: options.allowedUserEmails || [],
             });
 
             await document.save();
@@ -105,6 +106,7 @@ class DocumentService {
                 allowedUsers: document.allowedUsers?.map(id => id.toString()) || [],
                 allowedDepartments: document.allowedDepartments || [],
                 allowedTeams: document.allowedTeams || [],
+                allowedUserEmails: document.allowedUserEmails || [],
                 metadata: document.metadata || {},
             }));
 
@@ -189,7 +191,7 @@ class DocumentService {
     }
 
     // Get documents with pagination and filters
-    async getDocuments({ userId, userRole, department, teams, status, search, page = 1, limit = 20 }) {
+    async getDocuments({ userId, userRole, userEmail, departments, teams, status, search, page = 1, limit = 20 }) {
         const query = {};
 
         // Strictly exclude conversation-scoped documents from general library
@@ -200,24 +202,34 @@ class DocumentService {
         // Others see:
         // 1. Documents they own (uploadedBy)
         // 2. Documents that are 'public' (isGlobal: true, accessLevel: 'public')
-        // 3. Documents shared with their Department
-        // 4. Documents shared with their Team
-        // 5. Documents explicitly shared with them (allowedUsers)
+        // 3. Documents shared with their Department(s)
+        // 4. Documents shared with their Team(s)
+        // 5. Documents explicitly shared with them (allowedUsers by ID)
+        // 6. Documents shared with their email (allowedUserEmails)
 
         if (userRole !== 'admin') {
             const aclConditions = [
                 { uploadedBy: userId }, // Owner
                 { isGlobal: true, accessLevel: 'public' }, // Fully public
-                { allowedUsers: userId }, // Explicitly shared
+                { allowedUsers: userId }, // Explicitly shared by ID
             ];
 
-            if (department) {
+            // Check if user's email is in allowedUserEmails
+            if (userEmail) {
                 aclConditions.push({
-                    accessLevel: { $in: ['department'] },
-                    allowedDepartments: department
+                    allowedUserEmails: userEmail.toLowerCase()
                 });
             }
 
+            // Check if ANY of user's departments match (user can be in multiple departments)
+            if (departments && departments.length > 0) {
+                aclConditions.push({
+                    accessLevel: 'department',
+                    allowedDepartments: { $in: departments }
+                });
+            }
+
+            // Check if ANY of user's teams match
             if (teams && teams.length > 0) {
                 aclConditions.push({
                     allowedTeams: { $in: teams }
@@ -276,6 +288,60 @@ class DocumentService {
         };
     }
 
+    /**
+     * Filter a list of document IDs to return only those accessible by the user.
+     * Used for RAG post-search filtering.
+     */
+    async filterAccessibleDocuments({ userId, userRole, userEmail, departments, teams, documentIds }) {
+        if (!documentIds || documentIds.length === 0) return [];
+
+        const query = {
+            _id: { $in: documentIds }
+        };
+
+        // Admin Access: No further filtering needed (except the ID list)
+        if (userRole === 'admin') {
+            const docs = await Document.find(query).select('_id').lean();
+            return docs.map(d => d._id.toString());
+        }
+
+        // --- ACL LOGIC (Same as getDocuments) ---
+        const aclConditions = [
+            { uploadedBy: userId },
+            { isGlobal: true, accessLevel: 'public' },
+            { allowedUsers: userId },
+        ];
+
+        if (userEmail) {
+            aclConditions.push({ allowedUserEmails: userEmail.toLowerCase() });
+        }
+
+        if (departments && departments.length > 0) {
+            aclConditions.push({
+                accessLevel: 'department',
+                allowedDepartments: { $in: departments }
+            });
+        }
+
+        if (teams && teams.length > 0) {
+            aclConditions.push({ allowedTeams: { $in: teams } });
+        }
+
+        // Add scoped conversation access if the doc is part of a conversation the user participates in
+        // Note: For RAG, we usually pass conversationId scope separately.
+        // But here we might check if the doc belongs to a conversation owned by the user.
+        // For simplicity/security, RAG usually filters strictly by Current Conversation OR Global Lib.
+        // So global lib logic is covered by above. Conversation logic is handled by "conversationId" check in RAG.
+        // However, if we treat this as general access check:
+        // ACL usually applies to "Library" documents. Conversation attachments are implicitly accessible by chat participants.
+        // We will assume this filter is for "Library/Global" documents.
+
+        query.$or = aclConditions;
+
+        const docs = await Document.find(query).select('_id').lean();
+        return docs.map(d => d._id.toString());
+    }
+
     // Get single document by ID
     async getDocument(documentId) {
         const document = await Document.findById(documentId)
@@ -286,14 +352,14 @@ class DocumentService {
 
     // Update document metadata
     async updateDocument(documentId, updates) {
-        const allowedUpdates = ['title', 'description', 'tags', 'accessLevel', 'allowedDepartments', 'allowedTeams', 'allowedUsers'];
+        const allowedUpdates = ['title', 'description', 'tags', 'accessLevel', 'allowedDepartments', 'allowedTeams', 'allowedUsers', 'allowedUserEmails'];
         const filteredUpdates = {};
         let aclUpdated = false;
 
         for (const key of allowedUpdates) {
             if (updates[key] !== undefined) {
                 filteredUpdates[key] = updates[key];
-                if (['accessLevel', 'allowedDepartments', 'allowedTeams', 'allowedUsers'].includes(key)) {
+                if (['accessLevel', 'allowedDepartments', 'allowedTeams', 'allowedUsers', 'allowedUserEmails'].includes(key)) {
                     aclUpdated = true;
                 }
             }

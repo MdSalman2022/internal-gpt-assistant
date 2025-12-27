@@ -93,6 +93,8 @@ export function AuthProvider({ children }) {
     const isAdmin = user?.role === 'admin';
     const isVisitor = user?.role === 'visitor';
     const isEmployee = user?.role === 'employee';
+    // Visitors have admin-like UI access for demo purposes
+    const isAdminOrVisitor = isAdmin || isVisitor;
 
     return (
         <AuthContext.Provider value={{
@@ -108,6 +110,7 @@ export function AuthProvider({ children }) {
             isAdmin,
             isVisitor,
             isEmployee,
+            isAdminOrVisitor,
             permissionsConfig,
         }}>
             {children}

@@ -37,7 +37,7 @@ class QdrantService {
             const indexes = [
                 'isGlobal', 'uploadedBy', 'conversationId', 'documentId', 'chunkIndex',
                 // ACL fields for filtering
-                'accessLevel', 'allowedUsers', 'allowedDepartments', 'allowedTeams'
+                'accessLevel', 'allowedUsers', 'allowedDepartments', 'allowedTeams', 'allowedUserEmails'
             ];
             const schemas = {
                 isGlobal: 'bool',
@@ -49,7 +49,8 @@ class QdrantService {
                 accessLevel: 'keyword',
                 allowedUsers: 'keyword',
                 allowedDepartments: 'keyword',
-                allowedTeams: 'keyword'
+                allowedTeams: 'keyword',
+                allowedUserEmails: 'keyword'
             };
 
             for (const field of indexes) {
@@ -89,14 +90,10 @@ class QdrantService {
                     content: chunk.content,
                     chunkIndex: chunk.chunkIndex,
                     pageNumber: chunk.pageNumber || null,
-                    // RBAC Fields
+                    // Broad Scoping Fields
                     uploadedBy: chunk.uploadedBy,
                     conversationId: chunk.conversationId,
                     isGlobal: chunk.isGlobal,
-                    accessLevel: chunk.accessLevel,
-                    allowedUsers: chunk.allowedUsers,
-                    allowedDepartments: chunk.allowedDepartments,
-                    allowedTeams: chunk.allowedTeams,
                     metadata: chunk.metadata || {},
                 },
             }));
@@ -262,11 +259,12 @@ class QdrantService {
     }
 
     /**
-     * Build Qdrant filter for Access Control
+     * Build Qdrant filter for Access Control (Simplified for MongoDB-centric model)
+     * Only handles broad scoping (Global vs Conversation).
+     * Fine-grained permissions are handled by MongoDB post-filtering.
      */
     buildAclFilter(user, conversationId) {
         // Helper for "Global" docs (where conversationId is null)
-        // Correct Qdrant syntax: { is_null: { key: "fieldName" } }
         const isGlobalDoc = { is_null: { key: "conversationId" } };
 
         // Admin sees everything Global + Current Conversation
@@ -282,77 +280,21 @@ class QdrantService {
             return adminFilter;
         }
 
-        // Logic:
-        // 1. Matches this conversation (if applicable)
-        // OR
-        // 2. Is Global AND (Public OR (Dept Match) OR (Team Match) OR (User Match))
-        // OR
-        // 3. User is Owner (Global only) - If I own a doc in another chat, I shouldn't see it here? 
-        //    Actually, "My Uploads" Usually implies everything I uploaded. 
-        //    But for RAG, we want context relevance. 
-        //    Let's restrict "Owner" to Global docs too, to prevent leaking chat-to-chat context unless explicitly desired.
+        // Standard User Scope:
+        // 1. Current Conversation
+        // 2. Global Docs (which will be filtered by permission later)
 
-        const aclConditions = [
-            // 3. Owner (Global)
-            {
-                must: [
-                    { key: "uploadedBy", match: { value: user._id.toString() } },
-                    isGlobalDoc
-                ]
-            },
-            // 2. Global Public
-            {
-                must: [
-                    { key: "isGlobal", match: { value: true } },
-                    { key: "accessLevel", match: { value: "public" } },
-                    isGlobalDoc
-                ]
-            },
-            // Explicit User Match (Global)
-            {
-                must: [
-                    { key: "allowedUsers", match: { value: user._id.toString() } },
-                    isGlobalDoc
-                ]
-            }
-        ];
-
-        // Dept Match (Global)
-        if (user.department) {
-            aclConditions.push({
-                must: [
-                    { key: "accessLevel", match: { value: "department" } },
-                    { key: "allowedDepartments", match: { value: user.department } },
-                    isGlobalDoc
-                ]
-            });
-        }
-
-        // Team Match (Global)
-        if (user.teams && user.teams.length > 0) {
-            aclConditions.push({
-                must: [
-                    { key: "allowedTeams", match: { any: user.teams } },
-                    isGlobalDoc
-                ]
-            });
-        }
-
-        const globalAclFilter = {
-            should: aclConditions
+        const scopeFilter = {
+            should: [
+                isGlobalDoc
+            ]
         };
 
-        // If conversation context exists, we allow scoped docs OR the above Global ACL rules
         if (conversationId) {
-            return {
-                should: [
-                    { key: "conversationId", match: { value: conversationId.toString() } },
-                    globalAclFilter
-                ]
-            };
+            scopeFilter.should.push({ key: "conversationId", match: { value: conversationId.toString() } });
         }
 
-        return globalAclFilter;
+        return scopeFilter;
     }
 }
 

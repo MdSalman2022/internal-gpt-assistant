@@ -30,11 +30,21 @@ const userSchema = new mongoose.Schema({
         enum: ['admin', 'visitor', 'employee'],
         default: 'employee',
     },
-    department: {
+    // Approved departments and teams
+    departments: [{
         type: String,
-        default: null,
-    },
+        trim: true,
+    }],
     teams: [{
+        type: String,  // Format: "DepartmentName:TeamName"
+        trim: true,
+    }],
+    // Pending access requests (awaiting admin approval)
+    pendingDepartments: [{
+        type: String,
+        trim: true,
+    }],
+    pendingTeams: [{
         type: String,
         trim: true,
     }],

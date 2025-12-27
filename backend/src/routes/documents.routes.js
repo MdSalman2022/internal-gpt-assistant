@@ -75,11 +75,13 @@ export default async function documentRoutes(fastify) {
         let allowedDepartments = [];
         let allowedTeams = [];
         let allowedUsers = [];
+        let allowedUserEmails = [];
 
         try {
             if (fields.allowedDepartments) allowedDepartments = JSON.parse(fields.allowedDepartments);
             if (fields.allowedTeams) allowedTeams = JSON.parse(fields.allowedTeams);
             if (fields.allowedUsers) allowedUsers = JSON.parse(fields.allowedUsers);
+            if (fields.allowedUserEmails) allowedUserEmails = JSON.parse(fields.allowedUserEmails);
         } catch (e) {
             console.warn('Failed to parse ACL JSON fields', e);
         }
@@ -94,7 +96,8 @@ export default async function documentRoutes(fastify) {
                 accessLevel: fields.accessLevel || 'private',
                 allowedDepartments,
                 allowedTeams,
-                allowedUsers
+                allowedUsers,
+                allowedUserEmails
             }
         );
 
@@ -124,15 +127,15 @@ export default async function documentRoutes(fastify) {
     }, async (request, reply) => {
         const { page = 1, limit = 20, status, search } = request.query;
 
-        // Fetch full user details to get department/teams
-        // Note: request.userRole is set in preHandler but we need more
-        const user = await User.findById(request.session.userId).select('role department teams');
+        // Fetch full user details to get departments/teams arrays and email
+        const user = await User.findById(request.session.userId).select('role departments teams email');
 
         const result = await documentService.getDocuments({
             userId: request.session.userId,
             userRole: user.role,
-            department: user.department,
-            teams: user.teams,
+            userEmail: user.email,
+            departments: user.departments || [],
+            teams: user.teams || [],
             status,
             search,
             page: parseInt(page),
@@ -169,20 +172,22 @@ export default async function documentRoutes(fastify) {
         }
 
         // Access Control Logic
-        // Access Control Logic
         const userId = request.session.userId;
-        const user = await User.findById(userId).select('role department teams');
+        const user = await User.findById(userId).select('role departments teams email');
 
         const isAdmin = user.role === 'admin';
         const isOwner = document.uploadedBy.toString() === userId;
         const isPublic = document.isGlobal && document.accessLevel === 'public';
 
-        // Granular Checks
+        // Granular Checks - using departments array (any match)
         const isDepartmentMatch = document.accessLevel === 'department' &&
-            document.allowedDepartments?.includes(user.department);
+            document.allowedDepartments?.some(dept => user.departments?.includes(dept));
 
         const isTeamMatch = document.allowedTeams?.some(team => user.teams?.includes(team));
         const isUserAllowed = document.allowedUsers?.map(u => u.toString()).includes(userId);
+
+        // Email-based access check
+        const isEmailAllowed = user.email && document.allowedUserEmails?.includes(user.email.toLowerCase());
 
         // If it's a conversation-scoped doc, check if user is in that conversation
         let hasConvoAccess = false;
@@ -195,7 +200,7 @@ export default async function documentRoutes(fastify) {
         }
 
         // Broad access for Admin, Owner, Global docs, or Conversation members
-        if (!isAdmin && !isOwner && !isPublic && !isDepartmentMatch && !isTeamMatch && !isUserAllowed && !hasConvoAccess) {
+        if (!isAdmin && !isOwner && !isPublic && !isDepartmentMatch && !isTeamMatch && !isUserAllowed && !isEmailAllowed && !hasConvoAccess) {
             return reply.status(403).send({
                 error: 'Forbidden: You do not have permission to download this document'
             });

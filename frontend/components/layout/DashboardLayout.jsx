@@ -9,7 +9,7 @@ import {
     MessageSquare, FileText, BarChart3, Settings, LogOut,
     Menu, X, ChevronLeft, Sparkles, Plus, MessageCircle,
     MoreHorizontal, Pencil, Trash2, Check, X as XIcon, Shield, Users, Search,
-    User, Bell, Palette, Database, Key, Zap, DollarSign, Activity, ArrowLeft
+    User, Bell, Palette, Database, Key, Zap, DollarSign, Activity, ArrowLeft, Building2
 } from 'lucide-react';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 
@@ -21,15 +21,16 @@ const navItems = [
 ];
 
 // Settings tabs configuration for mobile sidebar - now using routes
-const getSettingsTabs = (isAdmin) => [
+const getSettingsTabs = (isAdminOrVisitor) => [
     { href: '/settings/profile', label: 'Profile', icon: User },
     { href: '/settings/usage', label: 'Usage', icon: Zap },
-    ...(isAdmin ? [{ href: '/settings/ai-models', label: 'AI Models', icon: Database }] : []),
-    ...(isAdmin ? [{ href: '/settings/cost-controls', label: 'Cost Controls', icon: DollarSign }] : []),
-    { href: '/settings/analytics', label: 'Analytics', icon: Activity },
+    ...(isAdminOrVisitor ? [{ href: '/settings/ai-models', label: 'AI Models', icon: Database }] : []),
+    ...(isAdminOrVisitor ? [{ href: '/settings/cost-controls', label: 'Cost Controls', icon: DollarSign }] : []),
+    ...(isAdminOrVisitor ? [{ href: '/settings/analytics', label: 'Analytics', icon: Activity }] : []),
     { href: '/settings/documents', label: 'Documents', icon: FileText },
     { href: '/settings/users', label: 'Users', icon: Users },
-    ...(isAdmin ? [{ href: '/settings/audit', label: 'Audit Logs', icon: Shield }] : []),
+    ...(isAdminOrVisitor ? [{ href: '/settings/organization', label: 'Organization', icon: Building2 }] : []),
+    ...(isAdminOrVisitor ? [{ href: '/settings/audit', label: 'Audit Logs', icon: Shield }] : []),
     { href: '/settings/notifications', label: 'Notifications', icon: Bell },
     { href: '/settings/security', label: 'Security', icon: Key },
     { href: '/settings/appearance', label: 'Appearance', icon: Palette },
@@ -37,7 +38,7 @@ const getSettingsTabs = (isAdmin) => [
 ];
 
 export default function DashboardLayout({ children }) {
-    const { user, logout, loading, hasPermission, isAdmin, isVisitor, isEmployee } = useAuth();
+    const { user, logout, loading, hasPermission, isAdmin, isVisitor, isEmployee, isAdminOrVisitor } = useAuth();
     const pathname = usePathname();
     const router = useRouter();
     const searchParams = useSearchParams();
@@ -345,9 +346,10 @@ export default function DashboardLayout({ children }) {
                                     <p className="text-xs text-slate-500 truncate">{user?.email}</p>
                                     {user?.role && (
                                         <span className={`text-[10px] px-1.5 py-0.5 rounded font-medium uppercase
-                                            ${(user.role === 'admin' || user.role === 'visitor' || user.role === 'employee') ? 'bg-red-500/20 text-red-400' :
-                                                'bg-slate-600/50 text-slate-400'}`}>
-                                            {(user.role === 'admin' || user.role === 'visitor' || user.role === 'employee') ? 'admin' : user.role}
+                                            ${(user.role === 'admin' || user.role === 'visitor') ? 'bg-red-500/20 text-red-400' :
+                                                user.role === 'employee' ? 'bg-blue-500/20 text-blue-400' :
+                                                    'bg-slate-600/50 text-slate-400'}`}>
+                                            {(user.role === 'admin' || user.role === 'visitor') ? 'ADMIN' : user.role}
                                         </span>
                                     )}
                                 </div>
@@ -394,7 +396,7 @@ export default function DashboardLayout({ children }) {
                             {/* Settings Tabs */}
                             <div className="flex-1 overflow-y-auto p-3">
                                 <div className="space-y-1">
-                                    {getSettingsTabs(isAdmin).map((tab) => {
+                                    {getSettingsTabs(isAdminOrVisitor).map((tab) => {
                                         const isActive = pathname === tab.href;
                                         return (
                                             <button

@@ -5,4 +5,5 @@ export { default as Message } from './Message.js';
 export { default as AuditLog } from './AuditLog.js';
 export { default as UsageLog } from './UsageLog.js';
 export { default as AdminSettings } from './AdminSettings.js';
+export { default as Department } from './Department.js';
 

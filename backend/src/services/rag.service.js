@@ -8,6 +8,7 @@
 import aiService from './ai.service.js';
 import qdrantService from './qdrant.service.js';
 import guardrailService from './guardrail.service.js';
+import documentService from './document.service.js';
 import { Document, Message } from '../models/index.js';
 import { reciprocalRankFusion } from '../utils/chunker.js';
 import config from '../config/index.js';
@@ -66,32 +67,47 @@ class RAGService {
             // 1. Generate embedding for user query (using safe/redacted version)
             const queryEmbedding = await aiService.generateEmbedding(safeQuery);
 
-            // 2. Build Search Filter
+            // 2. Build Search Filter (Simplified for MongoDB-centric ACL)
             let searchFilter = {};
 
             if (targetDocumentIds && targetDocumentIds.length > 0) {
-                // If targets are provided, we strictly limit to them.
-                // We use 'any' match for better performance on multiple IDs.
+                // If targets are provided, strictly limit to them
                 searchFilter = {
                     must: [
                         { key: 'documentId', match: { any: targetDocumentIds.map(id => id.toString()) } }
                     ]
                 };
+            } else if (conversationId) {
+                // If in a conversation, optionally prioritize/filter by context
+                // But generally we search broadly and filter by permission later.
+                // However, to keep it clean, we can scope to (Global OR CurrentConversation)
+                // This prevents leaking chunks from *other* conversations if we don't trust "Global" flag enough.
+                searchFilter = {
+                    should: [
+                        { is_null: { key: "conversationId" } }, // Global
+                        { key: "conversationId", match: { value: conversationId.toString() } }
+                    ]
+                };
             } else {
-                // Otherwise use standard RBAC access filter
-                searchFilter = this._buildAccessFilter(options.user, conversationId);
+                // Global chat - only global docs
+                searchFilter = {
+                    is_null: { key: "conversationId" }
+                };
             }
 
-            console.log('🎯 RAG Search Filter:', JSON.stringify(searchFilter, null, 2));
+            console.log('🎯 RAG Search Filter (Broad):', JSON.stringify(searchFilter, null, 2));
 
             // 3. Perform Searches (Semantic + Keyword)
+            // Fetch MORE candidates (e.g. 50) to allow for ACL filtering drop-off
+            const searchLimit = 50;
+
             const [semanticResults, keywordResults] = await Promise.all([
                 qdrantService.search(queryEmbedding, {
-                    limit: 15,
+                    limit: searchLimit,
                     scoreThreshold: targetDocumentIds && targetDocumentIds.length > 0 ? 0.01 : 0.35,
                     filter: searchFilter,
                 }),
-                this._keywordSearch(userQuery, 10, userId, conversationId, targetDocumentIds),
+                this._keywordSearch(userQuery, searchLimit, userId, conversationId, targetDocumentIds),
             ]);
 
             console.log(`📡 RAG Search Results: Semantic=${semanticResults.length}, Keyword=${keywordResults.length}`);
@@ -120,6 +136,33 @@ class RAGService {
             }
 
             allChunks = [...allChunks, ...keywordResults];
+
+            // --- PERMISSION FILTERING START ---
+            // Extract unique Document IDs
+            const candidateDocumentIds = [...new Set(allChunks.map(c => c.documentId || c.payload?.documentId))].filter(Boolean);
+
+            if (candidateDocumentIds.length > 0) {
+                // Check permissions against MongoDB
+                // options.user contains { _id, role, departments, teams, email }
+                const allowedDocumentIds = await documentService.filterAccessibleDocuments({
+                    userId: options.user._id,
+                    userRole: options.user.role,
+                    userEmail: options.user.email,
+                    departments: options.user.departments,
+                    teams: options.user.teams,
+                    documentIds: candidateDocumentIds
+                });
+
+                const allowedSet = new Set(allowedDocumentIds);
+                console.log(`🔒 ACL Filtering: ${candidateDocumentIds.length} candidates -> ${allowedDocumentIds.length} allowed`);
+
+                // Filter chunks
+                allChunks = allChunks.filter(c => {
+                    const docId = c.documentId || c.payload?.documentId;
+                    return allowedSet.has(docId);
+                });
+            }
+            // --- PERMISSION FILTERING END ---
 
             // Deduplicate
             const seen = new Set();

@@ -185,7 +185,7 @@ export default async function chatRoutes(fastify) {
             .lean();
 
         // Create user context for ACL
-        const user = await User.findById(request.session.userId).select('role department teams name email');
+        const user = await User.findById(request.session.userId).select('role department departments teams name email');
 
         // Call RAG pipeline with selected provider
         let response;

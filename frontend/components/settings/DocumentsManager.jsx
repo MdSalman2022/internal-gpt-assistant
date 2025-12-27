@@ -269,6 +269,7 @@ function DocumentPreviewModal({ document, onClose, onUpdate }) {
     const [accessLevel, setAccessLevel] = useState(document.accessLevel || 'private');
     const [selectedDepartments, setSelectedDepartments] = useState(document.allowedDepartments || []);
     const [selectedTeams, setSelectedTeams] = useState(document.allowedTeams || []);
+    const [selectedUsers, setSelectedUsers] = useState(document.allowedUserEmails || []);
     const [saving, setSaving] = useState(false);
 
     useEffect(() => {
@@ -285,7 +286,8 @@ function DocumentPreviewModal({ document, onClose, onUpdate }) {
         const updates = {
             accessLevel,
             allowedDepartments: accessLevel === 'department' ? selectedDepartments : [],
-            allowedTeams: accessLevel === 'team' ? selectedTeams : []
+            allowedTeams: accessLevel === 'team' ? selectedTeams : [],
+            allowedUserEmails: accessLevel === 'users' ? selectedUsers : []
         };
 
         const success = await onUpdate(document._id, updates);
@@ -358,6 +360,8 @@ function DocumentPreviewModal({ document, onClose, onUpdate }) {
                                 setSelectedDepartments={setSelectedDepartments}
                                 selectedTeams={selectedTeams}
                                 setSelectedTeams={setSelectedTeams}
+                                selectedUsers={selectedUsers}
+                                setSelectedUsers={setSelectedUsers}
                             />
                             <div className="mt-4 flex justify-end gap-2">
                                 <button onClick={() => setIsEditing(false)} className="btn-secondary text-xs">Cancel</button>
@@ -423,6 +427,7 @@ function UploadModal({ onClose, onUpload, uploading }) {
     const [accessLevel, setAccessLevel] = useState('private');
     const [selectedDepartments, setSelectedDepartments] = useState([]);
     const [selectedTeams, setSelectedTeams] = useState([]);
+    const [selectedUsers, setSelectedUsers] = useState([]);
 
     useEffect(() => {
         const handleEsc = (e) => e.key === 'Escape' && onClose();
@@ -439,10 +444,12 @@ function UploadModal({ onClose, onUpload, uploading }) {
     const submitUpload = () => {
         const aclSettings = {
             accessLevel: accessLevel === 'public' ? 'public' :
-                accessLevel === 'department' ? 'department' : 'private',
+                accessLevel === 'department' ? 'department' :
+                    accessLevel === 'users' ? 'users' : 'private',
 
             allowedDepartments: accessLevel === 'department' && selectedDepartments.length > 0 ? selectedDepartments : [],
-            allowedTeams: accessLevel === 'team' && selectedTeams.length > 0 ? selectedTeams : []
+            allowedTeams: accessLevel === 'team' && selectedTeams.length > 0 ? selectedTeams : [],
+            allowedUserEmails: accessLevel === 'users' && selectedUsers.length > 0 ? selectedUsers : []
         };
 
         onUpload(files, aclSettings);
@@ -496,6 +503,8 @@ function UploadModal({ onClose, onUpload, uploading }) {
                         setSelectedDepartments={setSelectedDepartments}
                         selectedTeams={selectedTeams}
                         setSelectedTeams={setSelectedTeams}
+                        selectedUsers={selectedUsers}
+                        setSelectedUsers={setSelectedUsers}
                     />
 
                 </div>

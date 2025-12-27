@@ -4,20 +4,21 @@ import { usePathname, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useAuth } from '@/lib/auth-context';
 import {
-    User, Bell, Shield, Palette, Database, Key,
+    User, Bell, Shield, Palette, Database, Key, Building2,
     LogOut, FileText, Users, Activity, Zap, DollarSign
 } from 'lucide-react';
 
 // Settings navigation items
-const getSettingsNavItems = (isAdmin) => [
+const getSettingsNavItems = (isAdminOrVisitor) => [
     { href: '/settings/profile', label: 'Profile', icon: User },
     { href: '/settings/usage', label: 'Usage', icon: Zap },
-    ...(isAdmin ? [{ href: '/settings/ai-models', label: 'AI Models', icon: Database }] : []),
-    ...(isAdmin ? [{ href: '/settings/cost-controls', label: 'Cost Controls', icon: DollarSign }] : []),
-    { href: '/settings/analytics', label: 'Analytics', icon: Activity },
+    ...(isAdminOrVisitor ? [{ href: '/settings/ai-models', label: 'AI Models', icon: Database }] : []),
+    ...(isAdminOrVisitor ? [{ href: '/settings/cost-controls', label: 'Cost Controls', icon: DollarSign }] : []),
+    ...(isAdminOrVisitor ? [{ href: '/settings/analytics', label: 'Analytics', icon: Activity }] : []),
     { href: '/settings/documents', label: 'Documents', icon: FileText },
     { href: '/settings/users', label: 'Users', icon: Users },
-    ...(isAdmin ? [{ href: '/settings/audit', label: 'Audit Logs', icon: Shield }] : []),
+    ...(isAdminOrVisitor ? [{ href: '/settings/organization', label: 'Organization', icon: Building2 }] : []),
+    ...(isAdminOrVisitor ? [{ href: '/settings/audit', label: 'Audit Logs', icon: Shield }] : []),
     { href: '/settings/notifications', label: 'Notifications', icon: Bell },
     { href: '/settings/security', label: 'Security', icon: Key },
     { href: '/settings/appearance', label: 'Appearance', icon: Palette },
@@ -27,9 +28,9 @@ const getSettingsNavItems = (isAdmin) => [
 export default function SettingsLayout({ children }) {
     const pathname = usePathname();
     const router = useRouter();
-    const { logout, isAdmin } = useAuth();
+    const { logout, isAdminOrVisitor } = useAuth();
 
-    const navItems = getSettingsNavItems(isAdmin);
+    const navItems = getSettingsNavItems(isAdminOrVisitor);
 
     const handleLogout = async () => {
         await logout();

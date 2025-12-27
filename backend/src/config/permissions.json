@@ -13,7 +13,8 @@
                 "chat:upload",
                 "analytics:read",
                 "users:manage",
-                "settings:manage"
+                "settings:manage",
+                "admin:manage"
             ]
         },
         "visitor": {
@@ -60,6 +61,7 @@
         "chat:upload": "Upload documents within a chat conversation",
         "analytics:read": "View usage analytics and statistics",
         "users:manage": "Manage user accounts and roles",
-        "settings:manage": "Modify system settings"
+        "settings:manage": "Modify system settings",
+        "admin:manage": "Manage departments, teams, and access requests"
     }
 }

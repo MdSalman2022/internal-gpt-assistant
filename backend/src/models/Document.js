@@ -102,6 +102,12 @@ const documentSchema = new mongoose.Schema({
     allowedTeams: [{
         type: String, // e.g. 'Engineering:Frontend', 'Sales:North'
     }],
+    // Specific user emails who can access (for fine-grained control)
+    allowedUserEmails: [{
+        type: String,
+        lowercase: true,
+        trim: true,
+    }],
     // Metadata
     metadata: {
         author: String,

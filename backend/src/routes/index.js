@@ -5,4 +5,5 @@ export { default as analyticsRoutes } from './analytics.routes.js';
 export { default as usersRoutes } from './users.routes.js';
 export { default as auditRoutes } from './audit.routes.js';
 export { default as usageRoutes } from './usage.routes.js';
+export { default as departmentsRoutes } from './departments.routes.js';
 
