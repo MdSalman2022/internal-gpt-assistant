@@ -9,7 +9,7 @@ export default function BusinessResults() {
     ];
 
     return (
-        <section id="results" className="min-h-[80vh] py-40 px-6 bg-black text-white flex items-center" data-theme="dark">
+        <section id="results" className="min-h-[80vh] md:py-40 px-6 bg-black text-white flex items-center" data-theme="dark">
             <div className="max-w-7xl mx-auto w-full">
                 <div className="grid lg:grid-cols-2 gap-20 items-start">
                     {/* Left - Sticky Title */}

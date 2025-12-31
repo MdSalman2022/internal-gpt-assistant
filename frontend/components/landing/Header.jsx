@@ -74,7 +74,7 @@ export default function Header() {
                         Login
                     </Link>
                     <Link
-                        href="/login"
+                        href="/signup?plan=trial"
                         className="group px-5 py-2.5 text-sm bg-black text-white font-medium rounded-full hover:bg-zinc-800 transition-all flex items-center gap-2"
                     >
                         Get Started

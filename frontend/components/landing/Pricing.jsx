@@ -4,9 +4,9 @@ import FadeIn from './FadeIn';
 
 export default function Pricing() {
     const plans = [
-        { name: 'Starter', price: 'Free', desc: 'For individuals', features: ['5 documents', '100 queries/month', 'GPT-4o mini', 'Email support'], cta: 'Get Started' },
-        { name: 'Pro', price: '$29', period: '/mo', desc: 'For small teams', features: ['Unlimited documents', 'Unlimited queries', 'All AI models', 'Priority support', 'Team workspaces'], popular: true, cta: 'Start Free Trial' },
-        { name: 'Enterprise', price: 'Custom', desc: 'For organizations', features: ['Everything in Pro', 'SSO & SAML', 'On-premise deploy', 'Custom SLA', 'Dedicated CSM'], cta: 'Contact Sales' },
+        { name: 'starter', price: 'Free', desc: 'For individuals', features: ['5 documents', '100 queries/month', 'GPT-4o mini', 'Email support'], cta: 'Get Started', href: '/signup?plan=trial' },
+        { name: 'pro', price: '$29', period: '/mo', desc: 'For small teams', features: ['Unlimited documents', 'Unlimited queries', 'All AI models', 'Priority support', 'Team workspaces'], popular: true, cta: 'Start Free Trial', href: '/signup?plan=pro' },
+        { name: 'enterprise', price: 'Custom', desc: 'For organizations', features: ['Everything in Pro', 'SSO & SAML', 'On-premise deploy', 'Custom SLA', 'Dedicated CSM'], cta: 'Contact Sales', href: '/contact?type=enterprise' },
     ];
 
     return (
@@ -55,7 +55,7 @@ export default function Pricing() {
                                         </li>
                                     ))}
                                 </ul>
-                                <Link href="/login" className={`block w-full py-3 text-center font-semibold rounded-full transition-all ${p.popular ? 'bg-black text-white hover:bg-zinc-800' : 'bg-white text-black hover:bg-zinc-100'}`}>
+                                <Link href={p.href} className={`block w-full py-3 text-center font-semibold rounded-full transition-all ${p.popular ? 'bg-black text-white hover:bg-zinc-800' : 'bg-white text-black hover:bg-zinc-100'}`}>
                                     {p.cta}
                                 </Link>
                             </div>

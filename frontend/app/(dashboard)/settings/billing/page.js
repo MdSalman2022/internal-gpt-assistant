@@ -224,8 +224,8 @@ export default function BillingPage() {
                             {organization.plan}
                         </div>
                         <div className={`text-sm mt-1 ${organization.planStatus === 'active' ? 'text-emerald-400' :
-                                organization.planStatus === 'trialing' ? 'text-cyan-400' :
-                                    'text-yellow-400'
+                            organization.planStatus === 'trialing' ? 'text-cyan-400' :
+                                'text-yellow-400'
                             }`}>
                             {organization.planStatus === 'trialing'
                                 ? `Trial ends ${formatDate(organization.trialEndsAt)}`
@@ -356,8 +356,8 @@ export default function BillingPage() {
                             <div
                                 key={plan.name}
                                 className={`border rounded-xl p-4 ${plan.isPopular
-                                        ? 'border-emerald-500 bg-emerald-500/5'
-                                        : 'border-gray-700'
+                                    ? 'border-emerald-500 bg-emerald-500/5'
+                                    : 'border-gray-700'
                                     }`}
                             >
                                 <h3 className="text-lg font-semibold text-white">{plan.displayName}</h3>
@@ -367,13 +367,13 @@ export default function BillingPage() {
                                 </div>
                                 <button
                                     onClick={() => plan.name === 'enterprise'
-                                        ? window.location.href = '/demo'
+                                        ? window.location.href = '/contact?type=enterprise'
                                         : handleUpgrade(plan)
                                     }
                                     disabled={actionLoading}
                                     className={`w-full py-2 rounded-lg transition-colors disabled:opacity-50 ${plan.isPopular
-                                            ? 'bg-emerald-500 hover:bg-emerald-600 text-white'
-                                            : 'bg-gray-700 hover:bg-gray-600 text-white'
+                                        ? 'bg-emerald-500 hover:bg-emerald-600 text-white'
+                                        : 'bg-gray-700 hover:bg-gray-600 text-white'
                                         }`}
                                 >
                                     {plan.name === 'enterprise' ? 'Contact Sales' : 'Select Plan'}
@@ -413,8 +413,8 @@ export default function BillingPage() {
                                         </td>
                                         <td className="py-3 px-4">
                                             <span className={`px-2 py-1 rounded-full text-xs font-medium ${invoice.status === 'paid'
-                                                    ? 'bg-emerald-500/20 text-emerald-400'
-                                                    : 'bg-yellow-500/20 text-yellow-400'
+                                                ? 'bg-emerald-500/20 text-emerald-400'
+                                                : 'bg-yellow-500/20 text-yellow-400'
                                                 }`}>
                                                 {invoice.status}
                                             </span>

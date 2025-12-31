@@ -35,7 +35,7 @@ export default function CTASection() {
 
                     <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
                         <Link
-                            href="/login"
+                            href="/signup?plan=trial"
                             className="group inline-flex items-center gap-3 px-10 py-5 bg-cyan-400 text-black font-bold rounded-full hover:bg-cyan-300 hover:shadow-xl hover:shadow-cyan-500/30 transition-all hover:scale-105"
                         >
                             Start Free Trial
@@ -43,12 +43,12 @@ export default function CTASection() {
                                 <ArrowRight className="w-4 h-4 text-cyan-400" />
                             </span>
                         </Link>
-                        <a
-                            href="#"
+                        <Link
+                            href="/contact?type=demo"
                             className="px-10 py-5 text-white font-medium border border-white/20 bg-white/5 backdrop-blur-sm rounded-full hover:border-white/40 hover:bg-white/10 transition-all"
                         >
                             Schedule Demo
-                        </a>
+                        </Link>
                     </div>
                 </FadeIn>
             </div>

@@ -4,9 +4,9 @@ import FadeIn from './FadeIn';
 
 export default function PricingCTA() {
     const plans = [
-        { name: 'Starter', price: 'Free', desc: 'For individuals', features: ['5 documents', '100 queries/month', 'GPT-4o mini', 'Email support'], cta: 'Get Started' },
-        { name: 'Pro', price: '$29', period: '/mo', desc: 'For small teams', features: ['Unlimited documents', 'Unlimited queries', 'All AI models', 'Priority support', 'Team workspaces'], popular: true, cta: 'Start Free Trial' },
-        { name: 'Enterprise', price: 'Custom', desc: 'For organizations', features: ['Everything in Pro', 'SSO & SAML', 'On-premise deploy', 'Custom SLA', 'Dedicated CSM'], cta: 'Contact Sales' },
+        { name: 'starter', price: 'Free', desc: 'For individuals', features: ['5 documents', '100 queries/month', 'GPT-4o mini', 'Email support'], cta: 'Get Started', href: '/signup?plan=trial' },
+        { name: 'pro', price: '$29', period: '/mo', desc: 'For small teams', features: ['Unlimited documents', 'Unlimited queries', 'All AI models', 'Priority support', 'Team workspaces'], popular: true, cta: 'Start Free Trial', href: '/signup?plan=pro' },
+        { name: 'enterprise', price: 'Custom', desc: 'For organizations', features: ['Everything in Pro', 'SSO & SAML', 'On-premise deploy', 'Custom SLA', 'Dedicated CSM'], cta: 'Contact Sales', href: '/contact?type=enterprise' },
     ];
 
     return (
@@ -63,7 +63,7 @@ export default function PricingCTA() {
                                         </li>
                                     ))}
                                 </ul>
-                                <Link href="/login" className={`block w-full py-3 text-center font-semibold rounded-full transition-all ${p.popular ? 'bg-black text-white hover:bg-zinc-800' : 'bg-white text-black hover:bg-zinc-100'}`}>
+                                <Link href={p.href} className={`block w-full py-3 text-center font-semibold rounded-full transition-all ${p.popular ? 'bg-black text-white hover:bg-zinc-800' : 'bg-white text-black hover:bg-zinc-100'}`}>
                                     {p.cta}
                                 </Link>
                             </div>
@@ -77,7 +77,7 @@ export default function PricingCTA() {
                         <p className="text-white/50 text-sm mb-6">Not sure which plan? Start free and upgrade anytime.</p>
                         <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
                             <Link
-                                href="/login"
+                                href="/signup?plan=trial"
                                 className="group inline-flex items-center gap-3 px-10 py-5 bg-cyan-400 text-black font-bold rounded-full hover:bg-cyan-300 hover:shadow-xl hover:shadow-cyan-500/30 transition-all hover:scale-105"
                             >
                                 Start Free Trial
@@ -85,12 +85,12 @@ export default function PricingCTA() {
                                     <ArrowRight className="w-4 h-4 text-cyan-400" />
                                 </span>
                             </Link>
-                            <a
-                                href="#"
+                            <Link
+                                href="/contact?type=demo"
                                 className="px-10 py-5 text-white font-medium border border-white/20 bg-white/5 backdrop-blur-sm rounded-full hover:border-white/40 hover:bg-white/10 transition-all"
                             >
                                 Schedule Demo
-                            </a>
+                            </Link>
                         </div>
                     </FadeIn>
                 </div>

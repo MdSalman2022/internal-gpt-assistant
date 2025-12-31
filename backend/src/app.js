@@ -6,7 +6,7 @@ import session from '@fastify/session';
 import multipart from '@fastify/multipart';
 import MongoStore from 'connect-mongo';
 import config from './config/index.js';
-import { authRoutes, documentRoutes, chatRoutes, analyticsRoutes, usersRoutes, auditRoutes, usageRoutes, departmentsRoutes, integrationsRoutes, subscriptionsRoutes, organizationsRoutes, superadminRoutes, demoRoutes } from './routes/index.js';
+import { authRoutes, documentRoutes, chatRoutes, analyticsRoutes, usersRoutes, auditRoutes, usageRoutes, departmentsRoutes, integrationsRoutes, subscriptionsRoutes, organizationsRoutes, superadminRoutes, demoRoutes, contactRoutes } from './routes/index.js';
 import { getLandingPageHtml, getHealthPageHtml } from './utils/statusPages.js';
 
 export async function buildApp() {
@@ -161,6 +161,7 @@ export async function buildApp() {
     fastify.register(organizationsRoutes, { prefix: '/api/organizations' });
     fastify.register(superadminRoutes, { prefix: '/api/superadmin' });
     fastify.register(demoRoutes, { prefix: '/api/demo' });
+    fastify.register(contactRoutes, { prefix: '/api/contact' });
 
     // Global error handler
     fastify.setErrorHandler((error, request, reply) => {

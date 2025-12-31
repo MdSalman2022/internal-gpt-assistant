@@ -104,7 +104,7 @@ export default function PricingPage() {
         if (plan.name === 'trial') {
             router.push('/signup?plan=trial');
         } else if (plan.name === 'enterprise') {
-            router.push('/demo');
+            router.push('/contact?type=enterprise');
         } else {
             router.push(`/signup?plan=${plan.name}&interval=${billingInterval}`);
         }
@@ -283,11 +283,11 @@ export default function PricingPage() {
                         Contact our sales team for a personalized demo.
                     </p>
                     <a
-                        href="/demo"
+                        href="/contact?type=sales"
                         className="inline-flex items-center gap-2 px-6 py-3 bg-emerald-500 hover:bg-emerald-600 text-white font-semibold rounded-xl transition-colors"
                     >
                         <Calendar className="w-5 h-5" />
-                        Schedule a Demo
+                        Contact Sales
                     </a>
                 </div>
             </section>

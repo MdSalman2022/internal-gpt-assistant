@@ -80,6 +80,12 @@ const config = {
         topK: 5,
         minConfidence: 0.7,
     },
+
+    // Resend (Email)
+    resend: {
+        apiKey: process.env.RESEND_API_KEY,
+        fromEmail: process.env.RESEND_MAIL || 'noreply@yourdomain.com',
+    },
 };
 
 export default config;
