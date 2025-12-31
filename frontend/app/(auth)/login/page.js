@@ -46,6 +46,18 @@ export default function LoginPage() {
         window.location.href = `${API_URL}/api/auth/google`;
     };
 
+    // Show loading while checking auth status
+    if (authLoading || user) {
+        return (
+            <div className="min-h-screen flex items-center justify-center bg-white">
+                <div className="flex flex-col items-center gap-4">
+                    <div className="w-10 h-10 border-2 border-zinc-200 border-t-cyan-500 rounded-full animate-spin" />
+                    <p className="text-sm text-zinc-500">Loading...</p>
+                </div>
+            </div>
+        );
+    }
+
     return (
         <div className="min-h-screen flex bg-white">
             {/* Left side - Form */}

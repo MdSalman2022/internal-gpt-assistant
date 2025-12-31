@@ -3,6 +3,7 @@
 import { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
+import { useAuth } from '@/lib/auth-context';
 import {
     User, Mail, Lock, Building2, Globe, Briefcase,
     ArrowRight, ArrowLeft, Check, Sparkles, Loader2, AlertCircle
@@ -27,11 +28,19 @@ const industries = [
 function SignupForm() {
     const router = useRouter();
     const searchParams = useSearchParams();
+    const { user, loading: authLoading } = useAuth();
     const [step, setStep] = useState(1);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
     const [slugChecking, setSlugChecking] = useState(false);
     const [slugAvailable, setSlugAvailable] = useState(null);
+
+    // Redirect if already logged in
+    useEffect(() => {
+        if (!authLoading && user) {
+            router.push('/chat');
+        }
+    }, [user, authLoading, router]);
 
     const [formData, setFormData] = useState({
         // Step 1: Account
@@ -148,6 +157,18 @@ function SignupForm() {
         pro: 'Pro Plan',
         enterprise: 'Enterprise Plan',
     };
+
+    // Show loading while checking auth status
+    if (authLoading || user) {
+        return (
+            <div className="min-h-screen flex items-center justify-center bg-white">
+                <div className="flex flex-col items-center gap-4">
+                    <div className="w-10 h-10 border-2 border-zinc-200 border-t-cyan-500 rounded-full animate-spin" />
+                    <p className="text-sm text-zinc-500">Loading...</p>
+                </div>
+            </div>
+        );
+    }
 
     return (
         <div className="min-h-screen flex bg-white">
