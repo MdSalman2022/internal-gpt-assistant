@@ -3,18 +3,16 @@ import User from '../models/User.js';
 import { documentService, qdrantService } from '../services/index.js';
 import { requireRole, requirePermission } from '../middleware/rbac.middleware.js';
 import { auditService } from '../services/index.js';
+import { requireTenant } from '../middleware/tenant.middleware.js';
 
 // Document routes
 export default async function documentRoutes(fastify) {
-    // Require auth for all document routes
+    // Require tenant context (auth + org + active subscription) for all document routes
     fastify.addHook('preHandler', async (request, reply) => {
-        if (!request.session.userId) {
-            return reply.status(401).send({ error: 'Not authenticated' });
-        }
+        await requireTenant()(request, reply);
 
-        // Attach user role to request
-        const user = await User.findById(request.session.userId).select('role');
-        request.userRole = user?.role || 'employee';
+        // Also attach user role for RBAC
+        request.userRole = request.user?.role || 'employee';
     });
 
     // Admin: Clear all vectors (use with caution!)
@@ -97,7 +95,8 @@ export default async function documentRoutes(fastify) {
                 allowedDepartments,
                 allowedTeams,
                 allowedUsers,
-                allowedUserEmails
+                allowedUserEmails,
+                organizationId: request.organizationId // Multi-tenant scope
             }
         );
 

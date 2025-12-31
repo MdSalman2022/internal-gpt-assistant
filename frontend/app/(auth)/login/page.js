@@ -4,22 +4,20 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useAuth } from '@/lib/auth-context';
 import { useRouter } from 'next/navigation';
-import { Eye, EyeOff, Mail, Lock, User, ArrowRight, Sparkles } from 'lucide-react';
+import { Eye, EyeOff, Mail, Lock, ArrowRight, Sparkles } from 'lucide-react';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL
 
 export default function LoginPage() {
-    const { login, register, user, loading: authLoading } = useAuth();
+    const { login, user, loading: authLoading } = useAuth();
     const router = useRouter();
-    const [isLogin, setIsLogin] = useState(true);
     const [showPassword, setShowPassword] = useState(false);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
 
     const [formData, setFormData] = useState({
-        name: '',
-        email: 'visitor@example.com',
-        password: '123456',
+        email: '',
+        password: '',
     });
 
     // Redirect if already logged in
@@ -35,11 +33,7 @@ export default function LoginPage() {
         setLoading(true);
 
         try {
-            if (isLogin) {
-                await login(formData.email, formData.password);
-            } else {
-                await register(formData.name, formData.email, formData.password);
-            }
+            await login(formData.email, formData.password);
             router.push('/chat');
         } catch (err) {
             setError(err.message || 'Authentication failed');
@@ -68,13 +62,10 @@ export default function LoginPage() {
                     {/* Header */}
                     <div className="mb-10">
                         <h1 className="text-3xl font-bold text-zinc-900 mb-3">
-                            {isLogin ? 'Welcome back' : 'Create account'}
+                            Welcome back
                         </h1>
                         <p className="text-zinc-500">
-                            {isLogin
-                                ? 'Sign in to access your knowledge assistant'
-                                : 'Start finding answers from your documents'
-                            }
+                            Sign in to access your knowledge assistant
                         </p>
                     </div>
 
@@ -114,25 +105,6 @@ export default function LoginPage() {
 
                     {/* Form */}
                     <form onSubmit={handleSubmit} className="space-y-5">
-                        {!isLogin && (
-                            <div>
-                                <label className="block text-sm font-medium text-zinc-900 mb-2">
-                                    Full Name
-                                </label>
-                                <div className="relative group">
-                                    <User className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-zinc-400 group-focus-within:text-black transition-colors" />
-                                    <input
-                                        type="text"
-                                        value={formData.name}
-                                        onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                                        placeholder="John Doe"
-                                        required={!isLogin}
-                                        className="w-full pl-10 pr-4 py-3 bg-zinc-50 border border-zinc-200 rounded-xl focus:bg-white focus:border-black focus:ring-1 focus:ring-black outline-none transition-all"
-                                    />
-                                </div>
-                            </div>
-                        )}
-
                         <div>
                             <label className="block text-sm font-medium text-zinc-900 mb-2">
                                 Email Address
@@ -174,13 +146,11 @@ export default function LoginPage() {
                             </div>
                         </div>
 
-                        {isLogin && (
-                            <div className="flex justify-end">
-                                <Link href="/forgot-password" className="text-sm text-zinc-500 hover:text-black hover:underline">
-                                    Forgot password?
-                                </Link>
-                            </div>
-                        )}
+                        <div className="flex justify-end">
+                            <Link href="/forgot-password" className="text-sm text-zinc-500 hover:text-black hover:underline">
+                                Forgot password?
+                            </Link>
+                        </div>
 
                         <button
                             type="submit"
@@ -197,7 +167,7 @@ export default function LoginPage() {
                                 </span>
                             ) : (
                                 <span className="flex items-center gap-2">
-                                    {isLogin ? 'Sign In' : 'Create Account'}
+                                    Sign In
                                     <ArrowRight className="w-5 h-5" />
                                 </span>
                             )}
@@ -206,13 +176,10 @@ export default function LoginPage() {
 
                     {/* Toggle */}
                     <p className="text-center text-zinc-500 mt-8">
-                        {isLogin ? "Don't have an account?" : 'Already have an account?'}
-                        <button
-                            onClick={() => setIsLogin(!isLogin)}
-                            className="ml-2 text-black font-semibold hover:underline"
-                        >
-                            {isLogin ? 'Sign up' : 'Sign in'}
-                        </button>
+                        Don't have an account?{' '}
+                        <Link href="/signup" className="text-black font-semibold hover:underline">
+                            Sign up
+                        </Link>
                     </p>
                 </div>
             </div>

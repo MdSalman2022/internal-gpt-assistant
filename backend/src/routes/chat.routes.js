@@ -2,14 +2,14 @@ import { Conversation, Message, Document, User } from '../models/index.js';
 import { ragService, aiService, geminiService, documentService, auditService, guardrailService, usageService } from '../services/index.js';
 import { requirePermission } from '../middleware/rbac.middleware.js';
 import { requireUsageLimit } from '../middleware/usage-limit.middleware.js';
+import { requireTenant, requireOrganization, requireActiveSubscription } from '../middleware/tenant.middleware.js';
 
 // Chat routes
 export default async function chatRoutes(fastify) {
-    // Require auth for all chat routes
+    // Require tenant context (auth + org + active subscription) for all chat routes
     fastify.addHook('preHandler', async (request, reply) => {
-        if (!request.session.userId) {
-            return reply.status(401).send({ error: 'Not authenticated' });
-        }
+        // Run tenant middleware
+        await requireTenant()(request, reply);
     });
 
     // Get available AI providers
@@ -84,6 +84,7 @@ export default async function chatRoutes(fastify) {
     fastify.post('/conversations', async (request, reply) => {
         const conversation = new Conversation({
             userId: request.session.userId,
+            organizationId: request.organizationId, // Multi-tenant scope
             title: 'New Conversation',
         });
         await conversation.save();

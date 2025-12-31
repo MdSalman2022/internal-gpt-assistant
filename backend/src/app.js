@@ -1,11 +1,12 @@
 import Fastify from 'fastify';
 import cors from '@fastify/cors';
+import helmet from '@fastify/helmet';
 import cookie from '@fastify/cookie';
 import session from '@fastify/session';
 import multipart from '@fastify/multipart';
 import MongoStore from 'connect-mongo';
 import config from './config/index.js';
-import { authRoutes, documentRoutes, chatRoutes, analyticsRoutes, usersRoutes, auditRoutes, usageRoutes, departmentsRoutes, integrationsRoutes } from './routes/index.js';
+import { authRoutes, documentRoutes, chatRoutes, analyticsRoutes, usersRoutes, auditRoutes, usageRoutes, departmentsRoutes, integrationsRoutes, subscriptionsRoutes, organizationsRoutes, superadminRoutes, demoRoutes } from './routes/index.js';
 import { getLandingPageHtml, getHealthPageHtml } from './utils/statusPages.js';
 
 export async function buildApp() {
@@ -13,25 +14,31 @@ export async function buildApp() {
         logger: config.nodeEnv === 'development',
     });
 
+    // ============================================
+    // SECURITY: Allowed Origins Configuration
+    // Add your production frontend URL here
+    // ============================================
+    const ALLOWED_ORIGINS = [
+        'http://localhost:3000',
+        'http://localhost:3001',
+        'http://localhost:3002',
+        'https://corporate-gpt-client.vercel.app',
+        // TODO: Add your production frontend URL here
+        // 'https://your-app.com',
+        config.frontendUrl
+    ].filter(Boolean);
+
     // CORS
     console.log('CORS Debug:', { nodeEnv: config.nodeEnv, frontendUrl: config.frontendUrl });
     await fastify.register(cors, {
         origin: (origin, cb) => {
-            const allowedOrigins = [
-                'https://corporate-gpt-client.vercel.app',
-                'http://localhost:3000',
-                'http://localhost:3001',
-                'http://localhost:3002',
-                config.frontendUrl
-            ].filter(Boolean);
-
             // Allow requests with no origin (like mobile apps or curl)
             // Allow any localhost for development
             // Allow any vercel.app for production flexibility
             const isAllowed = !origin ||
                 origin.startsWith('http://localhost') ||
                 origin.endsWith('.vercel.app') ||
-                allowedOrigins.includes(origin);
+                ALLOWED_ORIGINS.includes(origin);
 
             if (isAllowed) {
                 cb(null, true);
@@ -41,6 +48,51 @@ export async function buildApp() {
             }
         },
         credentials: true,
+    });
+
+    // ============================================
+    // SECURITY: HTTP Security Headers (Helmet)
+    // ============================================
+    await fastify.register(helmet, {
+        // Content Security Policy - controls what resources can be loaded
+        contentSecurityPolicy: config.nodeEnv === 'production' ? {
+            directives: {
+                defaultSrc: ["'self'"],
+                scriptSrc: ["'self'", "'unsafe-inline'"], // Allow inline scripts for some frameworks
+                styleSrc: ["'self'", "'unsafe-inline'", 'https://fonts.googleapis.com'],
+                fontSrc: ["'self'", 'https://fonts.gstatic.com'],
+                imgSrc: ["'self'", 'data:', 'https:', 'blob:'],
+                connectSrc: [
+                    "'self'",
+                    ...ALLOWED_ORIGINS,
+                    'https://*.stripe.com', // For Stripe payments
+                    // TODO: Add any external APIs you call
+                ],
+                frameSrc: ["'self'", 'https://*.stripe.com'], // For Stripe checkout
+                objectSrc: ["'none'"],
+                upgradeInsecureRequests: [],
+            },
+        } : false, // Disable CSP in development to avoid issues
+
+        // Cross-Origin policies
+        crossOriginEmbedderPolicy: false, // Disable - can break loading external resources
+        crossOriginResourcePolicy: { policy: 'cross-origin' }, // Allow cross-origin resource sharing
+
+        // HSTS - Force HTTPS (only in production)
+        hsts: config.nodeEnv === 'production' ? {
+            maxAge: 31536000, // 1 year
+            includeSubDomains: true,
+            preload: true,
+        } : false,
+
+        // Other security headers
+        xContentTypeOptions: true, // Prevent MIME type sniffing
+        xDnsPrefetchControl: { allow: false }, // Disable DNS prefetching
+        xDownloadOptions: true, // Prevent IE from executing downloads
+        xFrameOptions: { action: 'sameorigin' }, // Prevent clickjacking
+        xPermittedCrossDomainPolicies: { permittedPolicies: 'none' },
+        xXssProtection: true, // XSS filter (legacy but still useful)
+        referrerPolicy: { policy: 'strict-origin-when-cross-origin' },
     });
 
     // Cookie and Session
@@ -103,6 +155,12 @@ export async function buildApp() {
     fastify.register(usageRoutes, { prefix: '/api/usage' });
     fastify.register(departmentsRoutes, { prefix: '/api/departments' });
     fastify.register(integrationsRoutes, { prefix: '/api/integrations' });
+
+    // Multi-tenant SaaS routes
+    fastify.register(subscriptionsRoutes, { prefix: '/api/subscriptions' });
+    fastify.register(organizationsRoutes, { prefix: '/api/organizations' });
+    fastify.register(superadminRoutes, { prefix: '/api/superadmin' });
+    fastify.register(demoRoutes, { prefix: '/api/demo' });
 
     // Global error handler
     fastify.setErrorHandler((error, request, reply) => {

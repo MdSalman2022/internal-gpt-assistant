@@ -34,6 +34,7 @@ class DocumentService {
                     cloudinaryId: cloudinaryResult.publicId,
                 },
                 uploadedBy: userId,
+                organizationId: options.organizationId || null, // Multi-tenant scope
                 status: 'pending',
                 // Conversation scope - if set, only visible in that conversation's context
                 conversationId: options.conversationId || null,

@@ -58,6 +58,21 @@ const config = {
     // Frontend
     frontendUrl: process.env.FRONTEND_URL || 'http://localhost:3000',
 
+    // Stripe
+    stripe: {
+        secretKey: process.env.STRIPE_SECRET_KEY,
+        publishableKey: process.env.STRIPE_PUBLISHABLE_KEY,
+        webhookSecret: process.env.STRIPE_WEBHOOK_SECRET,
+        prices: {
+            starterMonthly: process.env.STRIPE_PRICE_STARTER_MONTHLY,
+            starterYearly: process.env.STRIPE_PRICE_STARTER_YEARLY,
+            proMonthly: process.env.STRIPE_PRICE_PRO_MONTHLY,
+            proYearly: process.env.STRIPE_PRICE_PRO_YEARLY,
+        },
+    },
+    stripeSecretKey: process.env.STRIPE_SECRET_KEY,
+    stripeWebhookSecret: process.env.STRIPE_WEBHOOK_SECRET,
+
     // RAG Settings
     rag: {
         chunkSize: 500,

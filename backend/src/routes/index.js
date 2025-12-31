@@ -8,3 +8,8 @@ export { default as usageRoutes } from './usage.routes.js';
 export { default as departmentsRoutes } from './departments.routes.js';
 export { default as integrationsRoutes } from './integrations.routes.js';
 
+// Multi-tenant SaaS routes
+export { default as subscriptionsRoutes } from './subscriptions.routes.js';
+export { default as organizationsRoutes } from './organizations.routes.js';
+export { default as superadminRoutes } from './superadmin.routes.js';
+export { default as demoRoutes } from './demo.routes.js';

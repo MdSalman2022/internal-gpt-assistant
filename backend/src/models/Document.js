@@ -72,6 +72,12 @@ const documentSchema = new mongoose.Schema({
         ref: 'User',
         required: true,
     },
+    // Multi-tenant: Organization scope
+    organizationId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Organization',
+        index: true,
+    },
     department: {
         type: String,
         default: null,
@@ -132,6 +138,8 @@ documentSchema.index({ uploadedBy: 1, status: 1 });
 documentSchema.index({ department: 1 });
 documentSchema.index({ queryCount: -1 }); // For popular documents
 documentSchema.index({ lastAccessedAt: -1 }); // For recently used
+documentSchema.index({ organizationId: 1, status: 1 }); // Multi-tenant queries
+documentSchema.index({ organizationId: 1, uploadedBy: 1 }); // User's docs within org
 
 const Document = mongoose.model('Document', documentSchema);
 

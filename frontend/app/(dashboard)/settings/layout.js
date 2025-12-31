@@ -5,13 +5,15 @@ import Link from 'next/link';
 import { useAuth } from '@/lib/auth-context';
 import {
     User, Bell, Shield, Palette, Database, Key, Building2,
-    LogOut, FileText, Users, Activity, Zap, DollarSign
+    LogOut, FileText, Users, Activity, Zap, DollarSign, CreditCard, UserPlus
 } from 'lucide-react';
 
 // Settings navigation items
 const getSettingsNavItems = (isAdminOrVisitor) => [
     { href: '/settings/profile', label: 'Profile', icon: User },
     { href: '/settings/usage', label: 'Usage', icon: Zap },
+    ...(isAdminOrVisitor ? [{ href: '/settings/billing', label: 'Billing', icon: CreditCard }] : []),
+    ...(isAdminOrVisitor ? [{ href: '/settings/team', label: 'Team', icon: UserPlus }] : []),
     ...(isAdminOrVisitor ? [{ href: '/settings/ai-models', label: 'AI Models', icon: Database }] : []),
     ...(isAdminOrVisitor ? [{ href: '/settings/cost-controls', label: 'Cost Controls', icon: DollarSign }] : []),
     ...(isAdminOrVisitor ? [{ href: '/settings/analytics', label: 'Analytics', icon: Activity }] : []),

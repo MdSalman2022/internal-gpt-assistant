@@ -7,3 +7,8 @@ export { default as UsageLog } from './UsageLog.js';
 export { default as AdminSettings } from './AdminSettings.js';
 export { default as Department } from './Department.js';
 
+// Multi-tenant SaaS models
+export { default as Organization } from './Organization.js';
+export { default as Subscription } from './Subscription.js';
+export { default as Plan } from './Plan.js';
+export { default as DemoRequest } from './DemoRequest.js';

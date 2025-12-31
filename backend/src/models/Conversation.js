@@ -6,6 +6,12 @@ const conversationSchema = new mongoose.Schema({
         ref: 'User',
         required: true,
     },
+    // Multi-tenant: Organization scope
+    organizationId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Organization',
+        index: true,
+    },
     title: {
         type: String,
         default: 'New Conversation',
@@ -39,6 +45,7 @@ const conversationSchema = new mongoose.Schema({
 // Indexes
 conversationSchema.index({ userId: 1, lastMessageAt: -1 });
 conversationSchema.index({ userId: 1, isPinned: -1, lastMessageAt: -1 });
+conversationSchema.index({ organizationId: 1, userId: 1 }); // Multi-tenant queries
 
 const Conversation = mongoose.model('Conversation', conversationSchema);
 

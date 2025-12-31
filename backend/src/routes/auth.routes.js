@@ -40,6 +40,113 @@ export default async function authRoutes(fastify) {
         }
     });
 
+    // Register new user with organization
+    fastify.post('/register-organization', async (request, reply) => {
+        const {
+            name, email, password,
+            organizationName, organizationSlug, industry,
+            plan, billingInterval
+        } = request.body;
+
+        // Validate required fields
+        if (!email || !password || !name) {
+            return reply.status(400).send({ error: 'Name, email, and password are required' });
+        }
+        if (!organizationName || !organizationSlug) {
+            return reply.status(400).send({ error: 'Organization name and URL are required' });
+        }
+
+        // Validate slug format
+        if (!/^[a-z0-9-]+$/.test(organizationSlug)) {
+            return reply.status(400).send({ error: 'Organization URL can only contain lowercase letters, numbers, and hyphens' });
+        }
+
+        try {
+            const { user, organization } = await authService.registerWithOrganization({
+                email, password, name,
+                organizationName, organizationSlug, industry,
+                plan: plan || 'trial',
+                billingInterval: billingInterval || 'month'
+            });
+
+            // Set session
+            request.session.userId = user._id;
+            request.session.user = user.toJSON();
+            await request.session.save();
+
+            // AUDIT LOG: Register with Organization
+            auditService.log(request, 'CREATE', { type: 'organization', id: organization._id.toString() }, {
+                method: 'register-organization',
+                email: user.email,
+                plan: organization.plan
+            });
+
+            // For trial plan, just return success
+            if (plan === 'trial' || !plan) {
+                return {
+                    success: true,
+                    user: user.toJSON(),
+                    organization: {
+                        _id: organization._id,
+                        name: organization.name,
+                        slug: organization.slug,
+                        plan: organization.plan,
+                        planStatus: organization.planStatus,
+                        trialEndsAt: organization.trialEndsAt
+                    },
+                    redirectUrl: '/chat'
+                };
+            }
+
+            // For paid plans, return checkout URL (will be implemented with Stripe)
+            // For now, start as trial and redirect to billing
+            return {
+                success: true,
+                user: user.toJSON(),
+                organization: {
+                    _id: organization._id,
+                    name: organization.name,
+                    slug: organization.slug,
+                    plan: organization.plan,
+                    planStatus: organization.planStatus
+                },
+                redirectUrl: '/settings/billing'
+            };
+        } catch (error) {
+            if (error.message === 'Email already registered' || error.message === 'Organization URL is already taken') {
+                return reply.status(409).send({ error: error.message });
+            }
+            console.error('Registration error:', error);
+            return reply.status(500).send({ error: 'Registration failed. Please try again.' });
+        }
+    });
+
+    // Check slug availability
+    fastify.get('/check-slug/:slug', async (request, reply) => {
+        const { slug } = request.params;
+
+        if (!slug || slug.length < 3) {
+            return { available: false, error: 'Slug must be at least 3 characters' };
+        }
+
+        const isAvailable = await authService.isSlugAvailable(slug);
+        return { available: isAvailable };
+    });
+
+    // Generate slug from name
+    fastify.get('/generate-slug', async (request, reply) => {
+        const { name } = request.query;
+
+        if (!name) {
+            return reply.status(400).send({ error: 'Name is required' });
+        }
+
+        const slug = authService.generateSlug(name);
+        const isAvailable = await authService.isSlugAvailable(slug);
+
+        return { slug, available: isAvailable };
+    });
+
     // Login
     fastify.post('/login', async (request, reply) => {
         const { email, password } = request.body;

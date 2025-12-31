@@ -39,6 +39,31 @@ const userSchema = new mongoose.Schema({
         type: String,  // Format: "DepartmentName:TeamName"
         trim: true,
     }],
+    // Organization (multi-tenant)
+    organizationId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Organization',
+        index: true,
+    },
+    orgRole: {
+        type: String,
+        enum: ['owner', 'admin', 'member'],
+        default: 'member',
+    },
+    // Platform-level role (for superadmin)
+    platformRole: {
+        type: String,
+        enum: ['superadmin', 'user'],
+        default: 'user',
+    },
+    // Invitation tracking
+    invitedBy: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'User',
+    },
+    invitedAt: Date,
+    invitationToken: String,
+    invitationExpires: Date,
     // Pending access requests (awaiting admin approval)
     pendingDepartments: [{
         type: String,
