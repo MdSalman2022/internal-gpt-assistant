@@ -60,7 +60,7 @@ export default function CostControlsAdmin() {
 
     if (!isAdmin) {
         return (
-            <div className="text-center text-slate-500 py-8">
+            <div className="text-center text-muted-foreground py-8">
                 <AlertCircle className="w-8 h-8 mx-auto mb-2" />
                 <p>Admin access required</p>
             </div>
@@ -70,7 +70,7 @@ export default function CostControlsAdmin() {
     if (loading) {
         return (
             <div className="flex items-center justify-center h-48">
-                <div className="w-6 h-6 border-2 border-primary-500 border-t-transparent rounded-full animate-spin" />
+                <div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin" />
             </div>
         );
     }
@@ -78,82 +78,92 @@ export default function CostControlsAdmin() {
     return (
         <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
             {/* Header */}
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div>
-                    <h3 className="text-lg font-medium text-white flex items-center gap-2">
-                        <Settings className="w-5 h-5 text-primary-400" />
+                    <h3 className="text-lg font-medium text-foreground flex items-center gap-2">
+                        <Settings className="w-5 h-5 text-primary" />
                         Cost Controls
                     </h3>
-                    <p className="text-slate-400 text-sm mt-1">Manage user token limits</p>
+                    <p className="text-muted-foreground text-sm mt-1">Manage user token limits</p>
                 </div>
                 <button
                     onClick={resetDailyAll}
-                    className="btn-secondary text-xs flex items-center gap-1.5"
+                    className="flex items-center gap-2 px-3 py-2 bg-secondary hover:bg-secondary/80 text-secondary-foreground text-sm rounded-lg transition-colors border border-border"
                 >
-                    <RotateCcw className="w-3.5 h-3.5" />
+                    <RotateCcw className="w-4 h-4" />
                     Reset All Daily
                 </button>
             </div>
 
             {/* Users Table */}
-            <div className="bg-slate-900/50 border border-slate-800 rounded-xl overflow-hidden">
-                <table className="w-full text-left">
-                    <thead>
-                        <tr className="border-b border-slate-700/50 text-xs uppercase tracking-wider text-slate-500 bg-slate-800/50">
-                            <th className="px-4 py-3">User</th>
-                            <th className="px-4 py-3">Daily Usage</th>
-                            <th className="px-4 py-3">Daily Limit</th>
-                            <th className="px-4 py-3">Monthly Usage</th>
-                            <th className="px-4 py-3">Monthly Limit</th>
-                        </tr>
-                    </thead>
-                    <tbody className="divide-y divide-slate-800">
-                        {users.map(u => (
-                            <tr key={u._id} className="hover:bg-slate-800/30">
-                                <td className="px-4 py-3">
-                                    <div>
-                                        <p className="text-sm text-white">{u.name}</p>
-                                        <p className="text-xs text-slate-500">{u.email}</p>
-                                    </div>
-                                </td>
-                                <td className="px-4 py-3">
-                                    <span className="text-sm text-slate-300">
-                                        {(u.usage?.dailyTokens || 0).toLocaleString()}
-                                    </span>
-                                </td>
-                                <td className="px-4 py-3">
-                                    <input
-                                        type="number"
-                                        defaultValue={u.limits?.dailyTokens || 50000}
-                                        onBlur={(e) => updateLimit(u._id, 'dailyTokens', e.target.value)}
-                                        className="w-24 bg-slate-800 border border-slate-700 rounded px-2 py-1 text-sm text-white"
-                                    />
-                                </td>
-                                <td className="px-4 py-3">
-                                    <span className="text-sm text-slate-300">
-                                        {(u.usage?.monthlyTokens || 0).toLocaleString()}
-                                    </span>
-                                </td>
-                                <td className="px-4 py-3">
-                                    <input
-                                        type="number"
-                                        defaultValue={u.limits?.monthlyTokens || 500000}
-                                        onBlur={(e) => updateLimit(u._id, 'monthlyTokens', e.target.value)}
-                                        className="w-28 bg-slate-800 border border-slate-700 rounded px-2 py-1 text-sm text-white"
-                                    />
-                                </td>
+            <div className="bg-card border border-border rounded-xl overflow-hidden shadow-sm">
+                <div className="overflow-x-auto">
+                    <table className="w-full text-left">
+                        <thead>
+                            <tr className="border-b border-border text-xs uppercase tracking-wider text-muted-foreground bg-muted/50">
+                                <th className="px-4 py-3 font-medium">User</th>
+                                <th className="px-4 py-3 font-medium">Daily Usage</th>
+                                <th className="px-4 py-3 font-medium">Daily Limit</th>
+                                <th className="px-4 py-3 font-medium">Monthly Usage</th>
+                                <th className="px-4 py-3 font-medium">Monthly Limit</th>
                             </tr>
-                        ))}
-                    </tbody>
-                </table>
+                        </thead>
+                        <tbody className="divide-y divide-border">
+                            {users.map(u => (
+                                <tr key={u._id} className="hover:bg-muted/50 transition-colors">
+                                    <td className="px-4 py-3">
+                                        <div>
+                                            <p className="text-sm font-medium text-foreground">{u.name}</p>
+                                            <p className="text-xs text-muted-foreground">{u.email}</p>
+                                        </div>
+                                    </td>
+                                    <td className="px-4 py-3">
+                                        <div className="flex items-center gap-2">
+                                            <span className={`text-sm ${(u.usage?.dailyTokens || 0) > (u.limits?.dailyTokens || 50000) * 0.9
+                                                    ? 'text-destructive font-medium'
+                                                    : 'text-foreground'
+                                                }`}>
+                                                {(u.usage?.dailyTokens || 0).toLocaleString()}
+                                            </span>
+                                        </div>
+                                    </td>
+                                    <td className="px-4 py-3">
+                                        <input
+                                            type="number"
+                                            defaultValue={u.limits?.dailyTokens || 50000}
+                                            onBlur={(e) => updateLimit(u._id, 'dailyTokens', e.target.value)}
+                                            className="w-28 bg-background border border-border rounded-lg px-2 py-1 text-sm text-foreground focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition-all"
+                                        />
+                                    </td>
+                                    <td className="px-4 py-3">
+                                        <span className={`text-sm ${(u.usage?.monthlyTokens || 0) > (u.limits?.monthlyTokens || 500000) * 0.9
+                                                ? 'text-destructive font-medium'
+                                                : 'text-foreground'
+                                            }`}>
+                                            {(u.usage?.monthlyTokens || 0).toLocaleString()}
+                                        </span>
+                                    </td>
+                                    <td className="px-4 py-3">
+                                        <input
+                                            type="number"
+                                            defaultValue={u.limits?.monthlyTokens || 500000}
+                                            onBlur={(e) => updateLimit(u._id, 'monthlyTokens', e.target.value)}
+                                            className="w-28 bg-background border border-border rounded-lg px-2 py-1 text-sm text-foreground focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition-all"
+                                        />
+                                    </td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
+                </div>
             </div>
 
             {/* Toast */}
             {toast && (
-                <div className={`fixed bottom-6 right-6 z-50 flex items-center gap-2 px-4 py-3 rounded-xl shadow-xl animate-scale-in border
-                    ${toast.type === 'error' ? 'bg-slate-900 border-red-500/50 text-red-200' : 'bg-slate-900 border-green-500/50 text-green-200'}`}>
-                    {toast.type === 'error' ? <AlertCircle className="w-4 h-4" /> : <Check className="w-4 h-4" />}
-                    <span className="text-sm">{toast.message}</span>
+                <div className={`fixed bottom-6 right-6 z-50 flex items-center gap-2 px-4 py-3 rounded-xl shadow-xl animate-in slide-in-from-bottom-5 border
+                    ${toast.type === 'error' ? 'bg-destructive border-destructive/50 text-destructive-foreground' : 'bg-card border-border text-foreground'}`}>
+                    {toast.type === 'error' ? <AlertCircle className="w-4 h-4" /> : <Check className="w-4 h-4 text-green-500" />}
+                    <span className="text-sm font-medium">{toast.message}</span>
                 </div>
             )}
         </div>

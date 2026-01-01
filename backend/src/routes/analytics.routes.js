@@ -1,22 +1,26 @@
 import { Document, Conversation, Message, User } from '../models/index.js';
-import { ragService } from '../services/index.js';
+import { requireTenant, requireOrgRole } from '../middleware/tenant.middleware.js';
 
 // Analytics routes
 export default async function analyticsRoutes(fastify) {
-    // Require auth for all analytics routes
+    // Require tenant context and admin/owner role
     fastify.addHook('preHandler', async (request, reply) => {
-        if (!request.session.userId) {
-            return reply.status(401).send({ error: 'Not authenticated' });
-        }
+        await requireTenant()(request, reply);
+        await requireOrgRole('admin', 'owner')(request, reply);
     });
 
     // Get dashboard overview stats
     fastify.get('/stats', async (request, reply) => {
         try {
-            const userId = request.session.userId;
+            const orgId = request.organizationId;
             const now = new Date();
             const thirtyDaysAgo = new Date(now - 30 * 24 * 60 * 60 * 1000);
             const sevenDaysAgo = new Date(now - 7 * 24 * 60 * 60 * 1000);
+
+            // Get conversation IDs for this organization to filter messages
+            // Optimization: In a huge system, we'd want organizationId on Message. 
+            // For now, fetching IDs is acceptable for typical org sizes.
+            const orgConversationIds = await Conversation.find({ organizationId: orgId }).distinct('_id');
 
             // Get counts in parallel
             const [
@@ -27,17 +31,17 @@ export default async function analyticsRoutes(fastify) {
                 activeUsers,
                 documentsThisMonth,
             ] = await Promise.all([
-                Document.countDocuments({}),
-                Conversation.countDocuments({ userId }),
-                Message.countDocuments({ role: 'user' }),
-                Message.find({ createdAt: { $gte: sevenDaysAgo } }).countDocuments(),
-                User.countDocuments({ updatedAt: { $gte: thirtyDaysAgo } }),
-                Document.countDocuments({ createdAt: { $gte: thirtyDaysAgo } }),
+                Document.countDocuments({ organizationId: orgId }),
+                Conversation.countDocuments({ organizationId: orgId }),
+                Message.countDocuments({ conversationId: { $in: orgConversationIds }, role: 'user' }),
+                Message.countDocuments({ conversationId: { $in: orgConversationIds }, createdAt: { $gte: sevenDaysAgo } }),
+                User.countDocuments({ organizationId: orgId, updatedAt: { $gte: thirtyDaysAgo } }),
+                Document.countDocuments({ organizationId: orgId, createdAt: { $gte: thirtyDaysAgo } }),
             ]);
 
             // Calculate average response time from messages with latency
             const latencyStats = await Message.aggregate([
-                { $match: { role: 'assistant', latency: { $exists: true, $gt: 0 } } },
+                { $match: { conversationId: { $in: orgConversationIds }, role: 'assistant', latency: { $exists: true, $gt: 0 } } },
                 { $group: { _id: null, avgLatency: { $avg: '$latency' }, count: { $sum: 1 } } },
             ]);
 
@@ -49,6 +53,7 @@ export default async function analyticsRoutes(fastify) {
                 activeUsers,
                 avgResponseTime: Math.round(avgResponseTime),
                 conversationsThisWeek: await Conversation.countDocuments({
+                    organizationId: orgId,
                     createdAt: { $gte: sevenDaysAgo }
                 }),
                 documentsThisMonth,
@@ -63,13 +68,15 @@ export default async function analyticsRoutes(fastify) {
     // Get top queries (most common user questions)
     fastify.get('/top-queries', async (request, reply) => {
         try {
+            const orgId = request.organizationId;
             const limit = parseInt(request.query.limit) || 10;
+            const orgConversationIds = await Conversation.find({ organizationId: orgId }).distinct('_id');
 
             // Get recent user messages and count similar ones
             const topQueries = await Message.aggregate([
-                { $match: { role: 'user' } },
+                { $match: { conversationId: { $in: orgConversationIds }, role: 'user' } },
                 { $sort: { createdAt: -1 } },
-                { $limit: 500 }, // Sample recent messages
+                { $limit: 1000 }, // Sample recent messages (increased from 500)
                 {
                     $group: {
                         _id: { $toLower: { $substr: ['$content', 0, 100] } },
@@ -98,11 +105,14 @@ export default async function analyticsRoutes(fastify) {
     // Get knowledge gaps (low confidence/unanswered questions)
     fastify.get('/knowledge-gaps', async (request, reply) => {
         try {
+            const orgId = request.organizationId;
             const limit = parseInt(request.query.limit) || 10;
+            const orgConversationIds = await Conversation.find({ organizationId: orgId }).distinct('_id');
 
             const gaps = await Message.aggregate([
                 {
                     $match: {
+                        conversationId: { $in: orgConversationIds },
                         role: 'assistant',
                         $or: [
                             { isLowConfidence: true },
@@ -154,13 +164,16 @@ export default async function analyticsRoutes(fastify) {
     // Get query volume over time (for chart)
     fastify.get('/query-volume', async (request, reply) => {
         try {
+            const orgId = request.organizationId;
             const days = parseInt(request.query.days) || 14;
             const startDate = new Date();
             startDate.setDate(startDate.getDate() - days);
+            const orgConversationIds = await Conversation.find({ organizationId: orgId }).distinct('_id');
 
             const volume = await Message.aggregate([
                 {
                     $match: {
+                        conversationId: { $in: orgConversationIds },
                         role: 'user',
                         createdAt: { $gte: startDate },
                     },
@@ -200,7 +213,9 @@ export default async function analyticsRoutes(fastify) {
     // Get document stats by status
     fastify.get('/document-stats', async (request, reply) => {
         try {
+            const orgId = request.organizationId;
             const stats = await Document.aggregate([
+                { $match: { organizationId: orgId } },
                 {
                     $group: {
                         _id: '$status',
@@ -230,9 +245,13 @@ export default async function analyticsRoutes(fastify) {
     // Get feedback summary
     fastify.get('/feedback', async (request, reply) => {
         try {
+            const orgId = request.organizationId;
+            const orgConversationIds = await Conversation.find({ organizationId: orgId }).distinct('_id');
+
             const feedback = await Message.aggregate([
                 {
                     $match: {
+                        conversationId: { $in: orgConversationIds },
                         role: 'assistant',
                         feedback: { $exists: true, $ne: null },
                     },

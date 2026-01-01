@@ -192,11 +192,16 @@ class DocumentService {
     }
 
     // Get documents with pagination and filters
-    async getDocuments({ userId, userRole, userEmail, departments, teams, status, search, page = 1, limit = 20 }) {
+    async getDocuments({ userId, userRole, userEmail, departments, teams, organizationId, status, search, page = 1, limit = 20 }) {
         const query = {};
 
         // Strictly exclude conversation-scoped documents from general library
         query.conversationId = null;
+
+        // Multi-tenant strict scope
+        if (organizationId) {
+            query.organizationId = organizationId;
+        }
 
         // --- ACL LOGIC ---
         // Admin sees everything.
@@ -343,9 +348,14 @@ class DocumentService {
         return docs.map(d => d._id.toString());
     }
 
-    // Get single document by ID
-    async getDocument(documentId) {
-        const document = await Document.findById(documentId)
+    // Get single document by ID with optional organization scope
+    async getDocument(documentId, organizationId = null) {
+        const query = { _id: documentId };
+        if (organizationId) {
+            query.organizationId = organizationId;
+        }
+
+        const document = await Document.findOne(query)
             .populate('uploadedBy', 'name email')
             .lean();
         return document;

@@ -135,6 +135,7 @@ export default async function documentRoutes(fastify) {
             userEmail: user.email,
             departments: user.departments || [],
             teams: user.teams || [],
+            organizationId: request.organizationId,
             status,
             search,
             page: parseInt(page),
@@ -148,7 +149,7 @@ export default async function documentRoutes(fastify) {
     fastify.get('/:id', {
         preHandler: [requirePermission('documents:read')]
     }, async (request, reply) => {
-        const document = await documentService.getDocument(request.params.id);
+        const document = await documentService.getDocument(request.params.id, request.organizationId);
 
         if (!document) {
             return reply.status(404).send({ error: 'Document not found' });
@@ -246,7 +247,10 @@ export default async function documentRoutes(fastify) {
             return reply.status(403).send({ error: 'You are not an admin. Only administrators can delete documents.' });
         }
 
-        const document = await Document.findById(request.params.id);
+        const document = await Document.findOne({
+            _id: request.params.id,
+            organizationId: request.organizationId
+        });
 
         if (!document) {
             return reply.status(404).send({ error: 'Document not found' });
@@ -266,7 +270,10 @@ export default async function documentRoutes(fastify) {
     fastify.patch('/:id', {
         preHandler: [requirePermission('documents:update')]
     }, async (request, reply) => {
-        const document = await Document.findById(request.params.id);
+        const document = await Document.findOne({
+            _id: request.params.id,
+            organizationId: request.organizationId
+        });
 
         if (!document) {
             return reply.status(404).send({ error: 'Document not found' });
@@ -284,7 +291,10 @@ export default async function documentRoutes(fastify) {
     fastify.post('/:id/reprocess', {
         preHandler: [requirePermission('documents:update')]
     }, async (request, reply) => {
-        const document = await Document.findById(request.params.id);
+        const document = await Document.findOne({
+            _id: request.params.id,
+            organizationId: request.organizationId
+        });
 
         if (!document) {
             return reply.status(404).send({ error: 'Document not found' });

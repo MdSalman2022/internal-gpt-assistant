@@ -95,8 +95,8 @@ export default async function demoRoutes(fastify) {
         const Plan = (await import('../models/Plan.js')).default;
 
         const plans = await Plan.find({ isActive: true })
-            .select('name displayName description monthlyPrice yearlyPrice features featureList isPopular sortOrder')
-            .sort({ sortOrder: 1 });
+            .select('type name description priceMonthly priceYearly limits features popular displayOrder cta href')
+            .sort({ displayOrder: 1 });
 
         return { plans };
     });

@@ -63,7 +63,8 @@ export default async function chatRoutes(fastify) {
             data.mimetype,
             request.session.userId,
             {
-                accessLevel: 'private' // Force private "My Document" (no conversation scope)
+                accessLevel: 'private', // Force private "My Document" (no conversation scope)
+                organizationId: request.organizationId // Multi-tenant scope
             }
         );
 

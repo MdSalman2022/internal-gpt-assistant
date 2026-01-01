@@ -1,21 +1,26 @@
-import { Organization, Subscription, Plan, User } from '../models/index.js';
+import { Organization, Subscription, Plan, User, Payment } from '../models/index.js';
 import { stripeService } from '../services/stripeService.js';
 import { auditService } from '../services/index.js';
 import config from '../config/index.js';
 
 export default async function subscriptionsRoutes(fastify) {
-    // All routes require authentication
+    // All routes require authentication except /plans
     fastify.addHook('preHandler', async (request, reply) => {
+        const path = request.routerPath || request.url.split('?')[0];
+        if (path?.endsWith('/plans') || path?.endsWith('/webhook')) {
+            return; // Skip auth for public routes
+        }
         if (!request.session?.userId) {
             return reply.status(401).send({ error: 'Authentication required' });
         }
     });
 
     /**
-     * GET /plans - Get all available plans
+     * GET /plans - Get all available plans from database
      */
     fastify.get('/plans', async (request, reply) => {
-        const plans = await Plan.getActivePlans();
+        // Fetch plans from database
+        const plans = await Plan.find({ isActive: true }).sort({ displayOrder: 1 });
         return { plans };
     });
 
@@ -29,10 +34,22 @@ export default async function subscriptionsRoutes(fastify) {
         }
 
         const organization = await Organization.findById(user.organizationId);
-        const subscription = await Subscription.findOne({
-            organizationId: user.organizationId,
-            status: { $in: ['active', 'trialing', 'past_due'] }
-        });
+
+        // Get customer credit balance from Stripe
+        let creditBalance = { balance: 0, balanceDisplay: '$0.00' };
+        if (organization?.stripeCustomerId) {
+            creditBalance = await stripeService.getCustomerBalance(organization.stripeCustomerId);
+        }
+
+        // Build subscription from Organization's embedded fields
+        const subscription = organization.stripeSubscriptionId ? {
+            plan: organization.plan,
+            status: organization.planStatus,
+            currentPeriodStart: organization.currentPeriodStart,
+            currentPeriodEnd: organization.currentPeriodEnd,
+            cancelAtPeriodEnd: organization.cancelAtPeriodEnd,
+            cancelledAt: organization.cancelledAt
+        } : null;
 
         return {
             organization: {
@@ -43,13 +60,10 @@ export default async function subscriptionsRoutes(fastify) {
                 trialEndsAt: organization.trialEndsAt,
                 limits: organization.limits,
                 usage: organization.usage,
+                stripeCustomerId: organization.stripeCustomerId,
             },
-            subscription: subscription ? {
-                plan: subscription.plan,
-                status: subscription.status,
-                currentPeriodEnd: subscription.currentPeriodEnd,
-                cancelAtPeriodEnd: subscription.cancelAtPeriodEnd,
-            } : null,
+            subscription,
+            creditBalance,
         };
     });
 
@@ -102,6 +116,135 @@ export default async function subscriptionsRoutes(fastify) {
     });
 
     /**
+     * POST /upgrade - Upgrade/downgrade existing subscription
+     */
+    fastify.post('/upgrade', async (request, reply) => {
+        const { newPriceId, newPlan } = request.body;
+        const user = await User.findById(request.session.userId);
+
+        if (!user?.organizationId) {
+            return reply.status(400).send({ error: 'Organization required' });
+        }
+
+        if (!['owner', 'admin'].includes(user.orgRole)) {
+            return reply.status(403).send({ error: 'Only owners and admins can manage billing' });
+        }
+
+        const organization = await Organization.findById(user.organizationId);
+        if (!organization?.stripeSubscriptionId) {
+            return reply.status(400).send({ error: 'No active subscription to upgrade. Please use checkout for new subscriptions.' });
+        }
+
+        try {
+            // Update the subscription in Stripe (handles proration automatically)
+            const updatedSubscription = await stripeService.updateSubscription(
+                organization.stripeSubscriptionId,
+                newPriceId
+            );
+
+            // Update organization plan and billing period
+            organization.plan = newPlan || 'starter';
+            organization.planStatus = updatedSubscription.status;
+            organization.currentPeriodStart = new Date(updatedSubscription.current_period_start * 1000);
+            organization.currentPeriodEnd = new Date(updatedSubscription.current_period_end * 1000);
+            organization.updatePlanLimits();
+            await organization.save();
+
+            // Fetch the proration invoice and store using Payment model
+            if (updatedSubscription.latest_invoice) {
+                try {
+                    const invoice = await stripeService.getStripe().invoices.retrieve(
+                        updatedSubscription.latest_invoice,
+                        { expand: ['payment_intent'] }
+                    );
+                    if (invoice.status === 'paid') {
+                        await Payment.createFromStripeInvoice(organization._id, invoice);
+                    }
+                } catch (invoiceError) {
+                    console.error('Error fetching proration invoice:', invoiceError);
+                }
+            }
+
+            auditService.log(request, 'SUBSCRIPTION_UPDATED', { type: 'subscription' }, {
+                organizationId: organization._id.toString(),
+                oldPlan: organization.plan,
+                newPlan,
+            });
+
+            return {
+                success: true,
+                message: 'Subscription updated successfully',
+                newPlan,
+                currentPeriodEnd: organization.currentPeriodEnd,
+            };
+        } catch (error) {
+            console.error('Error upgrading subscription:', error);
+            return reply.status(500).send({ error: 'Failed to upgrade subscription' });
+        }
+    });
+
+    /**
+     * POST /verify-session - Manually verify checkout session (for localhost)
+     */
+    fastify.post('/verify-session', async (request, reply) => {
+        const { sessionId } = request.body;
+        const user = await User.findById(request.session.userId);
+
+        if (!user?.organizationId) {
+            return reply.status(400).send({ error: 'Organization required' });
+        }
+
+        if (!sessionId) {
+            return reply.status(400).send({ error: 'Session ID required' });
+        }
+
+        try {
+            // Retrieve session from Stripe
+            const session = await stripeService.retrieveCheckoutSession(sessionId);
+
+            if (session.payment_status === 'paid') {
+                // Manually trigger the completion handler
+                // We add the organizationId metadata if missing (though it should be there)
+                session.metadata = { ...session.metadata, organizationId: user.organizationId.toString() };
+
+                await handleCheckoutComplete(session);
+
+                // If subscription exists, fetch it too to ensure full sync
+                if (session.subscription) {
+                    const subscription = await stripeService.retrieveSubscription(session.subscription);
+
+                    // CRITICAL: Ensure we have the metadata on the subscription object too
+                    subscription.metadata = { ...subscription.metadata, organizationId: user.organizationId.toString() };
+
+                    await handleSubscriptionUpdate(subscription);
+
+                    // Also fetch and store the first invoice/payment using Payment model
+                    try {
+                        const organization = await Organization.findById(user.organizationId);
+                        if (organization?.stripeCustomerId) {
+                            const invoices = await stripeService.getInvoices(organization.stripeCustomerId, 1);
+                            if (invoices && invoices.length > 0 && invoices[0].status === 'paid') {
+                                // Use Payment model - handles duplicates automatically
+                                await Payment.createFromStripeInvoice(organization._id, invoices[0]);
+                            }
+                        }
+                    } catch (invoiceError) {
+                        console.error('Error fetching initial invoice:', invoiceError);
+                        // Non-critical, continue anyway
+                    }
+                }
+
+                return { success: true, message: 'Subscription verified and updated' };
+            } else {
+                return { success: false, status: session.payment_status };
+            }
+        } catch (error) {
+            request.log.error(error);
+            return reply.status(500).send({ error: 'Failed to verify session' });
+        }
+    });
+
+    /**
      * POST /portal - Create Stripe billing portal session
      */
     fastify.post('/portal', async (request, reply) => {
@@ -126,7 +269,7 @@ export default async function subscriptionsRoutes(fastify) {
     });
 
     /**
-     * GET /invoices - Get invoice history
+     * GET /invoices - Get invoice history from Payment collection
      */
     fastify.get('/invoices', async (request, reply) => {
         const user = await User.findById(request.session.userId);
@@ -136,23 +279,100 @@ export default async function subscriptionsRoutes(fastify) {
         }
 
         const organization = await Organization.findById(user.organizationId);
-        if (!organization?.stripeCustomerId) {
-            return { invoices: [] };
+
+        // Fetch payments from Payment collection
+        let payments = await Payment.getForOrganization(user.organizationId, 20);
+
+        // If no payments locally, try syncing from Stripe
+        if (payments.length === 0 && organization?.stripeCustomerId) {
+            try {
+                const stripeInvoices = await stripeService.getInvoices(organization.stripeCustomerId, 10);
+
+                if (stripeInvoices && stripeInvoices.length > 0) {
+                    for (const invoice of stripeInvoices) {
+                        if (invoice.status === 'paid') {
+                            await Payment.createFromStripeInvoice(organization._id, invoice);
+                        }
+                    }
+                    // Re-fetch after sync
+                    payments = await Payment.getForOrganization(user.organizationId, 20);
+                }
+            } catch (error) {
+                console.error('Error syncing invoices from Stripe:', error);
+            }
         }
 
-        const invoices = await stripeService.getInvoices(organization.stripeCustomerId, 20);
+        // Map to invoice format
+        return {
+            invoices: payments.map(payment => ({
+                id: payment.stripeInvoiceId || payment._id?.toString(),
+                number: payment.invoiceNumber || payment.stripeInvoiceId?.slice(-8) || 'N/A',
+                amount: payment.amount,
+                currency: payment.currency?.toUpperCase() || 'USD',
+                status: payment.status === 'succeeded' ? 'paid' : payment.status,
+                created: payment.paidAt || payment.createdAt,
+                hostedUrl: payment.invoiceUrl,
+                pdfUrl: payment.invoicePdf,
+            }))
+        };
+    });
+
+    /**
+     * GET /check-refund-eligibility - Check if user is eligible for refund
+     */
+    fastify.get('/check-refund-eligibility', async (request, reply) => {
+        const user = await User.findById(request.session.userId);
+
+        if (!user?.organizationId) {
+            return { eligible: false };
+        }
+
+        const organization = await Organization.findById(user.organizationId);
+
+        // Check if has active subscription
+        if (!organization?.stripeSubscriptionId || !organization.currentPeriodStart) {
+            return { eligible: false };
+        }
+
+        // Calculate days since subscription started using Organization fields
+        const currentPeriodStart = new Date(organization.currentPeriodStart);
+        const currentPeriodEnd = new Date(organization.currentPeriodEnd);
+        const now = new Date();
+
+        const daysUsed = Math.ceil((now - currentPeriodStart) / (1000 * 60 * 60 * 24));
+        const totalDays = Math.ceil((currentPeriodEnd - currentPeriodStart) / (1000 * 60 * 60 * 24));
+
+        // Check if within 3-day refund window
+        const eligible = daysUsed <= 3;
+
+        if (!eligible) {
+            return {
+                eligible: false,
+                daysUsed,
+                periodEnd: organization.currentPeriodEnd
+            };
+        }
+
+        // Get last payment from Payment collection
+        const lastPayment = await Payment.findOne({
+            organizationId: organization._id,
+            status: 'paid'
+        }).sort({ paidAt: -1 });
+
+        const amountPaid = lastPayment?.amount || 0;
+
+        const chargeAmount = (amountPaid / totalDays) * daysUsed;
+        const refundAmount = amountPaid - chargeAmount;
 
         return {
-            invoices: invoices.map(inv => ({
-                id: inv.id,
-                number: inv.number,
-                amount: inv.amount_paid / 100,
-                currency: inv.currency,
-                status: inv.status,
-                created: new Date(inv.created * 1000),
-                hostedUrl: inv.hosted_invoice_url,
-                pdfUrl: inv.invoice_pdf,
-            })),
+            eligible: true,
+            daysUsed,
+            totalDays,
+            amountPaid,
+            chargeAmount: Math.round(chargeAmount * 100) / 100,
+            refundAmount: Math.round(refundAmount * 100) / 100,
+            periodEnd: organization.currentPeriodEnd,
+            lastPaymentId: lastPayment?.stripeInvoiceId
         };
     });
 
@@ -171,19 +391,100 @@ export default async function subscriptionsRoutes(fastify) {
             return reply.status(400).send({ error: 'No active subscription' });
         }
 
-        await stripeService.cancelSubscription(organization.stripeSubscriptionId, true);
+        // Calculate days since subscription started using Organization fields
+        const currentPeriodStart = organization.currentPeriodStart || new Date();
+        const currentPeriodEnd = organization.currentPeriodEnd || new Date();
+        const now = new Date();
+        const daysUsed = Math.ceil((now - new Date(currentPeriodStart)) / (1000 * 60 * 60 * 24));
 
-        // Update local subscription record
-        await Subscription.findOneAndUpdate(
-            { stripeSubscriptionId: organization.stripeSubscriptionId },
-            { cancelAtPeriodEnd: true }
-        );
+        // Check if within 3-day refund window
+        if (daysUsed <= 3) {
+            try {
+                // Get last payment from Payment collection for refund
+                const lastPayment = await Payment.findOne({
+                    organizationId: organization._id,
+                    status: 'paid'
+                }).sort({ paidAt: -1 });
 
-        auditService.log(request, 'SUBSCRIPTION_CANCELLED', { type: 'subscription' }, {
-            organizationId: organization._id.toString(),
-        });
+                console.log('🔍 Refund Debug - Last Payment:', JSON.stringify(lastPayment, null, 2));
 
-        return { success: true, message: 'Subscription will be cancelled at end of billing period' };
+                if (lastPayment?.stripePaymentIntentId) {
+                    // Calculate prorated refund
+                    const totalDays = Math.ceil((new Date(currentPeriodEnd) - new Date(currentPeriodStart)) / (1000 * 60 * 60 * 24));
+                    const amountPaid = lastPayment.amount;
+                    const chargeAmount = (amountPaid / totalDays) * daysUsed;
+                    const refundAmount = amountPaid - chargeAmount;
+
+                    console.log('💰 Refund Calculation:', {
+                        daysUsed,
+                        totalDays,
+                        amountPaid,
+                        chargeAmount,
+                        refundAmount
+                    });
+
+                    // Create refund
+                    if (refundAmount > 0) {
+                        console.log(`🔄 Creating refund: Payment Intent ${lastPayment.stripePaymentIntentId}, Amount: $${refundAmount}`);
+                        const refundResult = await stripeService.createRefund(lastPayment.stripePaymentIntentId, refundAmount);
+                        console.log('✅ Refund created successfully:', refundResult.id);
+
+                        // Update Payment record with refund info
+                        lastPayment.status = 'refunded';
+                        lastPayment.refundedAmount = refundAmount;
+                        lastPayment.refundedAt = new Date();
+                        lastPayment.refundReason = 'Cancelled within refund window';
+                        await lastPayment.save();
+                    } else {
+                        console.log('⚠️ Refund amount is 0 or negative, skipping refund');
+                    }
+                } else {
+                    console.log('❌ No payment intent found in last payment. Cannot process refund.');
+                }
+
+                // Cancel subscription immediately (not at period end)
+                await stripeService.cancelSubscription(organization.stripeSubscriptionId, false);
+
+                // Update Organization - clear subscription
+                organization.plan = 'trial';
+                organization.planStatus = 'cancelled';
+                organization.stripeSubscriptionId = null;
+                organization.currentPeriodStart = null;
+                organization.currentPeriodEnd = null;
+                organization.cancelAtPeriodEnd = false;
+                organization.cancelledAt = new Date();
+                organization.updatePlanLimits();
+                await organization.save();
+
+                auditService.log(request, 'SUBSCRIPTION_CANCELLED', { type: 'subscription' }, {
+                    organizationId: organization._id.toString(),
+                    refundIssued: true,
+                    daysUsed
+                });
+
+                return {
+                    success: true,
+                    message: 'Subscription cancelled and refund issued',
+                    refunded: true
+                };
+            } catch (error) {
+                console.error('Error processing immediate cancellation:', error);
+                return reply.status(500).send({ error: 'Failed to process cancellation' });
+            }
+        } else {
+            // After 3 days - cancel at period end
+            await stripeService.cancelSubscription(organization.stripeSubscriptionId, true);
+
+            // Update Organization
+            organization.cancelAtPeriodEnd = true;
+            await organization.save();
+
+            auditService.log(request, 'SUBSCRIPTION_CANCELLED', { type: 'subscription' }, {
+                organizationId: organization._id.toString(),
+            });
+
+            return { success: true, message: 'Subscription will be cancelled at end of billing period' };
+        }
     });
 
     /**
@@ -305,69 +606,67 @@ async function handleSubscriptionUpdate(stripeSubscription) {
     const organization = await Organization.findById(organizationId);
     if (!organization) return;
 
-    // Determine plan from price
+    // Determine plan from price - look up in Plan collection
     const priceId = stripeSubscription.items.data[0]?.price?.id;
     let plan = 'starter';
-    if (priceId?.includes('pro')) plan = 'pro';
-    if (priceId?.includes('enterprise')) plan = 'enterprise';
 
-    // Update organization
+    const planDoc = await Plan.findOne({ stripePriceIdMonthly: priceId });
+    if (planDoc) {
+        plan = planDoc.type;
+    } else {
+        // Fallback to string matching
+        if (priceId?.toLowerCase().includes('pro')) plan = 'pro';
+        if (priceId?.toLowerCase().includes('enterprise')) plan = 'enterprise';
+    }
+
+    // Update organization with all subscription fields
     organization.stripeSubscriptionId = stripeSubscription.id;
     organization.plan = plan;
     organization.planStatus = stripeSubscription.status;
+    organization.currentPeriodStart = new Date(stripeSubscription.current_period_start * 1000);
+    organization.currentPeriodEnd = new Date(stripeSubscription.current_period_end * 1000);
+    organization.cancelAtPeriodEnd = stripeSubscription.cancel_at_period_end;
     organization.updatePlanLimits();
     await organization.save();
-
-    // Update or create subscription record
-    await Subscription.findOneAndUpdate(
-        { stripeSubscriptionId: stripeSubscription.id },
-        {
-            organizationId: organization._id,
-            stripeSubscriptionId: stripeSubscription.id,
-            stripeCustomerId: stripeSubscription.customer,
-            stripePriceId: priceId,
-            plan,
-            status: stripeSubscription.status,
-            currentPeriodStart: new Date(stripeSubscription.current_period_start * 1000),
-            currentPeriodEnd: new Date(stripeSubscription.current_period_end * 1000),
-            cancelAtPeriodEnd: stripeSubscription.cancel_at_period_end,
-            lastWebhookEvent: 'subscription.updated',
-            lastWebhookAt: new Date(),
-        },
-        { upsert: true, new: true }
-    );
 
     console.log(`✅ Subscription updated for org: ${organization.name}, plan: ${plan}`);
 }
 
 async function handleSubscriptionCancelled(stripeSubscription) {
-    const sub = await Subscription.findOne({ stripeSubscriptionId: stripeSubscription.id });
-    if (!sub) return;
+    // Find organization by subscription ID
+    const organization = await Organization.findOne({
+        stripeSubscriptionId: stripeSubscription.id
+    });
+    if (!organization) return;
 
-    sub.status = 'cancelled';
-    sub.endedAt = new Date();
-    await sub.save();
+    // Update organization - revert to trial
+    organization.plan = 'trial';
+    organization.planStatus = 'cancelled';
+    organization.stripeSubscriptionId = null;
+    organization.currentPeriodStart = null;
+    organization.currentPeriodEnd = null;
+    organization.cancelAtPeriodEnd = false;
+    organization.cancelledAt = new Date();
+    organization.updatePlanLimits();
+    await organization.save();
 
-    // Update organization
-    const organization = await Organization.findById(sub.organizationId);
-    if (organization) {
-        organization.planStatus = 'cancelled';
-        organization.plan = 'trial'; // Downgrade to trial
-        organization.updatePlanLimits();
-        await organization.save();
-    }
-
-    console.log(`❌ Subscription cancelled for org: ${organization?.name}`);
+    console.log(`❌ Subscription cancelled for org: ${organization.name}`);
 }
 
 async function handleInvoicePaid(invoice) {
-    const sub = await Subscription.findOne({ stripeCustomerId: invoice.customer });
-    if (!sub) return;
+    // Find organization by stripe customer ID
+    const organization = await Organization.findOne({
+        stripeCustomerId: invoice.customer
+    });
+    if (!organization) return;
 
-    sub.addPayment(invoice);
-    await sub.save();
-
-    console.log(`💰 Payment received: $${invoice.amount_paid / 100}`);
+    // Create payment record using Payment model
+    try {
+        await Payment.createFromStripeInvoice(organization._id, invoice);
+        console.log(`💰 Payment received: $${invoice.amount_paid / 100}`);
+    } catch (error) {
+        console.error('Error creating payment record:', error);
+    }
 }
 
 async function handlePaymentFailed(invoice) {

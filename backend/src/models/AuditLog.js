@@ -21,8 +21,11 @@ const auditLogSchema = new mongoose.Schema({
             'QUERY',
             'VIEW_DOCUMENT', 'DOWNLOAD_DOCUMENT', 'UPLOAD_DOCUMENT', 'DELETE_DOCUMENT',
             'USER_UPDATE', 'USER_DELETE',
+            'MEMBER_INVITED', 'MEMBER_REMOVED', 'ROLE_UPDATED',
             'GUARDRAIL_BLOCK', 'GUARDRAIL_REDACT', // Security red flags
-            'SYSTEM_ERROR'
+            'SYSTEM_ERROR',
+            // Billing Actions
+            'CHECKOUT_STARTED', 'SUBSCRIPTION_UPDATED', 'SUBSCRIPTION_CANCELLED', 'SUBSCRIPTION_REACTIVATED'
         ]
     },
     resourceId: {
@@ -30,7 +33,7 @@ const auditLogSchema = new mongoose.Schema({
     },
     resourceType: {
         type: String,
-        enum: ['conversation', 'document', 'user', 'system'],
+        enum: ['conversation', 'document', 'user', 'system', 'organization', 'subscription'],
     },
     details: {
         type: mongoose.Schema.Types.Mixed,
@@ -42,6 +45,12 @@ const auditLogSchema = new mongoose.Schema({
         type: String,
         enum: ['SUCCESS', 'FAILURE', 'DENIED'],
         default: 'SUCCESS',
+    },
+    // Multi-tenant scope
+    organizationId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Organization',
+        index: true,
     },
     timestamp: {
         type: Date,
@@ -56,6 +65,7 @@ const auditLogSchema = new mongoose.Schema({
 auditLogSchema.index({ userId: 1, timestamp: -1 });
 auditLogSchema.index({ action: 1, timestamp: -1 });
 auditLogSchema.index({ "details.documentId": 1 }); // To find who accessed a specific doc
+auditLogSchema.index({ organizationId: 1, timestamp: -1 }); // Organization-scoped logs
 
 const AuditLog = mongoose.model('AuditLog', auditLogSchema);
 

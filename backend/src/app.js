@@ -6,12 +6,23 @@ import session from '@fastify/session';
 import multipart from '@fastify/multipart';
 import MongoStore from 'connect-mongo';
 import config from './config/index.js';
-import { authRoutes, documentRoutes, chatRoutes, analyticsRoutes, usersRoutes, auditRoutes, usageRoutes, departmentsRoutes, integrationsRoutes, subscriptionsRoutes, organizationsRoutes, superadminRoutes, demoRoutes, contactRoutes } from './routes/index.js';
+import { authRoutes, documentRoutes, chatRoutes, analyticsRoutes, usersRoutes, auditRoutes, usageRoutes, departmentsRoutes, integrationsRoutes, subscriptionsRoutes, organizationsRoutes, superadminRoutes, demoRoutes, contactRoutes, inviteRoutes } from './routes/index.js';
 import { getLandingPageHtml, getHealthPageHtml } from './utils/statusPages.js';
 
 export async function buildApp() {
     const fastify = Fastify({
-        logger: config.nodeEnv === 'development',
+        // Only log errors and warnings in development, full logging in production
+        logger: config.nodeEnv === 'development' ? {
+            level: 'error', // Only show errors (not info/debug/request logs)
+            transport: {
+                target: 'pino-pretty',
+                options: {
+                    translateTime: 'HH:MM:ss',
+                    ignore: 'pid,hostname,reqId,req,res,responseTime',
+                    colorize: true
+                }
+            }
+        } : true,
     });
 
     // ============================================
@@ -162,6 +173,7 @@ export async function buildApp() {
     fastify.register(superadminRoutes, { prefix: '/api/superadmin' });
     fastify.register(demoRoutes, { prefix: '/api/demo' });
     fastify.register(contactRoutes, { prefix: '/api/contact' });
+    fastify.register(inviteRoutes, { prefix: '/api/invite' });
 
     // Global error handler
     fastify.setErrorHandler((error, request, reply) => {

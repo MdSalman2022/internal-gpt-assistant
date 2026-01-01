@@ -12,6 +12,7 @@ import {
     User, Bell, Palette, Database, Key, Zap, DollarSign, Activity, ArrowLeft, Building2
 } from 'lucide-react';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 
 // Nav items with required permissions
 // Nav items with required permissions
@@ -50,6 +51,8 @@ function DashboardLayoutInner({ children }) {
     const [editingChatId, setEditingChatId] = useState(null);
     const [editTitle, setEditTitle] = useState('');
     const [hoveredChatId, setHoveredChatId] = useState(null);
+    const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+    const [chatToDelete, setChatToDelete] = useState(null);
 
     // Filter nav items based on user permissions
     const visibleNavItems = navItems.filter(item =>
@@ -97,20 +100,25 @@ function DashboardLayoutInner({ children }) {
     const handleDeleteChat = async (e, chatId) => {
         e.preventDefault();
         e.stopPropagation();
+        setChatToDelete(chatId);
+        setDeleteDialogOpen(true);
+    };
 
-        if (!confirm('Delete this conversation?')) return;
+    const confirmDeleteChat = async () => {
+        if (!chatToDelete) return;
 
         try {
-            await chatApi.deleteConversation(chatId);
-            setRecentChats(prev => prev.filter(c => c._id !== chatId));
+            await chatApi.deleteConversation(chatToDelete);
+            setRecentChats(prev => prev.filter(c => c._id !== chatToDelete));
 
             // If deleting current conversation, go to new chat
-            if (currentConversationId === chatId) {
+            if (currentConversationId === chatToDelete) {
                 router.push('/chat');
             }
         } catch (error) {
             console.error('Failed to delete conversation:', error);
         }
+        setChatToDelete(null);
     };
 
     const handleStartRename = (e, chat) => {
@@ -550,6 +558,18 @@ function DashboardLayoutInner({ children }) {
                     <Menu className="w-5 h-5 text-foreground" />
                 </button>
             )}
+
+            {/* Delete Chat Confirmation Dialog */}
+            <ConfirmDialog
+                open={deleteDialogOpen}
+                onOpenChange={setDeleteDialogOpen}
+                title="Delete Conversation"
+                description="Are you sure you want to delete this conversation? This action cannot be undone."
+                confirmText="Delete"
+                cancelText="Cancel"
+                variant="danger"
+                onConfirm={confirmDeleteChat}
+            />
         </div>
     );
 }

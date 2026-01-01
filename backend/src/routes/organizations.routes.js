@@ -1,5 +1,5 @@
 import { Organization, User, Subscription, Plan } from '../models/index.js';
-import { auditService } from '../services/index.js';
+import { auditService, emailService } from '../services/index.js';
 import { stripeService } from '../services/stripeService.js';
 import crypto from 'crypto';
 
@@ -123,8 +123,16 @@ export default async function organizationsRoutes(fastify) {
             return { members: [] };
         }
 
+        // Only owners/admins can see invitation tokens
+        const isAdmin = ['owner', 'admin'].includes(user.orgRole);
+        let selectFields = 'name email avatar role orgRole lastLogin createdAt invitedBy invitedAt';
+
+        if (isAdmin) {
+            selectFields += ' invitationToken invitationExpires';
+        }
+
         const members = await User.find({ organizationId: user.organizationId })
-            .select('name email avatar role orgRole lastLogin createdAt invitedBy invitedAt')
+            .select(selectFields)
             .sort({ orgRole: 1, createdAt: 1 });
 
         return { members };
@@ -194,9 +202,15 @@ export default async function organizationsRoutes(fastify) {
         organization.usage.currentUsers += 1;
         await organization.save();
 
-        // TODO: Send invitation email with token
-        // For now, return the invitation link
+        // Send invitation email with token
         const invitationLink = `${process.env.FRONTEND_URL || 'http://localhost:3000'}/invite/${invitationToken}`;
+
+        try {
+            await emailService.sendInvitationEmail(email, user.name, organization.name, invitationLink);
+        } catch (emailError) {
+            console.error('Failed to send invitation email:', emailError.message);
+            // Continue to return success so the user gets the link via the UI fallback
+        }
 
         auditService.log(request, 'MEMBER_INVITED', { type: 'organization', id: organization._id.toString() }, {
             invitedEmail: email,
@@ -205,8 +219,8 @@ export default async function organizationsRoutes(fastify) {
 
         return {
             success: true,
-            message: 'Invitation created',
-            invitationLink, // In production, this would be sent via email
+            message: 'Invitation sent successfully',
+            invitationLink, // Return link for fallback/debug
         };
     });
 
@@ -284,6 +298,11 @@ export default async function organizationsRoutes(fastify) {
 
         return { success: true, member };
     });
+
+    /**
+     * GET /invite/verify/:token - Verify invitation token
+     */
+
 
     /**
      * GET /check-slug/:slug - Check if slug is available

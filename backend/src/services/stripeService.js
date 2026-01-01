@@ -6,7 +6,7 @@ let stripe = null;
 
 function getStripe() {
     if (!stripe) {
-        const apiKey = config.stripeSecretKey || process.env.STRIPE_SECRET_KEY;
+        const apiKey = config.stripeSecretKey
         if (!apiKey) {
             console.warn('⚠️ Stripe API key not configured - billing features disabled');
             return null;
@@ -47,6 +47,27 @@ class StripeService {
     }
 
     /**
+     * Get customer's credit balance
+     */
+    async getCustomerBalance(customerId) {
+        try {
+            const customer = await getStripe().customers.retrieve(customerId);
+            // Balance is in cents, negative means credit (customer has money)
+            return {
+                balance: customer.balance / 100, // Convert to dollars
+                balanceDisplay: customer.balance < 0
+                    ? `$${Math.abs(customer.balance / 100).toFixed(2)} credit`
+                    : customer.balance > 0
+                        ? `$${(customer.balance / 100).toFixed(2)} owed`
+                        : '$0.00'
+            };
+        } catch (error) {
+            console.error('Error getting customer balance:', error);
+            return { balance: 0, balanceDisplay: '$0.00' };
+        }
+    }
+
+    /**
      * Create a checkout session for subscription
      */
     async createCheckoutSession(organization, priceId, successUrl, cancelUrl) {
@@ -75,6 +96,11 @@ class StripeService {
             // If organization already has a Stripe customer, use it
             if (organization.stripeCustomerId) {
                 sessionParams.customer = organization.stripeCustomerId;
+                // Don't automatically apply customer credit balance - let user see full price
+                sessionParams.customer_update = {
+                    name: 'auto',
+                    address: 'auto',
+                };
             } else {
                 sessionParams.customer_email = organization.email;
             }
@@ -104,9 +130,21 @@ class StripeService {
     }
 
     /**
-     * Get subscription details
+     * Retrieve a checkout session by ID
      */
-    async getSubscription(subscriptionId) {
+    async retrieveCheckoutSession(sessionId) {
+        try {
+            return await getStripe().checkout.sessions.retrieve(sessionId);
+        } catch (error) {
+            console.error('Error retrieving checkout session:', error);
+            throw error;
+        }
+    }
+
+    /**
+     * Retrieve a subscription by ID
+     */
+    async retrieveSubscription(subscriptionId) {
         try {
             return await getStripe().subscriptions.retrieve(subscriptionId);
         } catch (error) {
@@ -150,6 +188,23 @@ class StripeService {
     }
 
     /**
+     * Create a refund for a payment
+     */
+    async createRefund(paymentIntentId, amount, reason = 'requested_by_customer') {
+        try {
+            return await getStripe().refunds.create({
+                payment_intent: paymentIntentId,
+                amount: Math.round(amount * 100), // Convert to cents
+                reason,
+            });
+        } catch (error) {
+            console.error('Error creating refund:', error);
+            throw error;
+        }
+    }
+
+
+    /**
      * Update subscription (change plan)
      */
     async updateSubscription(subscriptionId, newPriceId) {
@@ -162,7 +217,7 @@ class StripeService {
                         price: newPriceId,
                     },
                 ],
-                proration_behavior: 'create_prorations',
+                proration_behavior: 'always_invoice', // Charge immediately (industry standard)
             });
         } catch (error) {
             console.error('Error updating subscription:', error);
@@ -178,6 +233,7 @@ class StripeService {
             const invoices = await getStripe().invoices.list({
                 customer: customerId,
                 limit,
+                expand: ['data.payment_intent'], // Expand to get full payment intent
             });
             return invoices.data;
         } catch (error) {
@@ -278,6 +334,13 @@ class StripeService {
             console.error('Error creating price:', error);
             throw error;
         }
+    }
+
+    /**
+     * Get Stripe instance for direct access
+     */
+    getStripe() {
+        return getStripe();
     }
 }
 

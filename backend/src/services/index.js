@@ -9,3 +9,4 @@ export { default as auditService } from './audit.service.js';
 export { default as guardrailService } from './guardrail.service.js';
 export { default as usageService } from './usage.service.js';
 export { stripeService } from './stripeService.js';
+export { emailService } from './email.service.js';

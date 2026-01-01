@@ -1,4 +1,5 @@
 import mongoose from 'mongoose';
+import { PLANS } from '../config/plans.js';
 
 const organizationSchema = new mongoose.Schema({
     name: {
@@ -50,6 +51,15 @@ const organizationSchema = new mongoose.Schema({
         default: null,
     },
 
+    // Subscription Billing Period (cached from Stripe)
+    currentPeriodStart: Date,
+    currentPeriodEnd: Date,
+    cancelAtPeriodEnd: {
+        type: Boolean,
+        default: false
+    },
+    cancelledAt: Date,
+
     // Limits (based on plan)
     limits: {
         maxUsers: { type: Number, default: 3 },
@@ -73,6 +83,14 @@ const organizationSchema = new mongoose.Schema({
     settings: {
         allowedDomains: [{ type: String }], // For email domain restrictions
         requireApproval: { type: Boolean, default: true }, // Require admin approval for new members
+    },
+
+    // AI Configuration (Organization Scope)
+    aiSettings: {
+        selectedModel: { type: String, default: 'gemini-2.5-flash' },
+        geminiApiKey: { type: String, default: null },
+        openaiApiKey: { type: String, default: null },
+        anthropicApiKey: { type: String, default: null },
     },
 
     // Signup Tracking
@@ -122,47 +140,29 @@ organizationSchema.pre('save', function (next) {
     next();
 });
 
-// Static method to get plan limits
+// Static method to get plan limits from plans.js
 organizationSchema.statics.getPlanLimits = function (plan) {
-    const limits = {
-        trial: {
-            maxUsers: 3,
-            maxDocuments: 50,
-            maxTokensPerMonth: 100000,
-            customIntegrations: false,
-            prioritySupport: false,
-            ssoEnabled: false,
-            apiAccess: false,
-        },
-        starter: {
-            maxUsers: 10,
-            maxDocuments: 500,
-            maxTokensPerMonth: 1000000,
-            customIntegrations: false,
-            prioritySupport: false,
-            ssoEnabled: false,
-            apiAccess: true,
-        },
-        pro: {
-            maxUsers: 50,
-            maxDocuments: 5000,
-            maxTokensPerMonth: 10000000,
-            customIntegrations: true,
-            prioritySupport: true,
-            ssoEnabled: false,
-            apiAccess: true,
-        },
-        enterprise: {
-            maxUsers: -1, // Unlimited
-            maxDocuments: -1,
-            maxTokensPerMonth: -1,
-            customIntegrations: true,
-            prioritySupport: true,
-            ssoEnabled: true,
-            apiAccess: true,
-        },
+    // Trial plan (hardcoded as it's not in PLANS)
+    const trialLimits = {
+        maxUsers: 3,
+        maxDocuments: 50,
+        maxTokensPerMonth: 100000,
+        customIntegrations: false,
+        prioritySupport: false,
+        ssoEnabled: false,
+        apiAccess: false,
     };
-    return limits[plan] || limits.trial;
+
+    // If trial, return trial limits
+    if (plan === 'trial') {
+        return trialLimits;
+    }
+
+    // Find the plan in PLANS array
+    const planConfig = PLANS.find(p => p.type === plan);
+
+    // Return limits from plans.js or default to trial
+    return planConfig?.limits || trialLimits;
 };
 
 // Update limits when plan changes

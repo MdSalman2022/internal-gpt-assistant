@@ -11,4 +11,5 @@ export { default as Department } from './Department.js';
 export { default as Organization } from './Organization.js';
 export { default as Subscription } from './Subscription.js';
 export { default as Plan } from './Plan.js';
+export { default as Payment } from './Payment.js';
 export { default as DemoRequest } from './DemoRequest.js';

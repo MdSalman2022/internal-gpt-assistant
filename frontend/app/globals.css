@@ -38,7 +38,7 @@
   }
 
   .btn-primary {
-    @apply btn bg-primary text-primary-foreground hover:bg-primary/90 focus:ring-primary shadow-lg shadow-primary;
+    @apply btn bg-primary text-primary-foreground hover:brightness-110 focus:ring-primary shadow-lg;
   }
 
   .btn-secondary {
@@ -177,6 +177,7 @@
     0% {
       transform: translateY(0);
     }
+
     100% {
       transform: translateY(-50%);
     }
@@ -187,9 +188,11 @@
     0% {
       stroke-dashoffset: 200;
     }
+
     50% {
       stroke-dashoffset: 0;
     }
+
     100% {
       stroke-dashoffset: -200;
     }

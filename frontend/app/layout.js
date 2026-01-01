@@ -39,12 +39,25 @@ export const metadata = {
   },
 };
 
+import { Toaster } from 'react-hot-toast';
+
 export default function RootLayout({ children }) {
   return (
     <html lang="en" className={`${inter.variable} dark`}>
       <body className={`${inter.className} min-h-screen`}>
         <AuthProvider>
           {children}
+          <Toaster
+            position="top-right"
+            toastOptions={{
+              duration: 4000,
+              style: {
+                background: '#18181b',
+                color: '#fff',
+                border: '1px solid #27272a',
+              },
+            }}
+          />
         </AuthProvider>
       </body>
     </html>

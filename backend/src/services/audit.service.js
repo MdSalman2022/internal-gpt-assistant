@@ -15,6 +15,7 @@ class AuditService {
             const userId = req.session?.userId || req.user?._id;
             const userEmail = req.user?.email || details.email; // Fallback for failed login
             const role = req.userRole || req.user?.role;
+            const organizationId = req.organizationId || req.user?.organizationId;
 
             const entry = new AuditLog({
                 userId,
@@ -24,6 +25,7 @@ class AuditService {
                 resourceId: resource.id,
                 resourceType: resource.type,
                 details,
+                organizationId, // Save organization context
                 // Request info
                 ipAddress: req.ip || req.headers['x-forwarded-for'],
                 userAgent: req.headers['user-agent'],
@@ -40,13 +42,14 @@ class AuditService {
 
     /**
      * Retrieve logs (Admin only)
-     * @param {Object} filters - { userId, action, startDate, endDate }
+     * @param {Object} filters - { userId, action, startDate, endDate, organizationId }
      * @param {Number} page
      * @param {Number} limit
      */
     async getLogs(filters = {}, page = 1, limit = 50) {
         const query = {};
 
+        if (filters.organizationId) query.organizationId = filters.organizationId;
         if (filters.userId) query.userId = filters.userId;
         if (filters.action) query.action = filters.action;
 

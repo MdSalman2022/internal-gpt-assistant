@@ -1,11 +1,11 @@
-'use client';
-
+"use client"
+import { useRef, useEffect } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useAuth } from '@/lib/auth-context';
 import {
     User, Bell, Shield, Palette, Database, Key, Building2,
-    LogOut, FileText, Users, Activity, Zap, DollarSign, CreditCard, UserPlus
+    LogOut, FileText, Users, Activity, Zap, DollarSign, CreditCard, UserPlus, Loader2
 } from 'lucide-react';
 
 // Settings navigation items
@@ -18,7 +18,7 @@ const getSettingsNavItems = (isAdminOrVisitor) => [
     ...(isAdminOrVisitor ? [{ href: '/settings/cost-controls', label: 'Cost Controls', icon: DollarSign }] : []),
     ...(isAdminOrVisitor ? [{ href: '/settings/analytics', label: 'Analytics', icon: Activity }] : []),
     { href: '/settings/documents', label: 'Documents', icon: FileText },
-    { href: '/settings/users', label: 'Users', icon: Users },
+    ...(isAdminOrVisitor ? [{ href: '/settings/users', label: 'Users', icon: Users }] : []),
     ...(isAdminOrVisitor ? [{ href: '/settings/organization', label: 'Organization', icon: Building2 }] : []),
     ...(isAdminOrVisitor ? [{ href: '/settings/audit', label: 'Audit Logs', icon: Shield }] : []),
     { href: '/settings/notifications', label: 'Notifications', icon: Bell },
@@ -27,17 +27,45 @@ const getSettingsNavItems = (isAdminOrVisitor) => [
     { href: '/settings/integrations', label: 'Integrations', icon: Database },
 ];
 
+const RESTRICTED_ROUTES = [
+    '/settings/billing',
+    '/settings/team',
+    '/settings/ai-models',
+    '/settings/cost-controls',
+    '/settings/analytics',
+    '/settings/users',
+    '/settings/organization',
+    '/settings/audit'
+];
+
 export default function SettingsLayout({ children }) {
     const pathname = usePathname();
     const router = useRouter();
-    const { logout, isAdminOrVisitor } = useAuth();
+    const { logout, isAdminOrVisitor, loading } = useAuth();
 
     const navItems = getSettingsNavItems(isAdminOrVisitor);
+
+    useEffect(() => {
+        if (!loading && !isAdminOrVisitor && RESTRICTED_ROUTES.includes(pathname)) {
+            router.push('/settings/profile');
+        }
+    }, [pathname, loading, isAdminOrVisitor, router]);
 
     const handleLogout = async () => {
         await logout();
         router.push('/login');
     };
+
+    if (loading) {
+        return (
+            <div className="flex h-full items-center justify-center bg-background">
+                <div className="flex flex-col items-center gap-4">
+                    <Loader2 className="w-8 h-8 animate-spin text-primary" />
+                    <p className="text-muted-foreground text-sm">Loading settings...</p>
+                </div>
+            </div>
+        );
+    }
 
     return (
         <div className="flex flex-col h-full overflow-hidden">

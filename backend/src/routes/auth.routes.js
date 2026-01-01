@@ -12,14 +12,14 @@ export default async function authRoutes(fastify) {
     });
     // Register new user
     fastify.post('/register', async (request, reply) => {
-        const { email, password, name } = request.body;
+        const { email, password, name, inviteToken } = request.body;
 
         if (!email || !password || !name) {
             return reply.status(400).send({ error: 'Email, password, and name are required' });
         }
 
         try {
-            const user = await authService.register({ email, password, name });
+            const user = await authService.register({ email, password, name, inviteToken });
 
             // Set session
             request.session.userId = user._id;

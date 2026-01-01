@@ -54,8 +54,36 @@ class AuthService {
 
     // Register new user
     async register(userData) {
-        const { email, password, name } = userData;
+        const { email, password, name, inviteToken } = userData;
 
+        // Handle Invitation Flow
+        if (inviteToken) {
+            const user = await User.findOne({
+                invitationToken: inviteToken,
+                invitationExpires: { $gt: new Date() }
+            });
+
+            if (!user) {
+                throw new Error('Invalid or expired invitation');
+            }
+
+            // Verify email matches (optional safety, but good practice if frontend pre-fills it)
+            if (user.email.toLowerCase() !== email.toLowerCase()) {
+                throw new Error('Email does not match invitation');
+            }
+
+            user.password = password; // Will be hashed by pre-save hook
+            user.name = name;
+            user.isActive = true;
+            user.invitationToken = undefined;
+            user.invitationExpires = undefined;
+
+            await user.save();
+            console.log(`👤 Invited user activated: ${email} (Org: ${user.organizationId})`);
+            return user;
+        }
+
+        // Standard Registration Flow
         // Check if user exists
         const existing = await User.findOne({ email });
         if (existing) {
@@ -115,6 +143,10 @@ class AuthService {
             signupSource: 'direct',
             signupPlan: plan,
         });
+
+        // Set plan limits based on the selected plan
+        organization.updatePlanLimits();
+
         await organization.save();
 
         // Check if this is the first user on platform (make them superadmin)

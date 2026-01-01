@@ -88,28 +88,28 @@ export default function AuditLogViewer() {
     };
 
     const actionColors = {
-        LOGIN: 'text-green-400 bg-green-500/10',
-        LOGOUT: 'text-slate-400 bg-slate-500/10',
-        QUERY: 'text-blue-400 bg-blue-500/10',
-        VIEW_DOCUMENT: 'text-cyan-400 bg-cyan-500/10',
-        DOWNLOAD_DOCUMENT: 'text-purple-400 bg-purple-500/10',
-        DELETE_DOCUMENT: 'text-red-400 bg-red-500/10',
-        UPLOAD_DOCUMENT: 'text-emerald-400 bg-emerald-500/10',
-        USER_UPDATE: 'text-orange-400 bg-orange-500/10',
-        USER_DELETE: 'text-red-500 bg-red-500/10',
-        FAILURE: 'text-red-500',
+        LOGIN: 'text-green-600 dark:text-green-400 bg-green-500/10',
+        LOGOUT: 'text-muted-foreground bg-muted',
+        QUERY: 'text-blue-600 dark:text-blue-400 bg-blue-500/10',
+        VIEW_DOCUMENT: 'text-cyan-600 dark:text-cyan-400 bg-cyan-500/10',
+        DOWNLOAD_DOCUMENT: 'text-purple-600 dark:text-purple-400 bg-purple-500/10',
+        DELETE_DOCUMENT: 'text-red-500 bg-destructive/10',
+        UPLOAD_DOCUMENT: 'text-emerald-600 dark:text-emerald-400 bg-emerald-500/10',
+        USER_UPDATE: 'text-orange-600 dark:text-orange-400 bg-orange-500/10',
+        USER_DELETE: 'text-red-600 dark:text-red-400 bg-red-500/10',
+        FAILURE: 'text-destructive',
     };
 
     if (authLoading) return null;
-    if (!isAdmin) return <div className="p-6 text-center text-slate-500">Access Denied. Admin only.</div>;
+    if (!isAdmin) return <div className="p-6 text-center text-muted-foreground">Access Denied. Admin only.</div>;
 
     return (
         <div className="flex flex-col h-full bg-transparent p-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
             {/* Toolbar */}
             <div className="flex items-center justify-between mb-6">
                 <div>
-                    <h2 className="text-lg font-medium text-white">Audit Logs</h2>
-                    <p className="text-slate-400 text-sm">Forensic records of all system events.</p>
+                    <h2 className="text-lg font-medium text-foreground">Audit Logs</h2>
+                    <p className="text-muted-foreground text-sm">Forensic records of all system events.</p>
                 </div>
 
                 <div className="flex items-center gap-4">
@@ -119,21 +119,21 @@ export default function AuditLogViewer() {
                             <select
                                 value={filters.userId}
                                 onChange={(e) => setFilters(prev => ({ ...prev, userId: e.target.value }))}
-                                className="pl-3 pr-8 py-1.5 bg-slate-800 border border-slate-700 rounded-lg text-sm text-white focus:ring-1 focus:ring-primary-500 appearance-none min-w-[150px]"
+                                className="pl-3 pr-8 py-1.5 bg-background border border-input rounded-lg text-sm text-foreground focus:ring-1 focus:ring-primary appearance-none min-w-[150px]"
                             >
                                 <option value="">All Users</option>
                                 {users.map(u => (
                                     <option key={u._id} value={u._id}>{u.name}</option>
                                 ))}
                             </select>
-                            <ChevronDown className="w-4 h-4 text-slate-500 absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none" />
+                            <ChevronDown className="w-4 h-4 text-muted-foreground absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none" />
                         </div>
 
                         <div className="relative">
                             <select
                                 value={filters.action}
                                 onChange={(e) => setFilters(prev => ({ ...prev, action: e.target.value }))}
-                                className="pl-3 pr-8 py-1.5 bg-slate-800 border border-slate-700 rounded-lg text-sm text-white focus:ring-1 focus:ring-primary-500 appearance-none"
+                                className="pl-3 pr-8 py-1.5 bg-background border border-input rounded-lg text-sm text-foreground focus:ring-1 focus:ring-primary appearance-none"
                             >
                                 <option value="">All Actions</option>
                                 <option value="LOGIN">Login / Register</option>
@@ -144,7 +144,7 @@ export default function AuditLogViewer() {
                                 <option value="USER_UPDATE">User Admin</option>
                                 <option value="FAILURE">Failures</option>
                             </select>
-                            <ChevronDown className="w-4 h-4 text-slate-500 absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none" />
+                            <ChevronDown className="w-4 h-4 text-muted-foreground absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none" />
                         </div>
                     </div>
 
@@ -156,10 +156,10 @@ export default function AuditLogViewer() {
             </div>
 
             {/* Logs Table */}
-            <div className="bg-slate-900/50 border border-slate-800 rounded-2xl overflow-hidden shadow-xl">
+            <div className="bg-card border border-border rounded-xl overflow-hidden shadow-sm">
                 <table className="w-full text-left">
                     <thead>
-                        <tr className="border-b border-slate-700/50 text-xs uppercase tracking-wider text-slate-500 bg-slate-800/50">
+                        <tr className="border-b border-border text-xs uppercase tracking-wider text-muted-foreground bg-muted/50">
                             <th className="px-6 py-4 w-6"></th>
                             <th className="px-6 py-4 font-medium">Timestamp</th>
                             <th className="px-6 py-4 font-medium">User</th>
@@ -168,19 +168,19 @@ export default function AuditLogViewer() {
                             <th className="px-6 py-4 font-medium">Status</th>
                         </tr>
                     </thead>
-                    <tbody className="divide-y divide-slate-800">
+                    <tbody className="divide-y divide-border">
                         {loading ? (
                             <tr>
-                                <td colSpan="6" className="px-6 py-12 text-center text-slate-500">
+                                <td colSpan="6" className="px-6 py-12 text-center text-muted-foreground">
                                     <div className="flex items-center justify-center gap-2">
-                                        <div className="w-4 h-4 border-2 border-primary-500 border-t-transparent rounded-full animate-spin" />
+                                        <div className="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin" />
                                         Loading logs...
                                     </div>
                                 </td>
                             </tr>
                         ) : logs.length === 0 ? (
                             <tr>
-                                <td colSpan="6" className="px-6 py-12 text-center text-slate-500">
+                                <td colSpan="6" className="px-6 py-12 text-center text-muted-foreground">
                                     No audit logs found matching filters.
                                 </td>
                             </tr>
@@ -191,45 +191,45 @@ export default function AuditLogViewer() {
                                         key={log._id}
                                         onClick={() => setExpandedLogId(expandedLogId === log._id ? null : log._id)}
                                         className={`
-                                            group cursor-pointer transition-colors hover:bg-slate-800/30
-                                            ${expandedLogId === log._id ? 'bg-slate-800/50' : ''}
+                                            group cursor-pointer transition-colors hover:bg-muted/50
+                                            ${expandedLogId === log._id ? 'bg-muted/50' : ''}
                                         `}
                                     >
                                         <td className="px-6 py-4">
-                                            {expandedLogId === log._id ? <ChevronDown className="w-4 h-4 text-slate-500" /> : <ChevronRight className="w-4 h-4 text-slate-500" />}
+                                            {expandedLogId === log._id ? <ChevronDown className="w-4 h-4 text-muted-foreground" /> : <ChevronRight className="w-4 h-4 text-muted-foreground" />}
                                         </td>
                                         <td className="px-6 py-4">
-                                            <div className="flex items-center gap-2 text-sm text-slate-300 font-mono">
-                                                <Clock className="w-3.5 h-3.5 text-slate-500" />
+                                            <div className="flex items-center gap-2 text-sm text-foreground/80 font-mono">
+                                                <Clock className="w-3.5 h-3.5 text-muted-foreground" />
                                                 {new Date(log.timestamp).toLocaleString()}
                                             </div>
                                         </td>
                                         <td className="px-6 py-4">
                                             <div className="flex items-center gap-2">
-                                                <div className="w-6 h-6 rounded-full bg-slate-800 flex items-center justify-center text-xs font-bold text-slate-400">
+                                                <div className="w-6 h-6 rounded-full bg-secondary flex items-center justify-center text-xs font-bold text-muted-foreground">
                                                     {(log.userEmail || 'S').charAt(0).toUpperCase()}
                                                 </div>
                                                 <div>
-                                                    <p className="text-sm font-medium text-white">{log.userId?.name || 'Unknown'}</p>
-                                                    <p className="text-xs text-slate-500">{log.userEmail || 'System/Guest'}</p>
+                                                    <p className="text-sm font-medium text-foreground">{log.userId?.name || 'Unknown'}</p>
+                                                    <p className="text-xs text-muted-foreground">{log.userEmail || 'System/Guest'}</p>
                                                 </div>
                                             </div>
                                         </td>
                                         <td className="px-6 py-4">
-                                            <span className={`inline-flex px-2 py-1 rounded text-xs font-bold ${actionColors[log.action] || 'bg-slate-800 text-slate-400'}`}>
+                                            <span className={`inline-flex px-2 py-1 rounded text-xs font-bold ${actionColors[log.action] || 'bg-muted text-muted-foreground'}`}>
                                                 {log.action}
                                             </span>
                                         </td>
-                                        <td className="px-6 py-4 text-sm text-slate-400 font-mono">
+                                        <td className="px-6 py-4 text-sm text-foreground/70 font-mono">
                                             {log.resourceType ? `${log.resourceType}:${log.resourceId?.substring(0, 6)}...` : '-'}
                                         </td>
                                         <td className="px-6 py-4">
                                             {log.status === 'SUCCESS' ? (
-                                                <span className="flex items-center gap-1.5 text-xs text-emerald-400">
+                                                <span className="flex items-center gap-1.5 text-xs text-green-600 dark:text-green-400">
                                                     <CheckCircle className="w-3.5 h-3.5" /> Success
                                                 </span>
                                             ) : (
-                                                <span className="flex items-center gap-1.5 text-xs text-red-400">
+                                                <span className="flex items-center gap-1.5 text-xs text-destructive">
                                                     <AlertTriangle className="w-3.5 h-3.5" /> {log.status}
                                                 </span>
                                             )}
@@ -237,21 +237,21 @@ export default function AuditLogViewer() {
                                     </tr>
                                     {/* Expanded Details Row */}
                                     {expandedLogId === log._id && (
-                                        <tr className="bg-slate-900/50 border-b border-slate-800">
+                                        <tr className="bg-muted/30 border-b border-border">
                                             <td colSpan="6" className="px-6 py-4">
-                                                <div className="ml-10 p-4 bg-slate-950 rounded-lg border border-slate-800 font-mono text-xs">
-                                                    <h4 className="text-slate-400 mb-2 font-bold uppercase tracking-wider text-[10px]">Event Details</h4>
+                                                <div className="ml-10 p-4 bg-background rounded-lg border border-border font-mono text-xs">
+                                                    <h4 className="text-muted-foreground mb-2 font-bold uppercase tracking-wider text-[10px]">Event Details</h4>
                                                     <div className="grid grid-cols-2 gap-8">
                                                         <div>
-                                                            <p className="text-slate-500 mb-1">IP Address</p>
-                                                            <p className="text-slate-300 mb-4">{log.ipAddress || 'Unknown'}</p>
+                                                            <p className="text-muted-foreground mb-1">IP Address</p>
+                                                            <p className="text-foreground mb-4">{log.ipAddress || 'Unknown'}</p>
 
-                                                            <p className="text-slate-500 mb-1">User Agent</p>
-                                                            <p className="text-slate-300 truncate max-w-md">{log.userAgent || 'Unknown'}</p>
+                                                            <p className="text-muted-foreground mb-1">User Agent</p>
+                                                            <p className="text-foreground truncate max-w-md">{log.userAgent || 'Unknown'}</p>
                                                         </div>
                                                         <div>
-                                                            <p className="text-slate-500 mb-1">Metadata</p>
-                                                            <pre className="text-emerald-400 overflow-x-auto whitespace-pre-wrap">
+                                                            <p className="text-muted-foreground mb-1">Metadata</p>
+                                                            <pre className="text-primary overflow-x-auto whitespace-pre-wrap">
                                                                 {JSON.stringify(log.details, null, 2)}
                                                             </pre>
                                                         </div>
@@ -272,15 +272,15 @@ export default function AuditLogViewer() {
                 <button
                     disabled={page === 1}
                     onClick={() => setPage(p => p - 1)}
-                    className="px-4 py-2 text-sm text-slate-400 disabled:opacity-50 hover:text-white"
+                    className="px-4 py-2 text-sm text-muted-foreground disabled:opacity-50 hover:text-foreground"
                 >
                     Previous
                 </button>
-                <span className="text-sm text-slate-500">Page {page} of {totalPages}</span>
+                <span className="text-sm text-muted-foreground">Page {page} of {totalPages}</span>
                 <button
                     disabled={page === totalPages}
                     onClick={() => setPage(p => p + 1)}
-                    className="px-4 py-2 text-sm text-slate-400 disabled:opacity-50 hover:text-white"
+                    className="px-4 py-2 text-sm text-muted-foreground disabled:opacity-50 hover:text-foreground"
                 >
                     Next
                 </button>

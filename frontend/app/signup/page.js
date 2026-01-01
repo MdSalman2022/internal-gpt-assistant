@@ -28,12 +28,14 @@ const industries = [
 function SignupForm() {
     const router = useRouter();
     const searchParams = useSearchParams();
+    const inviteToken = searchParams.get('inviteToken');
     const { user, loading: authLoading } = useAuth();
     const [step, setStep] = useState(1);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
     const [slugChecking, setSlugChecking] = useState(false);
     const [slugAvailable, setSlugAvailable] = useState(null);
+    const [inviteDetails, setInviteDetails] = useState(null);
 
     // Redirect if already logged in
     useEffect(() => {
@@ -41,6 +43,27 @@ function SignupForm() {
             router.push('/chat');
         }
     }, [user, authLoading, router]);
+
+    // Fetch Invite Details
+    useEffect(() => {
+        if (inviteToken) {
+            const fetchInvite = async () => {
+                try {
+                    const res = await fetch(`${API_URL}/api/invite/verify/${inviteToken}`);
+                    const data = await res.json();
+                    if (res.ok) {
+                        setInviteDetails(data);
+                        setFormData(prev => ({ ...prev, email: data.email }));
+                    } else {
+                        setError(data.error || 'Invalid invitation');
+                    }
+                } catch (err) {
+                    setError('Failed to verify invitation');
+                }
+            };
+            fetchInvite();
+        }
+    }, [inviteToken]);
 
     const [formData, setFormData] = useState({
         // Step 1: Account
@@ -106,31 +129,53 @@ function SignupForm() {
                 setError('Password must be at least 6 characters');
                 return;
             }
-            setStep(2);
+
+            // If invited, skip Step 2 and submit directly
+            if (inviteToken) {
+                handleSubmit(new Event('submit'));
+            } else {
+                setStep(2);
+            }
         }
     };
 
     const handleSubmit = async (e) => {
-        e.preventDefault();
+        if (e) e.preventDefault();
         setError('');
 
-        if (!formData.organizationName || !formData.organizationSlug) {
-            setError('Please fill in organization details');
-            return;
-        }
+        if (!inviteToken) {
+            if (!formData.organizationName || !formData.organizationSlug) {
+                setError('Please fill in organization details');
+                return;
+            }
 
-        if (!slugAvailable) {
-            setError('Organization URL is not available');
-            return;
+            if (!slugAvailable) {
+                setError('Organization URL is not available');
+                return;
+            }
         }
 
         setLoading(true);
         try {
-            const res = await fetch(`${API_URL}/api/auth/register-organization`, {
+            let url = `${API_URL}/api/auth/register-organization`;
+            let body = { ...formData };
+
+            // If invited, use simple register endpoint with token
+            if (inviteToken) {
+                url = `${API_URL}/api/auth/register`;
+                body = {
+                    name: formData.name,
+                    email: formData.email,
+                    password: formData.password,
+                    inviteToken
+                };
+            }
+
+            const res = await fetch(url, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 credentials: 'include',
-                body: JSON.stringify(formData),
+                body: JSON.stringify(body),
             });
 
             const data = await res.json();
@@ -144,7 +189,9 @@ function SignupForm() {
         } catch (err) {
             setError(err.message);
             if (err.message.includes('Email already registered')) {
-                setStep(1);
+                // If invited, this shouldn't happen unless logic is wrong, 
+                // but if new org signup, go back to step 1
+                if (!inviteToken) setStep(1);
             }
         } finally {
             setLoading(false);
@@ -186,40 +233,49 @@ function SignupForm() {
                     {/* Header */}
                     <div className="mb-8">
                         <h1 className="text-3xl font-bold text-zinc-900 mb-2">
-                            {step === 1 ? 'Create your account' : 'Set up your organization'}
+                            {inviteDetails
+                                ? `Join ${inviteDetails.organizationName}`
+                                : step === 1 ? 'Create your account' : 'Set up your organization'
+                            }
                         </h1>
                         <p className="text-zinc-500">
-                            {step === 1
-                                ? 'Start your journey with InsightAI'
-                                : 'Tell us about your company'
+                            {inviteDetails
+                                ? `You've been invited by ${inviteDetails.inviterName}`
+                                : step === 1
+                                    ? 'Start your journey with InsightAI'
+                                    : 'Tell us about your company'
                             }
                         </p>
                     </div>
 
-                    {/* Plan Badge */}
-                    <div className="mb-6 inline-flex items-center gap-2 px-3 py-1.5 bg-emerald-50 text-emerald-700 rounded-full text-sm font-medium">
-                        <Check className="w-4 h-4" />
-                        {planLabels[formData.plan]}
-                    </div>
+                    {/* Plan Badge (Hide if invited) */}
+                    {!inviteToken && (
+                        <div className="mb-6 inline-flex items-center gap-2 px-3 py-1.5 bg-emerald-50 text-emerald-700 rounded-full text-sm font-medium">
+                            <Check className="w-4 h-4" />
+                            {planLabels[formData.plan]}
+                        </div>
+                    )}
 
-                    {/* Step Indicator */}
-                    <div className="flex items-center gap-3 mb-8">
-                        <div className={`flex items-center gap-2 ${step >= 1 ? 'text-black' : 'text-zinc-400'}`}>
-                            <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${step >= 1 ? 'bg-black text-white' : 'bg-zinc-200'
-                                }`}>
-                                {step > 1 ? <Check className="w-4 h-4" /> : '1'}
+                    {/* Step Indicator (Hide if invited) */}
+                    {!inviteToken && (
+                        <div className="flex items-center gap-3 mb-8">
+                            <div className={`flex items-center gap-2 ${step >= 1 ? 'text-black' : 'text-zinc-400'}`}>
+                                <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${step >= 1 ? 'bg-black text-white' : 'bg-zinc-200'
+                                    }`}>
+                                    {step > 1 ? <Check className="w-4 h-4" /> : '1'}
+                                </div>
+                                <span className="text-sm font-medium">Account</span>
                             </div>
-                            <span className="text-sm font-medium">Account</span>
-                        </div>
-                        <div className="w-12 h-px bg-zinc-200" />
-                        <div className={`flex items-center gap-2 ${step >= 2 ? 'text-black' : 'text-zinc-400'}`}>
-                            <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${step >= 2 ? 'bg-black text-white' : 'bg-zinc-200'
-                                }`}>
-                                2
+                            <div className="w-12 h-px bg-zinc-200" />
+                            <div className={`flex items-center gap-2 ${step >= 2 ? 'text-black' : 'text-zinc-400'}`}>
+                                <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${step >= 2 ? 'bg-black text-white' : 'bg-zinc-200'
+                                    }`}>
+                                    2
+                                </div>
+                                <span className="text-sm font-medium">Organization</span>
                             </div>
-                            <span className="text-sm font-medium">Organization</span>
                         </div>
-                    </div>
+                    )}
 
                     {/* Error */}
                     {error && (
@@ -257,9 +313,11 @@ function SignupForm() {
                                             onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                                             placeholder="you@company.com"
                                             required
-                                            className="w-full pl-10 pr-4 py-3 bg-zinc-50 border border-zinc-200 rounded-xl text-zinc-900 placeholder-zinc-400 focus:bg-white focus:border-black focus:ring-1 focus:ring-black outline-none transition-all"
+                                            readOnly={!!inviteToken} // Read-only if invited
+                                            className={`w-full pl-10 pr-4 py-3 bg-zinc-50 border border-zinc-200 rounded-xl text-zinc-900 placeholder-zinc-400 outline-none transition-all ${inviteToken ? 'bg-zinc-100 cursor-not-allowed text-zinc-500' : 'focus:bg-white focus:border-black focus:ring-1 focus:ring-black'}`}
                                         />
                                     </div>
+                                    {inviteToken && <p className="text-xs text-zinc-500 mt-1">Email is locked for invitation</p>}
                                 </div>
 
                                 <div>
@@ -283,7 +341,7 @@ function SignupForm() {
                                     type="submit"
                                     className="w-full bg-black text-white py-3.5 rounded-xl font-medium hover:bg-zinc-800 transition-all flex items-center justify-center gap-2"
                                 >
-                                    Continue
+                                    {inviteToken ? 'Join Organization' : 'Continue'}
                                     <ArrowRight className="w-5 h-5" />
                                 </button>
                             </div>

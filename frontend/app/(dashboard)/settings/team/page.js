@@ -13,8 +13,18 @@ import {
     X,
     Check,
     AlertCircle,
-    Copy
+    Copy,
+    Share2
 } from 'lucide-react';
+import toast from 'react-hot-toast';
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+} from "@/components/ui/dialog";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
@@ -28,6 +38,11 @@ export default function TeamPage() {
     const [inviteLink, setInviteLink] = useState('');
     const [error, setError] = useState('');
     const [actionMenuOpen, setActionMenuOpen] = useState(null);
+
+    // Dialog states
+    const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
+    const [memberToDelete, setMemberToDelete] = useState(null);
+    const [lastInviteLink, setLastInviteLink] = useState('');
 
     useEffect(() => {
         fetchMembers();
@@ -67,92 +82,121 @@ export default function TeamPage() {
                 throw new Error(data.error || 'Failed to invite member');
             }
 
+            // Show success and close modal
+            setShowInviteModal(false);
+            setInviteEmail('');
+            // Trigger a refresh or show a toast notification here ideally
+            fetchMembers();
             if (data.invitationLink) {
-                setInviteLink(data.invitationLink);
-            } else {
-                setShowInviteModal(false);
-                setInviteEmail('');
-                fetchMembers();
+                setLastInviteLink(data.invitationLink);
             }
+            toast.success('Invitation sent successfully!');
         } catch (err) {
             setError(err.message);
+            toast.error(err.message);
         } finally {
             setInviteLoading(false);
         }
     };
 
-    const handleRemoveMember = async (memberId) => {
-        if (!confirm('Are you sure you want to remove this member?')) return;
+    const confirmRemoveMember = (member) => {
+        setMemberToDelete(member);
+        setDeleteConfirmOpen(true);
+        setActionMenuOpen(null);
+    };
+
+    const handleRemoveMember = async () => {
+        if (!memberToDelete) return;
 
         try {
-            await fetch(`${API_URL}/api/organizations/members/${memberId}`, {
+            const res = await fetch(`${API_URL}/api/organizations/members/${memberToDelete._id}`, {
                 method: 'DELETE',
                 credentials: 'include',
             });
+
+            if (!res.ok) {
+                const data = await res.json();
+                throw new Error(data.error || 'Failed to remove member');
+            }
+
+            toast.success('Member removed');
             fetchMembers();
         } catch (err) {
             console.error('Error removing member:', err);
+            // If already removed (404), refresh list
+            if (err.message.includes('not found')) {
+                toast.success('Member already removed');
+                fetchMembers();
+            } else {
+                toast.error(err.message);
+            }
+        } finally {
+            setDeleteConfirmOpen(false);
+            setMemberToDelete(null);
         }
     };
 
     const handleChangeRole = async (memberId, newRole) => {
         try {
-            await fetch(`${API_URL}/api/organizations/members/${memberId}/role`, {
+            const res = await fetch(`${API_URL}/api/organizations/members/${memberId}/role`, {
                 method: 'PATCH',
                 headers: { 'Content-Type': 'application/json' },
                 credentials: 'include',
                 body: JSON.stringify({ orgRole: newRole }),
             });
+
+            if (!res.ok) {
+                const data = await res.json();
+                throw new Error(data.error || 'Failed to update role');
+            }
+
+            toast.success(`Role updated to ${newRole}`);
             setActionMenuOpen(null);
             fetchMembers();
         } catch (err) {
             console.error('Error changing role:', err);
+            toast.error(err.message);
         }
-    };
-
-    const copyInviteLink = () => {
-        navigator.clipboard.writeText(inviteLink);
     };
 
     const getRoleIcon = (role) => {
         switch (role) {
-            case 'owner': return <Crown className="w-4 h-4 text-yellow-400" />;
-            case 'admin': return <Shield className="w-4 h-4 text-purple-400" />;
-            default: return <User className="w-4 h-4 text-gray-400" />;
+            case 'owner': return <Crown className="w-4 h-4 text-warning" />;
+            case 'admin': return <Shield className="w-4 h-4 text-primary" />;
+            default: return <User className="w-4 h-4 text-muted-foreground" />;
         }
     };
 
     const getRoleBadge = (role) => {
-        const styles = {
-            owner: 'bg-yellow-500/20 text-yellow-400',
-            admin: 'bg-purple-500/20 text-purple-400',
-            member: 'bg-gray-500/20 text-gray-400',
-        };
-        return (
-            <span className={`px-2 py-1 rounded-full text-xs font-medium capitalize ${styles[role]}`}>
-                {role}
-            </span>
-        );
+        switch (role) {
+            case 'owner':
+                return <span className="px-2 py-1 rounded-full text-xs font-medium capitalize bg-warning/20 text-warning">{role}</span>;
+            case 'admin':
+                return <span className="px-2 py-1 rounded-full text-xs font-medium capitalize bg-primary/20 text-primary">{role}</span>;
+            default:
+                return <span className="px-2 py-1 rounded-full text-xs font-medium capitalize bg-muted text-muted-foreground">{role}</span>;
+        }
     };
 
     if (loading) {
         return (
             <div className="flex items-center justify-center min-h-[400px]">
-                <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-emerald-500"></div>
+                <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-primary"></div>
             </div>
         );
     }
+
 
     return (
         <div className="space-y-6 p-4">
             <div className="flex items-center justify-between">
                 <div>
-                    <h1 className="text-2xl font-bold text-white">Team Members</h1>
-                    <p className="text-gray-400">Manage your organization's team members and roles</p>
+                    <h1 className="text-2xl font-bold text-foreground">Team Members</h1>
+                    <p className="text-muted-foreground">Manage your organization's team members and roles</p>
                 </div>
                 <button
                     onClick={() => setShowInviteModal(true)}
-                    className="flex items-center gap-2 px-4 py-2 bg-emerald-500 hover:bg-emerald-600 text-white rounded-lg transition-colors"
+                    className="btn-primary"
                 >
                     <UserPlus className="w-4 h-4" />
                     Invite Member
@@ -160,12 +204,12 @@ export default function TeamPage() {
             </div>
 
             {/* Members List */}
-            <div className="bg-gray-800/50 border border-gray-700 rounded-xl overflow-hidden">
-                <div className="divide-y divide-gray-700">
+            <div className="bg-card border border-border rounded-xl overflow-hidden">
+                <div className="divide-y divide-border">
                     {members.map((member) => (
-                        <div key={member._id} className="p-4 flex items-center justify-between hover:bg-gray-700/20">
+                        <div key={member._id} className="p-4 flex items-center justify-between hover:bg-accent/50 transition-colors">
                             <div className="flex items-center gap-4">
-                                <div className="w-10 h-10 bg-gradient-to-r from-emerald-500 to-cyan-500 rounded-full flex items-center justify-center text-white font-semibold">
+                                <div className="w-10 h-10 bg-primary/20 rounded-full flex items-center justify-center text-primary font-semibold">
                                     {member.avatar ? (
                                         <img src={member.avatar} alt={member.name} className="w-full h-full rounded-full object-cover" />
                                     ) : (
@@ -173,11 +217,11 @@ export default function TeamPage() {
                                     )}
                                 </div>
                                 <div>
-                                    <div className="text-white font-medium flex items-center gap-2">
+                                    <div className="text-foreground font-medium flex items-center gap-2">
                                         {member.name}
                                         {getRoleIcon(member.orgRole)}
                                     </div>
-                                    <div className="text-gray-400 text-sm">{member.email}</div>
+                                    <div className="text-muted-foreground text-sm">{member.email}</div>
                                 </div>
                             </div>
 
@@ -185,7 +229,7 @@ export default function TeamPage() {
                                 {getRoleBadge(member.orgRole)}
 
                                 {member.lastLogin && (
-                                    <span className="text-gray-400 text-sm hidden md:block">
+                                    <span className="text-muted-foreground text-sm hidden md:block">
                                         Last active: {new Date(member.lastLogin).toLocaleDateString()}
                                     </span>
                                 )}
@@ -194,23 +238,37 @@ export default function TeamPage() {
                                     <div className="relative">
                                         <button
                                             onClick={() => setActionMenuOpen(actionMenuOpen === member._id ? null : member._id)}
-                                            className="p-2 hover:bg-gray-700 rounded-lg transition-colors"
+                                            className="p-2 hover:bg-accent rounded-lg transition-colors"
                                         >
-                                            <MoreVertical className="w-4 h-4 text-gray-400" />
+                                            <MoreVertical className="w-4 h-4 text-muted-foreground" />
                                         </button>
 
                                         {actionMenuOpen === member._id && (
-                                            <div className="absolute right-0 top-full mt-1 w-48 bg-gray-800 border border-gray-700 rounded-lg shadow-xl z-10">
+                                            <div className="absolute right-0 top-full mt-1 w-48 bg-popover border border-border rounded-lg shadow-xl z-20 overflow-hidden">
+                                                {member.invitationToken && (
+                                                    <button
+                                                        onClick={() => {
+                                                            const link = `${window.location.origin}/invite/${member.invitationToken}`;
+                                                            navigator.clipboard.writeText(link);
+                                                            toast.success('Invite link copied');
+                                                            setActionMenuOpen(null);
+                                                        }}
+                                                        className="w-full px-4 py-2 text-left text-sm text-foreground hover:bg-accent flex items-center gap-2"
+                                                    >
+                                                        <Copy className="w-4 h-4" />
+                                                        Copy Invite Link
+                                                    </button>
+                                                )}
                                                 <button
                                                     onClick={() => handleChangeRole(member._id, member.orgRole === 'admin' ? 'member' : 'admin')}
-                                                    className="w-full px-4 py-2 text-left text-sm text-gray-300 hover:bg-gray-700 flex items-center gap-2"
+                                                    className="w-full px-4 py-2 text-left text-sm text-foreground hover:bg-accent flex items-center gap-2"
                                                 >
                                                     <Shield className="w-4 h-4" />
                                                     {member.orgRole === 'admin' ? 'Remove Admin' : 'Make Admin'}
                                                 </button>
                                                 <button
-                                                    onClick={() => handleRemoveMember(member._id)}
-                                                    className="w-full px-4 py-2 text-left text-sm text-red-400 hover:bg-gray-700 flex items-center gap-2"
+                                                    onClick={() => confirmRemoveMember(member)}
+                                                    className="w-full px-4 py-2 text-left text-sm text-destructive hover:bg-destructive/10 flex items-center gap-2"
                                                 >
                                                     <Trash2 className="w-4 h-4" />
                                                     Remove Member
@@ -227,10 +285,10 @@ export default function TeamPage() {
 
             {/* Invite Modal */}
             {showInviteModal && (
-                <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-                    <div className="bg-gray-800 border border-gray-700 rounded-xl w-full max-w-md">
-                        <div className="flex items-center justify-between p-4 border-b border-gray-700">
-                            <h2 className="text-lg font-semibold text-white">Invite Team Member</h2>
+                <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-in fade-in">
+                    <div className="bg-card border border-border rounded-xl w-full max-w-md shadow-2xl animate-in zoom-in-95 duration-200">
+                        <div className="flex items-center justify-between p-4 border-b border-border">
+                            <h2 className="text-lg font-semibold text-foreground">Invite Team Member</h2>
                             <button
                                 onClick={() => {
                                     setShowInviteModal(false);
@@ -238,7 +296,7 @@ export default function TeamPage() {
                                     setInviteLink('');
                                     setError('');
                                 }}
-                                className="text-gray-400 hover:text-white"
+                                className="text-muted-foreground hover:text-foreground"
                             >
                                 <X className="w-5 h-5" />
                             </button>
@@ -246,102 +304,124 @@ export default function TeamPage() {
 
                         <form onSubmit={handleInvite} className="p-4 space-y-4">
                             {error && (
-                                <div className="p-3 bg-red-500/10 border border-red-500/20 rounded-lg text-red-400 text-sm flex items-center gap-2">
+                                <div className="p-3 bg-destructive/10 border border-destructive/20 rounded-lg text-destructive text-sm flex items-center gap-2">
                                     <AlertCircle className="w-4 h-4" />
                                     {error}
                                 </div>
                             )}
 
-                            {inviteLink ? (
-                                <div className="space-y-4">
-                                    <div className="p-3 bg-emerald-500/10 border border-emerald-500/20 rounded-lg text-emerald-400 text-sm flex items-center gap-2">
-                                        <Check className="w-4 h-4" />
-                                        Invitation created! Share this link:
-                                    </div>
-                                    <div className="flex gap-2">
-                                        <input
-                                            type="text"
-                                            value={inviteLink}
-                                            readOnly
-                                            className="flex-1 px-3 py-2 bg-gray-700/50 border border-gray-600 rounded-lg text-white text-sm"
-                                        />
-                                        <button
-                                            type="button"
-                                            onClick={copyInviteLink}
-                                            className="px-3 py-2 bg-gray-700 hover:bg-gray-600 text-white rounded-lg"
-                                        >
-                                            <Copy className="w-4 h-4" />
-                                        </button>
-                                    </div>
-                                    <button
-                                        type="button"
-                                        onClick={() => {
-                                            setShowInviteModal(false);
-                                            setInviteEmail('');
-                                            setInviteLink('');
-                                            fetchMembers();
-                                        }}
-                                        className="w-full py-2 bg-emerald-500 hover:bg-emerald-600 text-white rounded-lg"
-                                    >
-                                        Done
-                                    </button>
+                            <div>
+                                <label className="block text-sm font-medium text-foreground mb-2">
+                                    Email Address
+                                </label>
+                                <div className="relative">
+                                    <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+                                    <input
+                                        type="email"
+                                        value={inviteEmail}
+                                        onChange={(e) => setInviteEmail(e.target.value)}
+                                        required
+                                        placeholder="colleague@company.com"
+                                        className="w-full pl-10 pr-4 py-2.5 bg-background border border-border rounded-lg text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+                                    />
                                 </div>
-                            ) : (
-                                <>
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-300 mb-2">
-                                            Email Address
-                                        </label>
-                                        <div className="relative">
-                                            <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-                                            <input
-                                                type="email"
-                                                value={inviteEmail}
-                                                onChange={(e) => setInviteEmail(e.target.value)}
-                                                required
-                                                placeholder="colleague@company.com"
-                                                className="w-full pl-10 pr-4 py-2.5 bg-gray-700/50 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-500"
-                                            />
-                                        </div>
-                                    </div>
+                            </div>
 
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-300 mb-2">
-                                            Role
-                                        </label>
-                                        <select
-                                            value={inviteRole}
-                                            onChange={(e) => setInviteRole(e.target.value)}
-                                            className="w-full px-4 py-2.5 bg-gray-700/50 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
-                                        >
-                                            <option value="member">Member - Can use the platform</option>
-                                            <option value="admin">Admin - Can manage members & settings</option>
-                                        </select>
-                                    </div>
+                            <div>
+                                <label className="block text-sm font-medium text-foreground mb-2">
+                                    Role
+                                </label>
+                                <select
+                                    value={inviteRole}
+                                    onChange={(e) => setInviteRole(e.target.value)}
+                                    className="w-full px-4 py-2.5 bg-background border border-border rounded-lg text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+                                >
+                                    <option value="member">Member - Can use the platform</option>
+                                    <option value="admin">Admin - Can manage members & settings</option>
+                                </select>
+                            </div>
 
-                                    <button
-                                        type="submit"
-                                        disabled={inviteLoading}
-                                        className="w-full py-2.5 bg-emerald-500 hover:bg-emerald-600 text-white font-medium rounded-lg transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
-                                    >
-                                        {inviteLoading ? (
-                                            <>
-                                                <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                                                Sending...
-                                            </>
-                                        ) : (
-                                            <>
-                                                <UserPlus className="w-4 h-4" />
-                                                Send Invitation
-                                            </>
-                                        )}
-                                    </button>
-                                </>
-                            )}
+                            <button
+                                type="submit"
+                                disabled={inviteLoading}
+                                className="w-full py-2.5 bg-primary hover:bg-primary/90 text-primary-foreground font-medium rounded-lg transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+                            >
+                                {inviteLoading ? (
+                                    <>
+                                        <div className="w-4 h-4 border-2 border-primary-foreground/30 border-t-primary-foreground rounded-full animate-spin" />
+                                        Sending Invite...
+                                    </>
+                                ) : (
+                                    <>
+                                        <UserPlus className="w-4 h-4" />
+                                        Send Invitation
+                                    </>
+                                )}
+                            </button>
                         </form>
                     </div>
                 </div>
             )}
+
+            {/* Delete Confirmation Dialog */}
+            <Dialog open={deleteConfirmOpen} onOpenChange={setDeleteConfirmOpen}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>Remove Team Member</DialogTitle>
+                        <DialogDescription>
+                            Are you sure you want to remove <strong>{memberToDelete?.name}</strong>?
+                            They will lose access to the organization immediately. This action cannot be undone.
+                        </DialogDescription>
+                    </DialogHeader>
+                    <DialogFooter>
+                        <button
+                            onClick={() => setDeleteConfirmOpen(false)}
+                            className="px-4 py-2 hover:bg-accent rounded-lg transition-colors text-sm font-medium"
+                        >
+                            Cancel
+                        </button>
+                        <button
+                            onClick={handleRemoveMember}
+                            className="px-4 py-2 bg-destructive text-destructive-foreground hover:bg-destructive/90 rounded-lg transition-colors text-sm font-medium"
+                        >
+                            Remove Member
+                        </button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+
+            {/* Invite Success Dialog with Link */}
+            <Dialog open={!!lastInviteLink} onOpenChange={(open) => !open && setLastInviteLink('')}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>Invitation Sent</DialogTitle>
+                        <DialogDescription>
+                            The invitation has been sent to the user. You can also copy the link below.
+                        </DialogDescription>
+                    </DialogHeader>
+                    <div className="flex items-center gap-2 p-2 bg-muted rounded-md mt-2 border border-border">
+                        <code className="text-xs flex-1 break-all font-mono text-muted-foreground">{lastInviteLink}</code>
+                        <button
+                            onClick={() => {
+                                navigator.clipboard.writeText(lastInviteLink);
+                                toast.success('Link copied');
+                            }}
+                            className="p-2 hover:bg-background rounded-md transition-colors text-muted-foreground hover:text-foreground"
+                            title="Copy link"
+                        >
+                            <Copy className="w-4 h-4" />
+                        </button>
+                    </div>
+                    <DialogFooter>
+                        <button
+                            onClick={() => setLastInviteLink('')}
+                            className="px-4 py-2 bg-primary text-primary-foreground hover:bg-primary/90 rounded-lg text-sm font-medium transition-colors"
+                        >
+                            Done
+                        </button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
         </div>
     );
 }

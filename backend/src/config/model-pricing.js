@@ -21,15 +21,6 @@ export const MODELS = {
         freeTier: true,
         recommended: true
     },
-    'gemini-2.5-flash': {
-        id: 'gemini-2.5-flash',
-        name: 'Gemini 2.5 Flash',
-        description: 'Hybrid reasoning, 1M context',
-        provider: 'gemini',
-        inputPer1M: 0.30,
-        outputPer1M: 2.50,
-        freeTier: true
-    },
     'gemini-3-pro-preview': {
         id: 'gemini-3-pro-preview',
         name: 'Gemini 3 Pro',
@@ -39,50 +30,48 @@ export const MODELS = {
         outputPer1M: 12.00,
         freeTier: false
     },
-    'gemini-1.5-flash': {
-        id: 'gemini-1.5-flash',
-        name: 'Gemini 1.5 Flash',
-        description: 'Cost-effective and reliable',
+    'gemini-2.5-pro': {
+        id: 'gemini-2.5-pro',
+        name: 'Gemini 2.5 Pro',
+        description: 'Multimodal model with advanced capabilities',
         provider: 'gemini',
-        inputPer1M: 0.075,
-        outputPer1M: 0.30,
-        freeTier: true
-    },
-
-    // ========== OPENAI ==========
-    'gpt-4o': {
-        id: 'gpt-4o',
-        name: 'GPT-4o',
-        description: 'Flagship multimodal model',
-        provider: 'openai',
-        inputPer1M: 2.50,
+        inputPer1M: 1.25,
         outputPer1M: 10.00,
         freeTier: false
     },
-    'gpt-4o-mini': {
-        id: 'gpt-4o-mini',
-        name: 'GPT-4o Mini',
-        description: 'Fast and affordable',
+    'gemini-2.5-flash': {
+        id: 'gemini-2.5-flash',
+        name: 'Gemini 2.5 Flash',
+        description: 'Hybrid reasoning, 1M context',
+        provider: 'gemini',
+        inputPer1M: 0.30,
+        outputPer1M: 2.50,
+        freeTier: true
+    },
+    // ========== OPENAI ==========
+    'gpt-5.2': {
+        id: 'gpt-5.2',
+        name: 'GPT-5.2',
+        description: 'Most advanced frontier model for professional work',
         provider: 'openai',
-        inputPer1M: 0.15,
-        outputPer1M: 0.60,
+        inputPer1M: 15.00,
+        outputPer1M: 60.00,
         freeTier: false,
         recommended: true
     },
-    'gpt-4-turbo': {
-        id: 'gpt-4-turbo',
-        name: 'GPT-4 Turbo',
-        description: '128K context window',
+    'gpt-5-pro': {
+        id: 'gpt-5-pro',
+        name: 'GPT-5 Pro',
+        description: 'Enhanced version of GPT-5 for smarter responses',
         provider: 'openai',
-        inputPer1M: 10.00,
-        outputPer1M: 30.00,
+        inputPer1M: 30.00,
+        outputPer1M: 90.00,
         freeTier: false
     },
-
     // ========== ANTHROPIC ==========
-    'claude-3-5-sonnet': {
-        id: 'claude-3-5-sonnet',
-        name: 'Claude 3.5 Sonnet',
+    'claude-4.5-sonnet': {
+        id: 'claude-4.5-sonnet',
+        name: 'Claude 4.5 Sonnet',
         description: 'Best balance of speed & intelligence',
         provider: 'anthropic',
         inputPer1M: 3.00,
@@ -90,24 +79,24 @@ export const MODELS = {
         freeTier: false,
         recommended: true
     },
-    'claude-3-haiku': {
-        id: 'claude-3-haiku',
-        name: 'Claude 3 Haiku',
+    'claude-4.5-haiku': {
+        id: 'claude-4.5-haiku',
+        name: 'Claude 4.5 Haiku',
         description: 'Fastest Claude model',
         provider: 'anthropic',
-        inputPer1M: 0.25,
-        outputPer1M: 1.25,
+        inputPer1M: 1.00,
+        outputPer1M: 5.00,
         freeTier: false
     },
-    'claude-3-opus': {
-        id: 'claude-3-opus',
-        name: 'Claude 3 Opus',
+    'claude-4.5-opus': {
+        id: 'claude-4.5-opus',
+        name: 'Claude 4.5 Opus',
         description: 'Most powerful Claude',
         provider: 'anthropic',
         inputPer1M: 15.00,
         outputPer1M: 75.00,
         freeTier: false
-    }
+    },
 };
 
 /**

@@ -82,8 +82,13 @@ subscriptionSchema.methods.getLastPayment = function () {
 
 // Add a payment record
 subscriptionSchema.methods.addPayment = function (paymentData) {
+    // Handle payment_intent being either a string ID or expanded object
+    const paymentIntentId = typeof paymentData.payment_intent === 'string'
+        ? paymentData.payment_intent
+        : paymentData.payment_intent?.id;
+
     this.payments.push({
-        stripePaymentIntentId: paymentData.payment_intent,
+        stripePaymentIntentId: paymentIntentId,
         stripeInvoiceId: paymentData.id,
         amount: paymentData.amount_paid / 100, // Convert from cents
         currency: paymentData.currency,

@@ -45,7 +45,6 @@
                 "chat:write",
                 "chat:upload",
                 "analytics:read",
-                "users:manage",
                 "settings:manage"
             ]
         }

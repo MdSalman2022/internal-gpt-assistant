@@ -8,11 +8,21 @@ export default async function usersRoutes(fastify) {
 
     // GET /structure - Get all unique departments and teams
     fastify.get('/structure', async (request, reply) => {
+        const userId = request.session.userId;
+        const user = await User.findById(userId);
+
+        // Scope to Organization if not superadmin
+        let filter = {};
+        if (user.role !== 'superadmin') {
+            if (!user.organizationId) return { departments: [], teams: [] };
+            filter.organizationId = user.organizationId;
+        }
+
         const [userDepts, userTeams, docDepts, docTeams] = await Promise.all([
-            User.distinct('department'),
-            User.distinct('teams'),
-            Document.distinct('allowedDepartments'),
-            Document.distinct('allowedTeams')
+            User.distinct('department', filter),
+            User.distinct('teams', filter),
+            Document.distinct('allowedDepartments', filter),
+            Document.distinct('allowedTeams', filter)
         ]);
 
         // Merge and clean departments
@@ -35,7 +45,21 @@ export default async function usersRoutes(fastify) {
 
     // GET / - List all users
     fastify.get('/', async (request, reply) => {
-        const users = await User.find()
+        const userId = request.session.userId;
+        const user = await User.findById(userId);
+
+        // Scope to Organization if not superadmin
+        let query = {};
+        if (user.role !== 'superadmin') {
+            if (!user.organizationId) {
+                // If user has no org and is not superadmin, they shouldn't see anyone (or maybe just themselves?)
+                // For safety returning empty list or error.
+                return { users: [] };
+            }
+            query.organizationId = user.organizationId;
+        }
+
+        const users = await User.find(query)
             .select('-password -resetPasswordToken -resetPasswordExpires')
             .sort({ createdAt: -1 })
             .lean();
@@ -47,51 +71,64 @@ export default async function usersRoutes(fastify) {
     fastify.patch('/:id', async (request, reply) => {
         const { id } = request.params;
         const { role, name } = request.body;
+        const currentUser = await User.findById(request.session.userId);
 
         // SECURITY: Only actual Admins can modify users
-        if (request.userRole !== 'admin') {
+        // Check Platform Admin (Superadmin) or Org Admin
+        const isSuperAdmin = currentUser.role === 'superadmin';
+        const isOrgAdmin = currentUser.organizationId && ['admin', 'owner'].includes(currentUser.orgRole);
+
+        if (!isSuperAdmin && !isOrgAdmin) {
             return reply.status(403).send({
                 error: 'You are not an admin. Only administrators can modify users.'
             });
         }
 
-        const user = await User.findById(id);
-        if (!user) {
+        const targetUser = await User.findById(id);
+        if (!targetUser) {
             return reply.status(404).send({ error: 'User not found' });
         }
 
-        // Prevent modifying yourself to avoid locking yourself out
-        if (user._id.toString() === request.session.userId) {
-            // Allow name change, but maybe restrict role change?
-            // For safety, let's block role change for self via this generic API
-            if (role && role !== user.role) {
+        // Scope Check: Org Admin can only modify users in their Org
+        if (!isSuperAdmin) {
+            if (targetUser.organizationId?.toString() !== currentUser.organizationId?.toString()) {
+                return reply.status(403).send({ error: 'Cannot modify users from other organizations' });
+            }
+        }
+
+        // Prevent modifying yourself to avoid locking yourself out (role change)
+        if (targetUser._id.toString() === request.session.userId) {
+            if (role && role !== targetUser.role) {
                 return reply.status(400).send({ error: 'You cannot change your own role.' });
             }
         }
 
-        if (role) user.role = role;
-        if (name) user.name = name;
+        if (role) targetUser.role = role;
+        if (name) targetUser.name = name;
 
-        await user.save();
+        await targetUser.save();
+
+        // AUDIT LOG: User Update
+        auditService.log(request, 'USER_UPDATE', { type: 'user', id: targetUser._id.toString() }, {
+            updatedFields: { role, name },
+            targetUserEmail: targetUser.email
+        });
 
         return {
             success: true,
-            user: { _id: user._id, name: user.name, email: user.email, role: user.role }
+            user: { _id: targetUser._id, name: targetUser.name, email: targetUser.email, role: targetUser.role }
         };
-
-        // AUDIT LOG: User Update
-        auditService.log(request, 'USER_UPDATE', { type: 'user', id: user._id.toString() }, {
-            updatedFields: { role, name },
-            targetUserEmail: user.email
-        });
     });
 
     // DELETE /:id - Delete user
     fastify.delete('/:id', async (request, reply) => {
         const { id } = request.params;
+        const currentUser = await User.findById(request.session.userId);
 
-        // SECURITY: Only actual Admins can delete users
-        if (request.userRole !== 'admin') {
+        const isSuperAdmin = currentUser.role === 'superadmin';
+        const isOrgAdmin = currentUser.organizationId && ['admin', 'owner'].includes(currentUser.orgRole);
+
+        if (!isSuperAdmin && !isOrgAdmin) {
             return reply.status(403).send({
                 error: 'You are not an admin. Only administrators can delete users.'
             });
@@ -101,15 +138,24 @@ export default async function usersRoutes(fastify) {
             return reply.status(400).send({ error: 'You cannot delete your own account.' });
         }
 
-        const user = await User.findByIdAndDelete(id);
-        if (!user) {
+        const targetUser = await User.findById(id);
+        if (!targetUser) {
             return reply.status(404).send({ error: 'User not found' });
         }
 
+        // Scope Check
+        if (!isSuperAdmin) {
+            if (targetUser.organizationId?.toString() !== currentUser.organizationId?.toString()) {
+                return reply.status(403).send({ error: 'Cannot delete users from other organizations' });
+            }
+        }
+
+        await User.findByIdAndDelete(id);
+
         // AUDIT LOG: User Delete
         auditService.log(request, 'USER_DELETE', { type: 'user', id: id }, {
-            targetUserEmail: user.email,
-            targetUserName: user.name
+            targetUserEmail: targetUser.email,
+            targetUserName: targetUser.name
         });
 
         return { success: true, message: 'User deleted successfully' };
@@ -128,6 +174,13 @@ export default async function usersRoutes(fastify) {
 
         if (!user) {
             return reply.status(404).send({ error: 'User not found' });
+        }
+
+        const currentUser = await User.findById(request.session.userId);
+        if (currentUser.role !== 'superadmin') {
+            if (user.organizationId?.toString() !== currentUser.organizationId?.toString()) {
+                return reply.status(403).send({ error: 'Access denied' });
+            }
         }
 
         // Aggregate security stats

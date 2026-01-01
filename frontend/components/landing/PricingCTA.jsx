@@ -1,13 +1,30 @@
+"use client"
 import Link from 'next/link';
 import { Check, ArrowRight, Sparkles } from 'lucide-react';
 import FadeIn from './FadeIn';
+import { useState, useEffect } from 'react';
+import { PLANS as DEFAULT_PLANS } from '@/lib/plans';
 
 export default function PricingCTA() {
-    const plans = [
-        { name: 'starter', price: 'Free', desc: 'For individuals', features: ['5 documents', '100 queries/month', 'GPT-4o mini', 'Email support'], cta: 'Get Started', href: '/signup?plan=trial' },
-        { name: 'pro', price: '$29', period: '/mo', desc: 'For small teams', features: ['Unlimited documents', 'Unlimited queries', 'All AI models', 'Priority support', 'Team workspaces'], popular: true, cta: 'Start Free Trial', href: '/signup?plan=pro' },
-        { name: 'enterprise', price: 'Custom', desc: 'For organizations', features: ['Everything in Pro', 'SSO & SAML', 'On-premise deploy', 'Custom SLA', 'Dedicated CSM'], cta: 'Contact Sales', href: '/contact?type=enterprise' },
-    ];
+    const [plans, setPlans] = useState(DEFAULT_PLANS);
+
+    useEffect(() => {
+        const fetchPlans = async () => {
+            try {
+                const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/subscriptions/plans`);
+                if (res.ok) {
+                    const data = await res.json();
+                    if (data.plans && data.plans.length > 0) {
+                        setPlans(data.plans);
+                    }
+                }
+            } catch (error) {
+                console.error('Failed to fetch pricing plans:', error);
+            }
+        };
+
+        fetchPlans();
+    }, []);
 
     return (
         <section id="pricing" className="py-32 px-6 bg-black text-white relative overflow-hidden">

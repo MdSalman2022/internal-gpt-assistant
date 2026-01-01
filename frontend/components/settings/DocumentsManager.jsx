@@ -9,11 +9,10 @@ import {
     Upload, FileText, Search, Trash2, CheckCircle, Clock, AlertCircle, X, File,
     ExternalLink, Grid3X3, List, Lock, Building, Users, Globe, Edit2, Save
 } from 'lucide-react';
-
-// ... (DocumentsManager default export)
+import toast from 'react-hot-toast';
 
 export default function DocumentsManager() {
-    // ... (keep existing state)
+    // ... items omitted ... (at line 16)
     const { user, hasPermission, isAdmin } = useAuth();
     const [documents, setDocuments] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -22,12 +21,6 @@ export default function DocumentsManager() {
     const [statusFilter, setStatusFilter] = useState('');
     const [showUploadModal, setShowUploadModal] = useState(false);
     const [selectedDocument, setSelectedDocument] = useState(null);
-    const [toast, setToast] = useState(null);
-
-    const showToast = (message, type = 'error') => {
-        setToast({ message, type });
-        setTimeout(() => setToast(null), 3000);
-    };
 
     useEffect(() => {
         if (user) loadDocuments();
@@ -40,6 +33,7 @@ export default function DocumentsManager() {
             setDocuments(data.documents || []);
         } catch (error) {
             console.error('Failed to load documents:', error);
+            toast.error('Failed to load documents');
         } finally {
             setLoading(false);
         }
@@ -53,10 +47,10 @@ export default function DocumentsManager() {
             }
             setShowUploadModal(false);
             loadDocuments();
-            showToast('Documents uploaded successfully', 'success');
+            toast.success('Documents uploaded successfully');
         } catch (error) {
             console.error('Upload failed:', error);
-            showToast('Upload failed', 'error');
+            toast.error('Upload failed');
         } finally {
             setUploading(false);
         }
@@ -66,13 +60,12 @@ export default function DocumentsManager() {
         try {
             await documentsApi.updateDocument(docId, updates);
             loadDocuments();
-            showToast('Document updated successfully', 'success');
-            // Update selected document in place to reflect changes in modal
+            toast.success('Document updated successfully');
             setSelectedDocument(prev => ({ ...prev, ...updates }));
             return true;
         } catch (error) {
             console.error('Update failed:', error);
-            showToast('Failed to update document', 'error');
+            toast.error('Failed to update document');
             return false;
         }
     };
@@ -81,7 +74,7 @@ export default function DocumentsManager() {
         e.stopPropagation();
 
         if (!isAdmin) {
-            showToast('You are not an admin. Only administrators can delete documents.', 'error');
+            toast.error('Only administrators can delete documents.');
             return;
         }
 
@@ -90,8 +83,10 @@ export default function DocumentsManager() {
             await documentsApi.deleteDocument(id);
             setDocuments(prev => prev.filter(d => d._id !== id));
             if (selectedDocument?._id === id) setSelectedDocument(null);
+            toast.success('Document deleted');
         } catch (error) {
             console.error('Delete failed:', error);
+            toast.error('Failed to delete document');
         }
     };
 
@@ -243,21 +238,6 @@ export default function DocumentsManager() {
                 />
             )}
 
-            {/* Toast Notification */}
-            {toast && (
-                <div className={`fixed bottom-6 right-6 z-[100] flex items-center gap-3 px-4 py-3 rounded-xl shadow-2xl animate-scale-in border
-                    ${toast.type === 'error'
-                        ? 'bg-card border-destructive/50 text-destructive'
-                        : 'bg-card border-primary/50 text-primary'
-                    }`}
-                >
-                    {toast.type === 'error' ? <AlertCircle className="w-5 h-5" /> : <CheckCircle className="w-5 h-5" />}
-                    <span className="text-sm font-medium">{toast.message}</span>
-                    <button onClick={() => setToast(null)} className="ml-2 hover:bg-foreground/10 rounded p-0.5">
-                        <X className="w-4 h-4" />
-                    </button>
-                </div>
-            )}
         </div>
     );
 }
