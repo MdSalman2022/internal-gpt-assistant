@@ -7,6 +7,7 @@ export { default as auditRoutes } from './audit.routes.js';
 export { default as usageRoutes } from './usage.routes.js';
 export { default as departmentsRoutes } from './departments.routes.js';
 export { default as integrationsRoutes } from './integrations.routes.js';
+export { default as credentialsRoutes } from './credentials.routes.js';
 
 // Multi-tenant SaaS routes
 export { default as subscriptionsRoutes } from './subscriptions.routes.js';

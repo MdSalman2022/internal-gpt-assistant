@@ -30,27 +30,28 @@ function decrypt(text) {
 }
 
 const adminSettingsSchema = new mongoose.Schema({
-    // Singleton pattern - always use _id: 'main'
+    // Singleton ID
     _id: { type: String, default: 'main' },
 
-    // AI Model Settings
+    // AI configs
     selectedModel: {
         type: String,
         default: 'gemini-2.5-flash',
         enum: ['gemini-3-flash-preview', 'gemini-2.5-flash', 'gemini-3-pro-preview', 'gemini-1.5-flash', 'gemini-1.5-pro']
     },
 
-    // API Keys (encrypted)
-    geminiApiKey: { type: String, default: null }, // Encrypted
-    openaiApiKey: { type: String, default: null }, // Encrypted
-    anthropicApiKey: { type: String, default: null }, // Encrypted
+    // Encrypted keys
+    geminiApiKey: { type: String, default: null },
+    openaiApiKey: { type: String, default: null },
+    anthropicApiKey: { type: String, default: null },
+    groqApiKey: { type: String, default: null },
 
     // Metadata
     updatedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
     updatedAt: { type: Date, default: Date.now }
 }, { _id: false });
 
-// Encrypt API keys before save
+// Encrypt before save
 adminSettingsSchema.pre('save', function (next) {
     if (this.isModified('geminiApiKey') && this.geminiApiKey && !this.geminiApiKey.includes(':')) {
         this.geminiApiKey = encrypt(this.geminiApiKey);
@@ -61,10 +62,13 @@ adminSettingsSchema.pre('save', function (next) {
     if (this.isModified('anthropicApiKey') && this.anthropicApiKey && !this.anthropicApiKey.includes(':')) {
         this.anthropicApiKey = encrypt(this.anthropicApiKey);
     }
+    if (this.isModified('groqApiKey') && this.groqApiKey && !this.groqApiKey.includes(':')) {
+        this.groqApiKey = encrypt(this.groqApiKey);
+    }
     next();
 });
 
-// Get decrypted API key
+// Decrypt key
 adminSettingsSchema.methods.getGeminiApiKey = function () {
     return decrypt(this.geminiApiKey);
 };
@@ -77,7 +81,11 @@ adminSettingsSchema.methods.getAnthropicApiKey = function () {
     return decrypt(this.anthropicApiKey);
 };
 
-// Static method to get or create settings
+adminSettingsSchema.methods.getGroqApiKey = function () {
+    return decrypt(this.groqApiKey);
+};
+
+// Get or create
 adminSettingsSchema.statics.getSettings = async function () {
     let settings = await this.findById('main');
     if (!settings) {
@@ -86,13 +94,14 @@ adminSettingsSchema.statics.getSettings = async function () {
     return settings;
 };
 
-// Return masked API key status (not the actual key)
+// Safe JSON
 adminSettingsSchema.methods.toSafeJSON = function () {
     return {
         selectedModel: this.selectedModel,
         geminiApiKey: this.geminiApiKey ? '••••••••' + (decrypt(this.geminiApiKey)?.slice(-4) || '') : null,
         openaiApiKey: this.openaiApiKey ? '••••••••' + (decrypt(this.openaiApiKey)?.slice(-4) || '') : null,
         anthropicApiKey: this.anthropicApiKey ? '••••••••' + (decrypt(this.anthropicApiKey)?.slice(-4) || '') : null,
+        groqApiKey: this.groqApiKey ? '••••••••' + (decrypt(this.groqApiKey)?.slice(-4) || '') : null,
         updatedAt: this.updatedAt
     };
 };

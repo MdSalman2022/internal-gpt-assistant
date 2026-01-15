@@ -31,7 +31,7 @@ class RAGService {
      * @param {number} options.topK - Number of results to retrieve
      */
     async query(userQuery, options = {}) {
-        const { userId, conversationId, conversationHistory = [], provider, targetDocumentIds } = options;
+        const { userId, organizationId, conversationId, conversationHistory = [], provider, targetDocumentIds } = options;
         const startTime = Date.now();
 
         try {
@@ -226,12 +226,19 @@ class RAGService {
                 };
             }
 
-            // 5. Generate Answer with VALID chunks
+            // 5. Generate Answer with VALID chunks (Multi-Tenant)
             console.log(`🤖 Sending to AI (${provider || 'default'}): ${validContextChunks.length} chunks`);
-            const response = await aiService.generateAnswer(userQuery, validContextChunks, {
-                provider,
-                history: conversationHistory
-            });
+            
+            // Use new multi-tenant method if organizationId is available
+            const response = await (organizationId 
+                ? aiService.generateAnswerForOrg(userQuery, validContextChunks, {
+                    provider,
+                    organizationId
+                })
+                : aiService.generateAnswer(userQuery, validContextChunks, {
+                    provider,
+                    history: conversationHistory
+                }));
 
             // 6. Extract AND Re-index Citations
             // We want citations to be sequential [1], [2], [3] in the text

@@ -81,6 +81,7 @@ export default async function usageRoutes(fastify) {
                 geminiApiKey: org.aiSettings?.geminiApiKey || '',
                 openaiApiKey: org.aiSettings?.openaiApiKey || '',
                 anthropicApiKey: org.aiSettings?.anthropicApiKey || '',
+                groqApiKey: org.aiSettings?.groqApiKey || '',
                 scope: 'organization'
             };
         }
@@ -98,7 +99,7 @@ export default async function usageRoutes(fastify) {
 
     // PATCH /api/usage/admin/settings - Update AI settings
     fastify.patch('/admin/settings', async (request, reply) => {
-        const { selectedModel, geminiApiKey, openaiApiKey, anthropicApiKey } = request.body;
+        const { selectedModel, geminiApiKey, openaiApiKey, anthropicApiKey, groqApiKey } = request.body;
         const user = await User.findById(request.session.userId);
 
         // 1. Organization Admin/Owner
@@ -109,6 +110,7 @@ export default async function usageRoutes(fastify) {
             if (geminiApiKey !== undefined) updates['aiSettings.geminiApiKey'] = geminiApiKey;
             if (openaiApiKey !== undefined) updates['aiSettings.openaiApiKey'] = openaiApiKey;
             if (anthropicApiKey !== undefined) updates['aiSettings.anthropicApiKey'] = anthropicApiKey;
+            if (groqApiKey !== undefined) updates['aiSettings.groqApiKey'] = groqApiKey;
 
             const org = await Organization.findByIdAndUpdate(
                 user.organizationId,
@@ -123,6 +125,7 @@ export default async function usageRoutes(fastify) {
                     geminiApiKey: org.aiSettings.geminiApiKey,
                     openaiApiKey: org.aiSettings.openaiApiKey,
                     anthropicApiKey: org.aiSettings.anthropicApiKey,
+                    groqApiKey: org.aiSettings.groqApiKey,
                     scope: 'organization'
                 }
             };
@@ -136,6 +139,7 @@ export default async function usageRoutes(fastify) {
             if (geminiApiKey !== undefined) settings.geminiApiKey = geminiApiKey || null;
             if (openaiApiKey !== undefined) settings.openaiApiKey = openaiApiKey || null;
             if (anthropicApiKey !== undefined) settings.anthropicApiKey = anthropicApiKey || null;
+            if (groqApiKey !== undefined) settings.groqApiKey = groqApiKey || null;
 
             settings.updatedBy = request.session.userId;
             settings.updatedAt = new Date();

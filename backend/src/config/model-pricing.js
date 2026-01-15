@@ -6,7 +6,8 @@
 export const PROVIDERS = {
     gemini: { name: 'Google Gemini', icon: '✨' },
     openai: { name: 'OpenAI', icon: '🤖' },
-    anthropic: { name: 'Anthropic Claude', icon: '🧠' }
+    anthropic: { name: 'Anthropic Claude', icon: '🧠' },
+    groq: { name: 'Groq (Llama 3)', icon: '⚡' }
 };
 
 export const MODELS = {
@@ -96,6 +97,100 @@ export const MODELS = {
         inputPer1M: 15.00,
         outputPer1M: 75.00,
         freeTier: false
+    },
+    // ========== GROQ ==========
+    // ========== GROQ ==========
+    'deepseek-r1-distill-llama-70b': {
+        id: 'deepseek-r1-distill-llama-70b',
+        name: 'DeepSeek R1 Distill 70B',
+        description: 'Advanced reasoning model (SOTA)',
+        provider: 'groq',
+        inputPer1M: 0.59,
+        outputPer1M: 0.79,
+        freeTier: true,
+        recommended: true
+    },
+    'llama-3.3-70b-versatile': {
+        id: 'llama-3.3-70b-versatile',
+        name: 'Llama 3.3 70B',
+        description: 'Smartest open model, highly versatile',
+        provider: 'groq',
+        inputPer1M: 0.59,
+        outputPer1M: 0.79,
+        freeTier: true,
+        recommended: true
+    },
+    'llama-3.1-8b-instant': {
+        id: 'llama-3.1-8b-instant',
+        name: 'Llama 3.1 8B Instant',
+        description: 'Extremely fast, high daily limits',
+        provider: 'groq',
+        inputPer1M: 0.05,
+        outputPer1M: 0.10,
+        freeTier: true
+    },
+    'meta-llama/llama-4-maverick-17b-128e-instruct': {
+        id: 'meta-llama/llama-4-maverick-17b-128e-instruct',
+        name: 'Llama 4 Maverick 17B',
+        description: 'Preview: Next-gen intelligence & speed',
+        provider: 'groq',
+        inputPer1M: 0.20,
+        outputPer1M: 0.20,
+        freeTier: true
+    },
+    'meta-llama/llama-4-scout-17b-16e-instruct': {
+        id: 'meta-llama/llama-4-scout-17b-16e-instruct',
+        name: 'Llama 4 Scout 17B',
+        description: 'Preview: Fast instruction following',
+        provider: 'groq',
+        inputPer1M: 0.20,
+        outputPer1M: 0.20,
+        freeTier: true
+    },
+    'qwen/qwen3-32b': {
+        id: 'qwen/qwen3-32b',
+        name: 'Qwen 3 32B',
+        description: 'High intelligence, massive daily quota',
+        provider: 'groq',
+        inputPer1M: 0.30,
+        outputPer1M: 0.30,
+        freeTier: true
+    },
+    'moonshotai/kimi-k2-instruct': {
+        id: 'moonshotai/kimi-k2-instruct',
+        name: 'Moonshot Kimi K2',
+        description: 'Strong instruction following',
+        provider: 'groq',
+        inputPer1M: 0.30,
+        outputPer1M: 0.30,
+        freeTier: true
+    },
+    'openai/gpt-oss-120b': {
+        id: 'openai/gpt-oss-120b',
+        name: 'GPT-OSS 120B',
+        description: 'Large open-weights model',
+        provider: 'groq',
+        inputPer1M: 0.50,
+        outputPer1M: 0.50,
+        freeTier: true
+    },
+    'mixtral-8x7b-32768': {
+        id: 'mixtral-8x7b-32768',
+        name: 'Mixtral 8x7B',
+        description: 'Classic high-performance MoE',
+        provider: 'groq',
+        inputPer1M: 0.27,
+        outputPer1M: 0.27,
+        freeTier: true
+    },
+    'gemma2-9b-it': {
+        id: 'gemma2-9b-it',
+        name: 'Gemma 2 9B',
+        description: 'Google efficient open model',
+        provider: 'groq',
+        inputPer1M: 0.10,
+        outputPer1M: 0.10,
+        freeTier: true
     },
 };
 

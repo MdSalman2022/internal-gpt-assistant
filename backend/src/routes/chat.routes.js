@@ -246,11 +246,11 @@ export default async function chatRoutes(fastify) {
         try {
             response = await ragService.query(content || 'Context from attachments', {
                 userId: request.session.userId,
-                user, // Pass full user object for ACL
-                conversationId: conversation._id, // Pass conversation ID for scoped RAG
+                organizationId: request.organizationId,
+                user,
+                conversationId: conversation._id,
                 conversationHistory: history.reverse(),
                 provider: provider || undefined,
-                // Pass directly attached files to prioritize them (Fix: use inputIds string array)
                 targetDocumentIds: inputIds.length > 0 ? inputIds : undefined
             });
         } catch (error) {

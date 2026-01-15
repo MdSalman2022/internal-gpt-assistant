@@ -91,6 +91,7 @@ const organizationSchema = new mongoose.Schema({
         geminiApiKey: { type: String, default: null },
         openaiApiKey: { type: String, default: null },
         anthropicApiKey: { type: String, default: null },
+        groqApiKey: { type: String, default: null },
     },
 
     // Signup Tracking
