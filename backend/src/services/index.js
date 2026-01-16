@@ -10,3 +10,4 @@ export { default as guardrailService } from './guardrail.service.js';
 export { default as usageService } from './usage.service.js';
 export { stripeService } from './stripeService.js';
 export { emailService } from './email.service.js';
+export { default as webSearchAgent } from './web-search-agent.js';

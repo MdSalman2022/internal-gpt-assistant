@@ -150,7 +150,8 @@ class RAGService {
                     userEmail: options.user.email,
                     departments: options.user.departments,
                     teams: options.user.teams,
-                    documentIds: candidateDocumentIds
+                    documentIds: candidateDocumentIds,
+                    organizationId: organizationId  // CRITICAL: Multi-tenant isolation
                 });
 
                 const allowedSet = new Set(allowedDocumentIds);

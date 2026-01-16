@@ -34,7 +34,7 @@ export default async function credentialsRoutes(fastify) {
         }
         // 2. Superadmin: See all credentials (org + platform)
         else if (user.role === 'superadmin') {
-            // No filter = see all
+            // No filter = see all (including inactive)
         }
         // 3. Regular users: Access denied
         else {
@@ -170,6 +170,7 @@ export default async function credentialsRoutes(fastify) {
         // Update fields
         if (label) credential.label = label;
         if (rateLimit) credential.rateLimit = rateLimit;
+        if (typeof request.body.isActive === 'boolean') credential.isActive = request.body.isActive;
         credential.updatedBy = user._id;
 
         await credential.save();
@@ -203,14 +204,12 @@ export default async function credentialsRoutes(fastify) {
             return reply.status(403).send({ error: 'Access denied' });
         }
 
-        // Soft delete: deactivate
-        credential.isActive = false;
-        credential.updatedBy = user._id;
-        await credential.save();
+        // Hard delete
+        await APICredentials.findByIdAndDelete(id);
 
         return {
             success: true,
-            message: 'Credential deactivated successfully'
+            message: 'Credential deleted permanently'
         };
     });
 

@@ -11,27 +11,47 @@ class AuditService {
      */
     async log(req, action, resource = {}, details = {}, status = 'SUCCESS') {
         try {
-            // Safe extraction of user data
-            const userId = req.session?.userId || req.user?._id;
-            const userEmail = req.user?.email || details.email; // Fallback for failed login
-            const role = req.userRole || req.user?.role;
-            const organizationId = req.organizationId || req.user?.organizationId;
+            // Support both request objects and plain data objects
+            let logData = {};
+            
+            if (req && typeof req === 'object' && !req.headers) {
+                // Plain object mode: req is actually the data object
+                logData = {
+                    userId: req.userId || null,
+                    userEmail: req.userEmail || null,
+                    role: req.role || null,
+                    action: req.action || action,
+                    resourceId: req.resource?.id || resource.id,
+                    resourceType: req.resource?.type || resource.type,
+                    details: req.details || details,
+                    organizationId: req.organizationId || null,
+                    ipAddress: null,
+                    userAgent: null,
+                    status: req.status || status
+                };
+            } else {
+                // Request object mode: traditional way
+                const userId = req?.session?.userId || req?.user?._id;
+                const userEmail = req?.user?.email || details.email;
+                const role = req?.userRole || req?.user?.role;
+                const organizationId = req?.organizationId || req?.user?.organizationId;
+                
+                logData = {
+                    userId,
+                    userEmail,
+                    role,
+                    action,
+                    resourceId: resource.id,
+                    resourceType: resource.type,
+                    details,
+                    organizationId,
+                    ipAddress: req?.ip || req?.headers?.['x-forwarded-for'],
+                    userAgent: req?.headers?.['user-agent'],
+                    status
+                };
+            }
 
-            const entry = new AuditLog({
-                userId,
-                userEmail,
-                role,
-                action,
-                resourceId: resource.id,
-                resourceType: resource.type,
-                details,
-                organizationId, // Save organization context
-                // Request info
-                ipAddress: req.ip || req.headers['x-forwarded-for'],
-                userAgent: req.headers['user-agent'],
-                status
-            });
-
+            const entry = new AuditLog(logData);
             await entry.save();
         } catch (error) {
             // Failsafe: Don't crash the main request if logging fails, but log to console

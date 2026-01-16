@@ -165,7 +165,11 @@ export default async function documentRoutes(fastify) {
 
     // Download document (secure access check)
     fastify.get('/:id/download', async (request, reply) => {
-        const document = await Document.findById(request.params.id);
+        // CRITICAL: Multi-tenant isolation - only fetch docs from user's org
+        const document = await Document.findOne({
+            _id: request.params.id,
+            organizationId: request.organizationId
+        });
 
         if (!document) {
             return reply.status(404).send({ error: 'Document not found' });

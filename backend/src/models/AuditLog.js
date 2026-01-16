@@ -25,7 +25,8 @@ const auditLogSchema = new mongoose.Schema({
             'GUARDRAIL_BLOCK', 'GUARDRAIL_REDACT', // Security red flags
             'SYSTEM_ERROR',
             // Billing Actions
-            'CHECKOUT_STARTED', 'SUBSCRIPTION_UPDATED', 'SUBSCRIPTION_CANCELLED', 'SUBSCRIPTION_REACTIVATED'
+            'CHECKOUT_STARTED', 'SUBSCRIPTION_UPDATED', 'SUBSCRIPTION_CANCELLED', 'SUBSCRIPTION_REACTIVATED',
+            'EMBEDDED_CHECKOUT_STARTED', 'PAYMENT_INTENT_CREATED'
         ]
     },
     resourceId: {

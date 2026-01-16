@@ -87,6 +87,11 @@ const config = {
     minConfidence: 0.7,
   },
 
+  // Web Search
+  tavily: {
+    apiKey: process.env.TAVILY_API_KEY,
+  },
+
   // Resend (Email)
   resend: {
     apiKey: process.env.RESEND_API_KEY,

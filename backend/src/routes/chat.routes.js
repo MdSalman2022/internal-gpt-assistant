@@ -1,5 +1,5 @@
 import { Conversation, Message, Document, User } from '../models/index.js';
-import { ragService, aiService, geminiService, documentService, auditService, guardrailService, usageService } from '../services/index.js';
+import { ragService, aiService, geminiService, documentService, auditService, guardrailService, usageService, webSearchAgent } from '../services/index.js';
 import { requirePermission } from '../middleware/rbac.middleware.js';
 import { requireUsageLimit } from '../middleware/usage-limit.middleware.js';
 import { requireTenant, requireOrganization, requireActiveSubscription } from '../middleware/tenant.middleware.js';
@@ -243,6 +243,7 @@ export default async function chatRoutes(fastify) {
 
         // Call RAG pipeline with selected provider
         let response;
+        let webSearchUsed = false;
         try {
             response = await ragService.query(content || 'Context from attachments', {
                 userId: request.session.userId,
@@ -253,6 +254,39 @@ export default async function chatRoutes(fastify) {
                 provider: provider || undefined,
                 targetDocumentIds: inputIds.length > 0 ? inputIds : undefined
             });
+
+            // Web search integration (opt-in via useWebSearch param)
+            const { useWebSearch = false } = request.body;
+            
+            if (useWebSearch && webSearchAgent.isAvailable()) {
+                try {
+                    console.log(`🌐 Web search enabled, fetching live results...`);
+                    const webResults = await webSearchAgent.search(content, { maxResults: 3 });
+                    
+                    if (webResults && webResults.results && webResults.results.length > 0) {
+                        console.log(`✅ Found ${webResults.results.length} web results`);
+                        
+                        // Check if RAG has good internal results
+                        const topRelevance = response.citations?.[0]?.relevanceScore || 0;
+                        
+                        if (topRelevance > 0.5) {
+                            // COMBINE: Good internal docs + web results
+                            response.answer = `${response.answer}\n\n---\n\n**🌐 Additional Web Sources:**\n\n${webResults.summary}\n\n**Sources:**\n${webResults.results.map((r, i) => `${i + 1}. [${r.title}](${r.url})`).join('\n')}`;
+                            response.webSearch = { used: true, resultsCount: webResults.results.length, mode: 'combined' };
+                        } else {
+                            // REPLACE: Poor internal docs, use web only
+                            response.answer = `**🌐 Web Search Results:**\n\n${webResults.summary}\n\n**Sources:**\n${webResults.results.map((r, i) => `${i + 1}. [${r.title}](${r.url})`).join('\n')}`;
+                            response.confidence = 0.85;
+                            response.citations = [];
+                            response.webSearch = { used: true, resultsCount: webResults.results.length, mode: 'primary' };
+                        }
+                    } else {
+                        console.warn('⚠️ Web search returned no results');
+                    }
+                } catch (webError) {
+                    console.error('❌ Web search failed:', webError.message);
+                }
+            }
         } catch (error) {
             console.error('❌ RAG Service Error:', error);
             // Handle rate limiting specifically

@@ -116,6 +116,121 @@ export default async function subscriptionsRoutes(fastify) {
     });
 
     /**
+     * POST /create-embedded-checkout - Create EMBEDDED Stripe checkout session (UI stays on site)
+     */
+    fastify.post('/create-embedded-checkout', async (request, reply) => {
+        const { priceId, plan } = request.body;
+        const user = await User.findById(request.session.userId);
+
+        if (!user?.organizationId) {
+            return reply.status(400).send({ error: 'You must be part of an organization to subscribe' });
+        }
+
+        // Check org role - only owner/admin can manage billing
+        if (!['owner', 'admin'].includes(user.orgRole)) {
+            return reply.status(403).send({ error: 'Only organization owners and admins can manage billing' });
+        }
+
+        const organization = await Organization.findById(user.organizationId);
+        if (!organization) {
+            return reply.status(404).send({ error: 'Organization not found' });
+        }
+
+        // Create Stripe customer if doesn't exist
+        if (!organization.stripeCustomerId) {
+            const customer = await stripeService.createCustomer(organization, user);
+            organization.stripeCustomerId = customer.id;
+            await organization.save();
+        }
+
+        const returnUrl = `${config.frontendUrl}/settings/billing?session_id={CHECKOUT_SESSION_ID}`;
+
+        const { clientSecret, sessionId } = await stripeService.createEmbeddedCheckoutSession(
+            organization,
+            priceId,
+            returnUrl
+        );
+
+        // Audit log
+        auditService.log(request, 'EMBEDDED_CHECKOUT_STARTED', { type: 'subscription' }, {
+            plan,
+            priceId,
+            organizationId: organization._id.toString(),
+        });
+
+        return { clientSecret, sessionId };
+    });
+
+    /**
+     * POST /create-payment-intent - Create Payment Intent for minimal PaymentElement
+     */
+    fastify.post('/create-payment-intent', async (request, reply) => {
+        const { priceId, plan } = request.body;
+        const user = await User.findById(request.session.userId);
+
+        if (!user?.organizationId) {
+            return reply.status(400).send({ error: 'You must be part of an organization to subscribe' });
+        }
+
+        if (!['owner', 'admin'].includes(user.orgRole)) {
+            return reply.status(403).send({ error: 'Only organization owners and admins can manage billing' });
+        }
+
+        const organization = await Organization.findById(user.organizationId);
+        if (!organization) {
+            return reply.status(404).send({ error: 'Organization not found' });
+        }
+
+        // Create Stripe customer if doesn't exist
+        if (!organization.stripeCustomerId) {
+            const customer = await stripeService.createCustomer(organization, user);
+            organization.stripeCustomerId = customer.id;
+            await organization.save();
+        }
+
+        const { clientSecret, amount, currency } = await stripeService.createSubscriptionPaymentIntent(
+            organization,
+            priceId
+        );
+
+
+        // Audit log
+        auditService.log(request, 'PAYMENT_INTENT_CREATED', { type: 'subscription' }, {
+            plan,
+            priceId,
+            amount,
+            organizationId: organization._id.toString(),
+        });
+
+        return { clientSecret, amount, currency };
+    });
+
+    /**
+     * POST /finalize-payment-intent - Create subscription after payment succeeds
+     */
+    fastify.post('/finalize-payment-intent', async (request, reply) => {
+        const { paymentIntentId } = request.body;
+        const user = await User.findById(request.session.userId);
+
+        if (!user?.organizationId) {
+            return reply.status(400).send({ error: 'You must be part of an organization' });
+        }
+
+        if (!['owner', 'admin'].includes(user.orgRole)) {
+            return reply.status(403).send({ error: 'Only owners and admins can manage subscriptions' });
+        }
+
+        const organization = await Organization.findById(user.organizationId);
+        if (!organization) {
+            return reply.status(404).send({ error: 'Organization not found' });
+        }
+
+        const result = await stripeService.finalizePaymentIntent(paymentIntentId, organization);
+
+        return result;
+    });
+
+    /**
      * POST /upgrade - Upgrade/downgrade existing subscription
      */
     fastify.post('/upgrade', async (request, reply) => {
@@ -340,18 +455,6 @@ export default async function subscriptionsRoutes(fastify) {
         const now = new Date();
 
         const daysUsed = Math.ceil((now - currentPeriodStart) / (1000 * 60 * 60 * 24));
-        const totalDays = Math.ceil((currentPeriodEnd - currentPeriodStart) / (1000 * 60 * 60 * 24));
-
-        // Check if within 3-day refund window
-        const eligible = daysUsed <= 3;
-
-        if (!eligible) {
-            return {
-                eligible: false,
-                daysUsed,
-                periodEnd: organization.currentPeriodEnd
-            };
-        }
 
         // Get last payment from Payment collection
         const lastPayment = await Payment.findOne({
@@ -360,6 +463,17 @@ export default async function subscriptionsRoutes(fastify) {
         }).sort({ paidAt: -1 });
 
         const amountPaid = lastPayment?.amount || 0;
+
+        // Use period dates from lastPayment if organization dates are not available
+        const periodStart = organization.currentPeriodStart || lastPayment?.periodStart;
+        const periodEnd = organization.currentPeriodEnd || lastPayment?.periodEnd;
+
+        const totalDays = periodStart && periodEnd 
+            ? Math.max(1, Math.ceil((new Date(periodEnd) - new Date(periodStart)) / (1000 * 60 * 60 * 24)))
+            : 30; // Fallback to 30 days
+
+        // Check if within 3-day refund window
+        const eligible = daysUsed <= 3;
 
         const chargeAmount = (amountPaid / totalDays) * daysUsed;
         const refundAmount = amountPaid - chargeAmount;
@@ -409,34 +523,43 @@ export default async function subscriptionsRoutes(fastify) {
                 console.log('🔍 Refund Debug - Last Payment:', JSON.stringify(lastPayment, null, 2));
 
                 if (lastPayment?.stripePaymentIntentId) {
-                    // Calculate prorated refund
-                    const totalDays = Math.ceil((new Date(currentPeriodEnd) - new Date(currentPeriodStart)) / (1000 * 60 * 60 * 24));
-                    const amountPaid = lastPayment.amount;
-                    const chargeAmount = (amountPaid / totalDays) * daysUsed;
-                    const refundAmount = amountPaid - chargeAmount;
-
-                    console.log('💰 Refund Calculation:', {
-                        daysUsed,
-                        totalDays,
-                        amountPaid,
-                        chargeAmount,
-                        refundAmount
-                    });
-
-                    // Create refund
-                    if (refundAmount > 0) {
-                        console.log(`🔄 Creating refund: Payment Intent ${lastPayment.stripePaymentIntentId}, Amount: $${refundAmount}`);
-                        const refundResult = await stripeService.createRefund(lastPayment.stripePaymentIntentId, refundAmount);
-                        console.log('✅ Refund created successfully:', refundResult.id);
-
-                        // Update Payment record with refund info
-                        lastPayment.status = 'refunded';
-                        lastPayment.refundedAmount = refundAmount;
-                        lastPayment.refundedAt = new Date();
-                        lastPayment.refundReason = 'Cancelled within refund window';
-                        await lastPayment.save();
+                    // Use period dates from lastPayment if organization dates are not available
+                    const periodStart = organization.currentPeriodStart || lastPayment.periodStart;
+                    const periodEnd = organization.currentPeriodEnd || lastPayment.periodEnd;
+                    
+                    if (!periodStart || !periodEnd) {
+                        console.log('❌ No period dates available. Cannot calculate refund.');
                     } else {
-                        console.log('⚠️ Refund amount is 0 or negative, skipping refund');
+                        const totalDays = Math.max(1, Math.ceil((new Date(periodEnd) - new Date(periodStart)) / (1000 * 60 * 60 * 24)));
+                        const amountPaid = lastPayment.amount;
+                        const chargeAmount = (amountPaid / totalDays) * daysUsed;
+                        const refundAmount = amountPaid - chargeAmount;
+
+                        console.log('💰 Refund Calculation:', {
+                            daysUsed,
+                            totalDays,
+                            amountPaid,
+                            chargeAmount,
+                            refundAmount,
+                            periodStart,
+                            periodEnd
+                        });
+
+                        // Create refund
+                        if (refundAmount > 0) {
+                                console.log(`🔄 Creating refund: Payment Intent ${lastPayment.stripePaymentIntentId}, Amount: $${refundAmount}`);
+                            const refundResult = await stripeService.createRefund(lastPayment.stripePaymentIntentId, refundAmount);
+                            console.log('✅ Refund created successfully:', refundResult.id);
+
+                            // Update Payment record with refund info
+                            lastPayment.status = 'refunded';
+                            lastPayment.refundedAmount = refundAmount;
+                            lastPayment.refundedAt = new Date();
+                            lastPayment.refundReason = 'Cancelled within refund window';
+                            await lastPayment.save();
+                        } else {
+                            console.log('⚠️ Refund amount is 0 or negative, skipping refund');
+                        }
                     }
                 } else {
                     console.log('❌ No payment intent found in last payment. Cannot process refund.');

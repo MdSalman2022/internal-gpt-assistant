@@ -298,24 +298,33 @@ class DocumentService {
      * Filter a list of document IDs to return only those accessible by the user.
      * Used for RAG post-search filtering.
      */
-    async filterAccessibleDocuments({ userId, userRole, userEmail, departments, teams, documentIds }) {
+    async filterAccessibleDocuments({ userId, userRole, userEmail, departments, teams, documentIds, organizationId }) {
         if (!documentIds || documentIds.length === 0) return [];
 
         const query = {
             _id: { $in: documentIds }
         };
 
-        // Admin Access: No further filtering needed (except the ID list)
-        if (userRole === 'admin') {
+        // CRITICAL: Multi-tenant isolation - ALWAYS filter by organizationId
+        // Documents without organizationId are treated as orphaned and inaccessible
+        if (organizationId) {
+            query.organizationId = organizationId;
+        } else {
+            // If user has no org, they can only see documents without org (orphaned/legacy)
+            query.organizationId = null;
+        }
+
+        // Admin Access: Can see all docs in their organization
+        if (userRole === 'admin' || userRole === 'superadmin') {
             const docs = await Document.find(query).select('_id').lean();
             return docs.map(d => d._id.toString());
         }
 
-        // --- ACL LOGIC (Same as getDocuments) ---
+        // --- ACL LOGIC (for regular users) ---
         const aclConditions = [
-            { uploadedBy: userId },
-            { isGlobal: true, accessLevel: 'public' },
-            { allowedUsers: userId },
+            { uploadedBy: userId }, // User's own uploads
+            { isGlobal: true, accessLevel: 'public' }, // Public docs (within org)
+            { allowedUsers: userId }, // Explicitly granted access
         ];
 
         if (userEmail) {
@@ -332,15 +341,6 @@ class DocumentService {
         if (teams && teams.length > 0) {
             aclConditions.push({ allowedTeams: { $in: teams } });
         }
-
-        // Add scoped conversation access if the doc is part of a conversation the user participates in
-        // Note: For RAG, we usually pass conversationId scope separately.
-        // But here we might check if the doc belongs to a conversation owned by the user.
-        // For simplicity/security, RAG usually filters strictly by Current Conversation OR Global Lib.
-        // So global lib logic is covered by above. Conversation logic is handled by "conversationId" check in RAG.
-        // However, if we treat this as general access check:
-        // ACL usually applies to "Library" documents. Conversation attachments are implicitly accessible by chat participants.
-        // We will assume this filter is for "Library/Global" documents.
 
         query.$or = aclConditions;
 
