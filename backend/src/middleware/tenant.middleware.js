@@ -1,16 +1,8 @@
-/**
- * Multi-Tenant Middleware
- * 
- * Provides middleware functions for organization-scoped access control.
- * Ensures all requests are properly scoped to the user's organization.
- */
+// Multi-tenant access control middleware
 
 import { User, Organization } from '../models/index.js';
 
-/**
- * Require authentication and attach user to request
- * This is the base middleware that other tenant middleware builds on
- */
+// Require auth and attach user
 export function requireAuth() {
     return async (request, reply) => {
         const userId = request.session?.userId;
@@ -39,10 +31,7 @@ export function requireAuth() {
     };
 }
 
-/**
- * Require user to belong to an organization
- * Attaches organization context to request for downstream use
- */
+// Require organization and attach context
 export function requireOrganization() {
     return async (request, reply) => {
         // First ensure user is authenticated
@@ -90,10 +79,7 @@ export function requireOrganization() {
     };
 }
 
-/**
- * Require active subscription (not expired trial or cancelled)
- * Use after requireOrganization middleware
- */
+// Require active subscription
 export function requireActiveSubscription() {
     return async (request, reply) => {
         // Ensure organization is loaded
@@ -128,10 +114,7 @@ export function requireActiveSubscription() {
     };
 }
 
-/**
- * Require specific organization role (owner, admin, member)
- * Use after requireOrganization middleware
- */
+// Require specific organization role
 export function requireOrgRole(...allowedRoles) {
     return async (request, reply) => {
         if (!request.user) {
@@ -164,9 +147,7 @@ export function requireOrgRole(...allowedRoles) {
     };
 }
 
-/**
- * Require platform superadmin role
- */
+// Require platform superadmin role
 export function requireSuperadmin() {
     return async (request, reply) => {
         const userId = request.session?.userId;
@@ -194,10 +175,7 @@ export function requireSuperadmin() {
     };
 }
 
-/**
- * Check organization limits (users, documents, tokens)
- * Use after requireOrganization middleware
- */
+// Check organization resource limits
 export function checkOrgLimit(limitType) {
     return async (request, reply) => {
         if (!request.organization) {
@@ -248,10 +226,7 @@ export function checkOrgLimit(limitType) {
     };
 }
 
-/**
- * Composite middleware: Auth + Organization + Active Subscription
- * Use this for most protected routes
- */
+// Composite middleware for protected routes
 export function requireTenant() {
     return async (request, reply) => {
         // Step 1: Authenticate

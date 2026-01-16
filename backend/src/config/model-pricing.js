@@ -1,7 +1,4 @@
-/**
- * Model Pricing Configuration
- * Pricing for Gemini, OpenAI, and Anthropic Claude
- */
+// Model pricing configuration (Gemini, OpenAI, Anthropic, Groq)
 
 export const PROVIDERS = {
     gemini: { name: 'Google Gemini', icon: '✨' },

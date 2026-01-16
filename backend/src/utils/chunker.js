@@ -1,8 +1,6 @@
 import config from '../config/index.js';
 
-/**
- * Split text into overlapping chunks
- */
+// Split text into overlapping chunks
 export function chunkText(text, options = {}) {
     const {
         chunkSize = config.rag.chunkSize,
@@ -43,9 +41,7 @@ export function chunkText(text, options = {}) {
     return chunks;
 }
 
-/**
- * Clean and normalize text
- */
+// Clean and normalize text
 export function cleanText(text) {
     return text
         // Remove excessive whitespace
@@ -58,9 +54,7 @@ export function cleanText(text) {
         .trim();
 }
 
-/**
- * Extract keywords from text using simple TF approach
- */
+// Extract keywords from text
 export function extractKeywords(text, topN = 10) {
     // Common stop words
     const stopWords = new Set([
@@ -89,10 +83,7 @@ export function extractKeywords(text, topN = 10) {
         .map(([word]) => word);
 }
 
-/**
- * Reciprocal Rank Fusion for combining search results
- * Used for hybrid search (semantic + keyword)
- */
+// Reciprocal Rank Fusion for search results
 export function reciprocalRankFusion(resultSets, k = 60) {
     const scores = {};
 

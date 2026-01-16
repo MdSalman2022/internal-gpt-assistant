@@ -1,9 +1,4 @@
-/**
- * Guardrail Service
- * 
- * Detects PII and prompt injection patterns before sending to LLM.
- * Designed for minimal latency using regex-based detection.
- */
+// Detects PII and prompt injection in LLM inputs
 
 class GuardrailService {
     constructor() {
@@ -72,12 +67,7 @@ class GuardrailService {
         };
     }
 
-    /**
-     * Analyze text for PII and injection patterns.
-     * @param {string} text - User message to analyze
-     * @param {string} mode - 'redact' or 'block'
-     * @returns {Object} { safe: boolean, findings: Array, redactedText: string, blocked: boolean }
-     */
+    // Analyze text for PII and injections
     analyze(text, mode = 'redact') {
         const findings = [];
         let redactedText = text;
@@ -125,7 +115,7 @@ class GuardrailService {
         const hasPII = findings.some(f => f.type === 'pii');
 
         // In 'block' mode, any finding is unsafe
-        // In 'redact' mode, we redact PII and allow (but still flag injections as unsafe)
+        // Redact PII or block injections based on mode
         let safe = true;
         let blocked = false;
 
@@ -135,7 +125,7 @@ class GuardrailService {
                 blocked = true;
             }
         } else {
-            // 'redact' mode: PII is redacted and allowed, but injection still blocks
+                // Block if injection is detected
             if (hasInjection) {
                 safe = false;
                 blocked = true;
@@ -152,9 +142,7 @@ class GuardrailService {
         };
     }
 
-    /**
-     * Create a redacted placeholder
-     */
+    // Create redacted placeholder string
     _redact(value, type) {
         const labels = {
             email: '[EMAIL_REDACTED]',
@@ -169,9 +157,7 @@ class GuardrailService {
         return labels[type] || '[REDACTED]';
     }
 
-    /**
-     * Quick check if text likely contains sensitive data (for UI hints)
-     */
+    // Fast check for sensitive data patterns
     quickCheck(text) {
         // Fast check for common patterns
         const hasEmail = /@/.test(text);

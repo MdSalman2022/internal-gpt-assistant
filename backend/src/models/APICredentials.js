@@ -32,10 +32,10 @@ function decrypt(text) {
     }
 }
 
-// ==================== SCHEMA DEFINITION ====================
+// Schema
 
 const apiCredentialSchema = new mongoose.Schema({
-    // ========== OWNERSHIP ==========
+    // Ownership
     organizationId: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'Organization',
@@ -43,7 +43,7 @@ const apiCredentialSchema = new mongoose.Schema({
         index: true
     },
 
-    // ========== PROVIDER CONFIGURATION ==========
+    // Provider Configuration
     provider: {
         type: String,
         enum: ['gemini', 'openai', 'anthropic', 'groq'],
@@ -51,14 +51,14 @@ const apiCredentialSchema = new mongoose.Schema({
         index: true
     },
 
-    // ========== ENCRYPTED API KEY ==========
+    // Encrypted API key
     encryptedApiKey: {
         type: String,
         required: true,
         select: false  // Never return in queries by default (security)
     },
 
-    // ========== METADATA ==========
+    // Metadata
     label: {
         type: String,
         default: 'Default Key',
@@ -71,7 +71,7 @@ const apiCredentialSchema = new mongoose.Schema({
         index: true
     },
 
-    // ========== USAGE TRACKING ==========
+    // Usage tracking
     usage: {
         totalRequests: { type: Number, default: 0 },
         totalTokens: { type: Number, default: 0 },
@@ -79,13 +79,13 @@ const apiCredentialSchema = new mongoose.Schema({
         lastUsedAt: { type: Date, default: null }
     },
 
-    // ========== RATE LIMITING (Optional) ==========
+    // Rate limiting
     rateLimit: {
         requestsPerMinute: { type: Number, default: null },
         tokensPerDay: { type: Number, default: null }
     },
 
-    // ========== AUDIT TRAIL ==========
+    // Audit trail
     createdBy: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'User'
@@ -100,7 +100,7 @@ const apiCredentialSchema = new mongoose.Schema({
     timestamps: true  // Adds createdAt and updatedAt
 });
 
-// ==================== INDEXES ====================
+// Indexes
 
 // Compound index: Ensure only ONE active key per provider per org
 apiCredentialSchema.index(
@@ -115,7 +115,7 @@ apiCredentialSchema.index(
 // Performance index for lookups
 apiCredentialSchema.index({ provider: 1, isActive: 1 });
 
-// ==================== MIDDLEWARE ====================
+// Middleware
 
 // Encrypt API key before saving
 apiCredentialSchema.pre('save', function (next) {
@@ -125,7 +125,7 @@ apiCredentialSchema.pre('save', function (next) {
     next();
 });
 
-// ==================== INSTANCE METHODS ====================
+// Instance methods
 
 // Decrypt API key
 apiCredentialSchema.methods.getDecryptedKey = function () {
@@ -173,7 +173,7 @@ apiCredentialSchema.methods.toSafeJSON = function () {
     };
 };
 
-// ==================== STATIC METHODS ====================
+// Static methods
 
 // Find active credential (Org -> Platform fallback)
 apiCredentialSchema.statics.findActiveCredential = async function (provider, organizationId = null) {

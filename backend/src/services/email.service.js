@@ -5,7 +5,7 @@ class EmailService {
     constructor() {
         if (config.resend?.apiKey) {
             this.resend = new Resend(config.resend.apiKey);
-            // In development or if fromEmail is Gmail, default to onboarding@resend.dev to avoid 403 Forbidden
+            // Use Resend onboarding domain if using Gmail
             const configuredEmail = config.resend.fromEmail;
             const isPublicDomain = configuredEmail?.includes('gmail.com') || configuredEmail?.includes('yahoo.com') || configuredEmail?.includes('hotmail.com');
 
@@ -14,10 +14,10 @@ class EmailService {
                 : configuredEmail;
 
             if (isPublicDomain) {
-                console.warn(`[EmailService] Using 'onboarding@resend.dev' because '${configuredEmail}' is a public domain which Resend rejects.`);
+                console.warn(`[EmailService] Using onboarding domain for public email.`);
             }
         } else {
-            console.warn('Resend API key not found. Email service will log emails instead of sending.');
+            console.warn('Resend key missing. Emails will be logged locally.');
         }
     }
 

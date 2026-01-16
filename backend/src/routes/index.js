@@ -13,6 +13,5 @@ export { default as credentialsRoutes } from './credentials.routes.js';
 export { default as subscriptionsRoutes } from './subscriptions.routes.js';
 export { default as organizationsRoutes } from './organizations.routes.js';
 export { default as superadminRoutes } from './superadmin.routes.js';
-export { default as demoRoutes } from './demo.routes.js';
 export { default as contactRoutes } from './contact.routes.js';
 export { default as inviteRoutes } from './invite.routes.js';

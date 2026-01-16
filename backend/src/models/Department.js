@@ -38,7 +38,6 @@ const departmentSchema = new mongoose.Schema({
 });
 
 // Index for efficient searching
-departmentSchema.index({ name: 1 });
 
 const Department = mongoose.model('Department', departmentSchema);
 

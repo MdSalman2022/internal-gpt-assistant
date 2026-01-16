@@ -11,9 +11,7 @@ export default async function organizationsRoutes(fastify) {
         }
     });
 
-    /**
-     * POST / - Create a new organization
-     */
+    // Create a new organization
     fastify.post('/', async (request, reply) => {
         const { name, slug } = request.body;
         const user = await User.findById(request.session.userId);
@@ -60,9 +58,7 @@ export default async function organizationsRoutes(fastify) {
         return { success: true, organization };
     });
 
-    /**
-     * GET / - Get current user's organization
-     */
+    // Get current user's organization
     fastify.get('/', async (request, reply) => {
         const user = await User.findById(request.session.userId);
 
@@ -74,9 +70,7 @@ export default async function organizationsRoutes(fastify) {
         return { organization };
     });
 
-    /**
-     * PATCH /:id - Update organization
-     */
+    // Update organization details
     fastify.patch('/:id', async (request, reply) => {
         const { id } = request.params;
         const { name, logo, settings } = request.body;
@@ -113,9 +107,7 @@ export default async function organizationsRoutes(fastify) {
         return { success: true, organization };
     });
 
-    /**
-     * GET /members - List organization members
-     */
+    // List organization members
     fastify.get('/members', async (request, reply) => {
         const user = await User.findById(request.session.userId);
 
@@ -138,9 +130,7 @@ export default async function organizationsRoutes(fastify) {
         return { members };
     });
 
-    /**
-     * POST /members/invite - Invite a team member
-     */
+    // Invite a team member
     fastify.post('/members/invite', async (request, reply) => {
         const { email, orgRole = 'member' } = request.body;
         const user = await User.findById(request.session.userId);
@@ -224,9 +214,7 @@ export default async function organizationsRoutes(fastify) {
         };
     });
 
-    /**
-     * DELETE /members/:id - Remove a team member
-     */
+    // Remove a team member
     fastify.delete('/members/:id', async (request, reply) => {
         const { id } = request.params;
         const user = await User.findById(request.session.userId);
@@ -266,9 +254,7 @@ export default async function organizationsRoutes(fastify) {
         return { success: true, message: 'Member removed' };
     });
 
-    /**
-     * PATCH /members/:id/role - Change member role
-     */
+    // Change member role
     fastify.patch('/members/:id/role', async (request, reply) => {
         const { id } = request.params;
         const { orgRole } = request.body;
@@ -299,14 +285,10 @@ export default async function organizationsRoutes(fastify) {
         return { success: true, member };
     });
 
-    /**
-     * GET /invite/verify/:token - Verify invitation token
-     */
+    // Verify invitation token
 
 
-    /**
-     * GET /check-slug/:slug - Check if slug is available
-     */
+    // Check if slug is available
     fastify.get('/check-slug/:slug', async (request, reply) => {
         const { slug } = request.params;
         const existing = await Organization.findOne({ slug: slug.toLowerCase() });

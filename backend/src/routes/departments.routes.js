@@ -3,7 +3,7 @@ import { requirePermission } from '../middleware/rbac.middleware.js';
 import { auditService } from '../services/index.js';
 
 export default async function departmentsRoutes(fastify) {
-    // ==================== PUBLIC ROUTES ====================
+    // Public routes
 
     // GET / - List all departments with teams (available to all authenticated users)
     fastify.get('/', async (request, reply) => {
@@ -19,7 +19,7 @@ export default async function departmentsRoutes(fastify) {
         return { departments };
     });
 
-    // ==================== ADMIN-ONLY ROUTES ====================
+    // Admin routes
 
     // POST / - Create department (admin only)
     fastify.post('/', { preHandler: requirePermission('admin:manage') }, async (request, reply) => {
@@ -92,7 +92,7 @@ export default async function departmentsRoutes(fastify) {
         return { success: true, message: 'Department deleted' };
     });
 
-    // ==================== TEAM MANAGEMENT ====================
+    // Team management
 
     // POST /:id/teams - Add team to department (admin only)
     fastify.post('/:id/teams', { preHandler: requirePermission('admin:manage') }, async (request, reply) => {
@@ -148,7 +148,7 @@ export default async function departmentsRoutes(fastify) {
         return { success: true, department };
     });
 
-    // ==================== ACCESS REQUEST MANAGEMENT ====================
+    // Access requests
 
     // GET /requests - Get all pending access requests (admin only)
     fastify.get('/requests', { preHandler: requirePermission('admin:manage') }, async (request, reply) => {
@@ -265,7 +265,7 @@ export default async function departmentsRoutes(fastify) {
         return { success: true, message: `Access request rejected` };
     });
 
-    // ==================== USER ACCESS REQUEST ====================
+    // User requests
 
     // POST /request-access - User requests access to department/team
     fastify.post('/request-access', async (request, reply) => {

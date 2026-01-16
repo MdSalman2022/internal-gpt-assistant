@@ -1,10 +1,7 @@
 import { Resend } from 'resend';
 import config from '../config/index.js';
 
-/**
- * Contact Routes
- * Handles contact form submissions and sends emails via Resend
- */
+// Contact form routes
 export default async function contactRoutes(fastify) {
     // Initialize Resend client
     const resend = config.resend.apiKey ? new Resend(config.resend.apiKey) : null;

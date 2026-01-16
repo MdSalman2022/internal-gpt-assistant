@@ -13,8 +13,7 @@ const userSchema = new mongoose.Schema({
     password: {
         type: String,
         required: function () {
-            // Password is NOT required if it's a social login (googleId) 
-            // OR if it's a pending invitation (invitationToken)
+            // Password not required for social login or invites
             return !this.googleId && !this.invitationToken;
         },
     },

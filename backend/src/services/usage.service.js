@@ -1,8 +1,4 @@
-/**
- * Usage Service
- * 
- * Tracks token consumption, enforces limits, and provides usage analytics.
- */
+// Service for tracking token usage and limits
 
 import UsageLog from '../models/UsageLog.js';
 import { User } from '../models/index.js';
@@ -16,9 +12,7 @@ const COST_PER_1K_TOKENS = {
 };
 
 class UsageService {
-    /**
-     * Log token usage for a request
-     */
+    // Log token usage data
     async logUsage({ userId, conversationId, promptTokens, completionTokens, model, provider, requestType = 'chat' }) {
         const totalTokens = promptTokens + completionTokens;
 
@@ -56,10 +50,7 @@ class UsageService {
         return usageLog;
     }
 
-    /**
-     * Check if user is within their limits
-     * @returns {Object} { allowed: boolean, reason?: string, remaining?: { daily, monthly } }
-     */
+    // Check user resource limits
     async checkLimits(userId) {
         const user = await User.findById(userId).select('usage limits').lean();
 
@@ -104,9 +95,7 @@ class UsageService {
         };
     }
 
-    /**
-     * Get user's usage statistics
-     */
+    // Get user usage statistics
     async getUserStats(userId) {
         const user = await User.findById(userId).select('usage limits').lean();
 
@@ -142,9 +131,7 @@ class UsageService {
         };
     }
 
-    /**
-     * Reset daily usage (called by cron job at midnight UTC)
-     */
+    // Reset daily usage tokens
     async resetDailyUsage() {
         const result = await User.updateMany(
             {},
@@ -154,9 +141,7 @@ class UsageService {
         return result;
     }
 
-    /**
-     * Reset monthly usage (called by cron job on 1st of month)
-     */
+    // Reset monthly usage tokens
     async resetMonthlyUsage() {
         const result = await User.updateMany(
             {},
@@ -166,9 +151,7 @@ class UsageService {
         return result;
     }
 
-    /**
-     * Update user limits (admin function)
-     */
+    // Update user usage limits
     async updateUserLimits(userId, { dailyTokens, monthlyTokens }) {
         return User.findByIdAndUpdate(
             userId,

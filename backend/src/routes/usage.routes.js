@@ -1,8 +1,4 @@
-/**
- * Usage API Routes
- * 
- * Endpoints for usage statistics, limits, admin controls, and AI settings.
- */
+// Usage and AI settings routes
 
 import { usageService } from '../services/index.js';
 import { User, UsageLog, AdminSettings, Organization } from '../models/index.js';
@@ -63,11 +59,11 @@ export default async function usageRoutes(fastify) {
         };
     });
 
-    // ========== ADMIN ROUTES ==========
+    // Admin routes
 
     // ... (Lines 54-150 remain unchanged, skipping them in replacement) ... 
 
-    // ========== AI SETTINGS (Organization & Admin) ==========
+    // AI Settings
 
     // GET /api/usage/admin/settings - Get AI settings
     fastify.get('/admin/settings', async (request, reply) => {

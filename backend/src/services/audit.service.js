@@ -1,14 +1,7 @@
 import { AuditLog } from '../models/index.js';
 
 class AuditService {
-    /**
-     * Log an action to the database
-     * @param {Object} req - Fastify request object (for extracting IP/User)
-     * @param {String} action - Action enum (e.g. 'QUERY', 'LOGIN')
-     * @param {Object} resource - { type: 'document', id: '123' }
-     * @param {Object} details - Additional metadata
-     * @param {String} status - 'SUCCESS', 'FAILURE', 'DENIED'
-     */
+    // Log action to database
     async log(req, action, resource = {}, details = {}, status = 'SUCCESS') {
         try {
             // Support both request objects and plain data objects
@@ -30,7 +23,7 @@ class AuditService {
                     status: req.status || status
                 };
             } else {
-                // Request object mode: traditional way
+                // Traditional request object mode
                 const userId = req?.session?.userId || req?.user?._id;
                 const userEmail = req?.user?.email || details.email;
                 const role = req?.userRole || req?.user?.role;
@@ -54,18 +47,13 @@ class AuditService {
             const entry = new AuditLog(logData);
             await entry.save();
         } catch (error) {
-            // Failsafe: Don't crash the main request if logging fails, but log to console
+            // Fail-safe: Log error but don't crash request
             console.error('❌ Failed to write audit log:', error);
             console.error('   Log Data:', { action, resource, status });
         }
     }
 
-    /**
-     * Retrieve logs (Admin only)
-     * @param {Object} filters - { userId, action, startDate, endDate, organizationId }
-     * @param {Number} page
-     * @param {Number} limit
-     */
+    // Retrieve logs for admin review
     async getLogs(filters = {}, page = 1, limit = 50) {
         const query = {};
 

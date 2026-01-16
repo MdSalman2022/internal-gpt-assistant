@@ -87,7 +87,7 @@ const documentSchema = new mongoose.Schema({
         enum: ['private', 'department', 'public'],
         default: 'private',
     },
-    // Per-conversation scoping - if set, document is only used for this conversation
+    // Document scoped to specific conversation
     conversationId: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'Conversation',

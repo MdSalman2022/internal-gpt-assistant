@@ -17,9 +17,7 @@ export default async function analyticsRoutes(fastify) {
             const thirtyDaysAgo = new Date(now - 30 * 24 * 60 * 60 * 1000);
             const sevenDaysAgo = new Date(now - 7 * 24 * 60 * 60 * 1000);
 
-            // Get conversation IDs for this organization to filter messages
-            // Optimization: In a huge system, we'd want organizationId on Message. 
-            // For now, fetching IDs is acceptable for typical org sizes.
+            // Get organization conversation IDs
             const orgConversationIds = await Conversation.find({ organizationId: orgId }).distinct('_id');
 
             // Get counts in parallel

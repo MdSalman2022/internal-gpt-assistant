@@ -67,7 +67,7 @@ class AuthService {
                 throw new Error('Invalid or expired invitation');
             }
 
-            // Verify email matches (optional safety, but good practice if frontend pre-fills it)
+        // Verify email matches invitation
             if (user.email.toLowerCase() !== email.toLowerCase()) {
                 throw new Error('Email does not match invitation');
             }
@@ -149,7 +149,7 @@ class AuthService {
 
         await organization.save();
 
-        // Check if this is the first user on platform (make them superadmin)
+        // Make first user a platform superadmin
         const userCount = await User.countDocuments();
         const platformRole = userCount === 0 ? 'superadmin' : 'user';
 

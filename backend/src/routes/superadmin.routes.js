@@ -1,4 +1,4 @@
-import { Organization, User, Subscription, DemoRequest, Plan, AuditLog } from '../models/index.js';
+import { Organization, User, Subscription, Plan, AuditLog } from '../models/index.js';
 
 export default async function superadminRoutes(fastify) {
     // All routes require superadmin role
@@ -15,9 +15,7 @@ export default async function superadminRoutes(fastify) {
         request.superadmin = user;
     });
 
-    /**
-     * GET /dashboard - Get superadmin dashboard stats
-     */
+    // Get superadmin dashboard stats
     fastify.get('/dashboard', async (request, reply) => {
         const [
             totalOrganizations,
@@ -25,7 +23,6 @@ export default async function superadminRoutes(fastify) {
             totalUsers,
             activeSubscriptions,
             trialOrganizations,
-            pendingDemos,
             totalMRR,
             recentOrganizations,
         ] = await Promise.all([
@@ -34,7 +31,6 @@ export default async function superadminRoutes(fastify) {
             User.countDocuments({ platformRole: 'user' }),
             Subscription.countDocuments({ status: 'active' }),
             Organization.countDocuments({ planStatus: 'trialing' }),
-            DemoRequest.countDocuments({ status: 'pending' }),
             Subscription.getTotalMRR(),
             Organization.find().sort({ createdAt: -1 }).limit(5).lean(),
         ]);
@@ -59,7 +55,6 @@ export default async function superadminRoutes(fastify) {
                 totalUsers,
                 activeSubscriptions,
                 trialOrganizations,
-                pendingDemos,
                 mrr: totalMRR,
                 growth: {
                     organizations: parseFloat(orgGrowth),
@@ -70,9 +65,7 @@ export default async function superadminRoutes(fastify) {
         };
     });
 
-    /**
-     * GET /organizations - List all organizations
-     */
+    // List all organizations
     fastify.get('/organizations', async (request, reply) => {
         const { page = 1, limit = 20, search, plan, status } = request.query;
 
@@ -120,9 +113,7 @@ export default async function superadminRoutes(fastify) {
         };
     });
 
-    /**
-     * GET /organizations/:id - Get organization details
-     */
+    // Get organization details
     fastify.get('/organizations/:id', async (request, reply) => {
         const { id } = request.params;
 
@@ -152,9 +143,7 @@ export default async function superadminRoutes(fastify) {
         };
     });
 
-    /**
-     * PATCH /organizations/:id - Update organization (superadmin)
-     */
+    // Update organization (superadmin)
     fastify.patch('/organizations/:id', async (request, reply) => {
         const { id } = request.params;
         const { plan, planStatus, limits, notes } = request.body;
@@ -179,9 +168,7 @@ export default async function superadminRoutes(fastify) {
         return { success: true, organization };
     });
 
-    /**
-     * GET /subscriptions - List all subscriptions
-     */
+    // List all subscriptions
     fastify.get('/subscriptions', async (request, reply) => {
         const { page = 1, limit = 20, status } = request.query;
 
@@ -209,63 +196,7 @@ export default async function superadminRoutes(fastify) {
         };
     });
 
-    /**
-     * GET /demo-requests - List demo requests
-     */
-    fastify.get('/demo-requests', async (request, reply) => {
-        const { page = 1, limit = 20, status } = request.query;
-
-        const query = {};
-        if (status) query.status = status;
-
-        const [requests, total] = await Promise.all([
-            DemoRequest.find(query)
-                .sort({ createdAt: -1 })
-                .skip((page - 1) * limit)
-                .limit(parseInt(limit))
-                .populate('assignedTo', 'name email')
-                .lean(),
-            DemoRequest.countDocuments(query),
-        ]);
-
-        return {
-            requests,
-            pagination: {
-                page: parseInt(page),
-                limit: parseInt(limit),
-                total,
-                pages: Math.ceil(total / limit),
-            },
-        };
-    });
-
-    /**
-     * PATCH /demo-requests/:id - Update demo request
-     */
-    fastify.patch('/demo-requests/:id', async (request, reply) => {
-        const { id } = request.params;
-        const { status, notes, assignedTo, scheduledAt, priority } = request.body;
-
-        const demoRequest = await DemoRequest.findById(id);
-        if (!demoRequest) {
-            return reply.status(404).send({ error: 'Demo request not found' });
-        }
-
-        if (status) demoRequest.status = status;
-        if (notes) demoRequest.notes = (demoRequest.notes || '') + `\n[${new Date().toISOString()}] ${notes}`;
-        if (assignedTo) demoRequest.assignedTo = assignedTo;
-        if (scheduledAt) demoRequest.scheduledAt = scheduledAt;
-        if (priority) demoRequest.priority = priority;
-
-        demoRequest.lastContactedAt = new Date();
-        await demoRequest.save();
-
-        return { success: true, request: demoRequest };
-    });
-
-    /**
-     * GET /analytics/revenue - Revenue analytics
-     */
+    // Revenue analytics
     fastify.get('/analytics/revenue', async (request, reply) => {
         const { period = '30d' } = request.query;
 
@@ -317,9 +248,7 @@ export default async function superadminRoutes(fastify) {
         };
     });
 
-    /**
-     * GET /users - List all users (platform-wide)
-     */
+    // List all users (platform-wide)
     fastify.get('/users', async (request, reply) => {
         const { page = 1, limit = 50, search, role } = request.query;
 
@@ -354,9 +283,7 @@ export default async function superadminRoutes(fastify) {
         };
     });
 
-    /**
-     * PATCH /users/:id/platform-role - Set user platform role
-     */
+    // Set user platform role
     fastify.patch('/users/:id/platform-role', async (request, reply) => {
         const { id } = request.params;
         const { platformRole } = request.body;

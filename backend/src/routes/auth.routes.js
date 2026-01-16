@@ -256,7 +256,7 @@ export default async function authRoutes(fastify) {
         return { success: true, user: user.toJSON() };
     });
 
-    // ==================== FORGOT PASSWORD ====================
+    // Password reset flow
 
     // Request password reset
     fastify.post('/forgot-password', async (request, reply) => {
@@ -355,7 +355,7 @@ export default async function authRoutes(fastify) {
         return { success: true, message: 'Password has been reset successfully' };
     });
 
-    // ==================== GOOGLE OAUTH ====================
+    // Google OAuth flow
 
     // Google OAuth - Initiate
     fastify.get('/google', async (request, reply) => {

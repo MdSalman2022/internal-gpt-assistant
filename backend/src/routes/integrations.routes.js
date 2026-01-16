@@ -1,7 +1,4 @@
-/**
- * Integrations Routes
- * Handles third-party service connections (Google Calendar, etc.)
- */
+// Third-party service integrations
 import calendarService from '../services/calendar.service.js';
 
 export default async function integrationsRoutes(fastify, options) {
@@ -15,7 +12,7 @@ export default async function integrationsRoutes(fastify, options) {
         return true;
     };
 
-    // ==================== GOOGLE CALENDAR ====================
+    // Google Calendar
 
     /**
      * GET /api/integrations/google-calendar/auth

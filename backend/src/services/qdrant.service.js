@@ -11,9 +11,7 @@ class QdrantService {
         this.vectorSize = 768; // Gemini embedding-001 dimension
     }
 
-    /**
-     * Initialize collection if it doesn't exist
-     */
+    // Initialize Qdrant collection
     async initCollection() {
         try {
             const collections = await this.client.getCollections();
@@ -75,10 +73,7 @@ class QdrantService {
         }
     }
 
-    /**
-     * Store document chunks with embeddings
-     * @param {Array} chunks - Array of {id, vector, payload}
-     */
+    // Store chunks with embeddings
     async upsertChunks(chunks) {
         try {
             const points = chunks.map((chunk) => ({
@@ -110,11 +105,7 @@ class QdrantService {
         }
     }
 
-    /**
-     * Semantic search for similar chunks
-     * @param {Array} queryVector - Query embedding
-     * @param {Object} options - Search options
-     */
+    // Semantic search for similar chunks
     async search(queryVector, options = {}) {
         const { limit = 5, scoreThreshold, filter = null } = options;
         const actualThreshold = scoreThreshold !== undefined ? scoreThreshold : 0.35;
@@ -139,10 +130,7 @@ class QdrantService {
         }
     }
 
-    /**
-     * Delete all chunks for a document
-     * @param {string} documentId 
-     */
+    // Delete document chunks
     async deleteByDocument(documentId) {
         try {
             await this.client.delete(this.collectionName, {
@@ -162,10 +150,7 @@ class QdrantService {
         }
     }
 
-    /**
-     * Count vectors for a specific document
-     * @param {string} documentId
-     */
+    // Count chunks for a document
     async countVectors(documentId) {
         try {
             const result = await this.client.count(this.collectionName, {
@@ -186,9 +171,7 @@ class QdrantService {
         }
     }
 
-    /**
-     * Get collection stats
-     */
+    // Get collection statistics
     async getStats() {
         try {
             const info = await this.client.getCollection(this.collectionName);
@@ -203,10 +186,7 @@ class QdrantService {
         }
     }
 
-    /**
-     * Clear ALL vectors from the collection (use with caution!)
-     * This is useful for cleaning up orphaned vectors
-     */
+    // Clear all vectors (use with caution)
     async clearAllVectors() {
         try {
             // Delete and recreate the collection
@@ -229,11 +209,7 @@ class QdrantService {
         }
     }
 
-    /**
-     * Update payload for all chunks of a document (e.g. for ACL updates)
-     * @param {string} documentId 
-     * @param {Object} payloadUpdates 
-     */
+    // Update payload for document chunks
     async updateDocumentPayload(documentId, payloadUpdates) {
         try {
             // Qdrant allows updating payload by filter.
@@ -252,17 +228,12 @@ class QdrantService {
             return true;
         } catch (error) {
             console.error('❌ Qdrant payload update error:', error.message);
-            // Fallback: If filter based update is not supported by this client version,
-            // we might need to fetch IDs and update. But qdrant-js-client usually supports it.
+            // Fallback for payload updates
             throw error;
         }
     }
 
-    /**
-     * Build Qdrant filter for Access Control (Simplified for MongoDB-centric model)
-     * Only handles broad scoping (Global vs Conversation).
-     * Fine-grained permissions are handled by MongoDB post-filtering.
-     */
+    // Build Access Control filter
     buildAclFilter(user, conversationId) {
         // Helper for "Global" docs (where conversationId is null)
         const isGlobalDoc = { is_null: { key: "conversationId" } };

@@ -1,13 +1,4 @@
-/**
- * API Credentials Routes
- * 
- * CRUD endpoints for managing AI provider API keys.
- * Supports both organization-specific and platform-wide keys.
- * 
- * Permissions:
- * - Organization Admin/Owner: Can manage their org's keys
- * - Superadmin: Can manage platform keys + all org keys
- */
+// API keys management
 
 import { APICredentials } from '../models/index.js';
 import { User, Organization } from '../models/index.js';
@@ -21,7 +12,7 @@ export default async function credentialsRoutes(fastify) {
         }
     });
 
-    // ==================== GET /api/credentials ====================
+    // List credentials
     // List all credentials for the current user's scope
     fastify.get('/', async (request, reply) => {
         const user = await User.findById(request.session.userId);
@@ -51,7 +42,7 @@ export default async function credentialsRoutes(fastify) {
         };
     });
 
-    // ==================== GET /api/credentials/:id ====================
+    // Get single credential
     // Get single credential by ID
     fastify.get('/:id', async (request, reply) => {
         const { id } = request.params;
@@ -79,7 +70,7 @@ export default async function credentialsRoutes(fastify) {
         };
     });
 
-    // ==================== POST /api/credentials ====================
+    // Create/update credential
     // Create or update a credential
     fastify.post('/', async (request, reply) => {
         const { provider, apiKey, label, isPlatformKey } = request.body;
@@ -144,7 +135,7 @@ export default async function credentialsRoutes(fastify) {
         };
     });
 
-    // ==================== PUT /api/credentials/:id ====================
+    // Update metadata
     // Update existing credential (e.g., label, rate limits)
     fastify.put('/:id', async (request, reply) => {
         const { id } = request.params;
@@ -182,7 +173,7 @@ export default async function credentialsRoutes(fastify) {
         };
     });
 
-    // ==================== DELETE /api/credentials/:id ====================
+    // Delete credential
     // Deactivate a credential (soft delete)
     fastify.delete('/:id', async (request, reply) => {
         const { id } = request.params;
@@ -213,7 +204,7 @@ export default async function credentialsRoutes(fastify) {
         };
     });
 
-    // ==================== POST /api/credentials/:id/rotate ====================
+    // Rotate key
     // Rotate API key (security feature)
     fastify.post('/:id/rotate', async (request, reply) => {
         const { id } = request.params;
@@ -250,7 +241,7 @@ export default async function credentialsRoutes(fastify) {
         };
     });
 
-    // ==================== GET /api/credentials/available ====================
+    // Get available providers
     // Get available providers for current user's organization
     fastify.get('/available/providers', async (request, reply) => {
         const user = await User.findById(request.session.userId);

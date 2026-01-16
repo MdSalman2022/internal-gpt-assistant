@@ -1,20 +1,4 @@
-/**
- * AI Provider Factory Service
- * 
- * Production-grade factory for creating provider instances with organization-specific API keys.
- * 
- * Architecture:
- * - Dynamic provider initialization per request
- * - Hierarchical fallback: Org keys → Platform keys
- * - Automatic usage tracking
- * - Rate limit enforcement
- * - Provider instance caching (optional, for performance)
- * 
- * Design Patterns:
- * - Factory Pattern: Creates provider instances on-demand
- * - Strategy Pattern: Different providers implement common interface
- * - Singleton Pattern: One factory instance across the app
- */
+// Factory for creating organization-specific AI providers
 
 import { GeminiProvider, OpenAIProvider, AnthropicProvider, GroqProvider } from './providers/index.js';
 import { APICredentials } from '../models/index.js';
@@ -34,16 +18,7 @@ class AIProviderFactory {
         };
     }
 
-    /**
-     * Get a provider instance for a specific organization and provider
-     * 
-     * @param {string} providerName - Name of the provider (gemini, openai, etc.)
-     * @param {string|null} organizationId - Organization ID (null for platform key)
-     * @param {Object} options - Additional options
-     * @param {boolean} options.skipCache - Skip cache lookup
-     * @returns {Promise<Provider>} Provider instance
-     * @throws {Error} If no API key is configured
-     */
+    // Create provider instance for organization
     async getProvider(providerName, organizationId = null, options = {}) {
         const { skipCache = false } = options;
 
@@ -103,17 +78,7 @@ class AIProviderFactory {
         return provider;
     }
 
-    /**
-     * Track usage for a provider call
-     * 
-     * @param {string} providerName - Provider name
-     * @param {string|null} organizationId - Organization ID
-     * @param {Object} usage - Usage data
-     * @param {number} usage.promptTokens - Input tokens
-     * @param {number} usage.completionTokens - Output tokens
-     * @param {number} usage.totalTokens - Total tokens
-     * @param {number} usage.costCents - Cost in cents
-     */
+    // Track provider token usage
     async trackUsage(providerName, organizationId, usage) {
         const { totalTokens = 0, costCents = 0 } = usage;
 
@@ -130,13 +95,7 @@ class AIProviderFactory {
         }
     }
 
-    /**
-     * Check if a provider is available for an organization
-     * 
-     * @param {string} providerName - Provider name
-     * @param {string|null} organizationId - Organization ID
-     * @returns {Promise<boolean>}
-     */
+    // Check if provider is available
     async isProviderAvailable(providerName, organizationId = null) {
         try {
             const credential = await APICredentials.findActiveCredential(providerName, organizationId);
@@ -146,12 +105,7 @@ class AIProviderFactory {
         }
     }
 
-    /**
-     * Get list of available providers for an organization
-     * 
-     * @param {string|null} organizationId - Organization ID
-     * @returns {Promise<Array<{provider: string, isOrgKey: boolean, label: string}>>}
-     */
+    // List available organization providers
     async getAvailableProviders(organizationId = null) {
         const providers = [];
 
@@ -171,14 +125,7 @@ class AIProviderFactory {
         return providers;
     }
 
-    /**
-     * Check rate limit before making API call
-     * 
-     * @param {string} providerName - Provider name
-     * @param {string|null} organizationId - Organization ID
-     * @param {number} estimatedTokens - Estimated tokens to consume
-     * @throws {Error} If rate limit would be exceeded
-     */
+    // Check provider rate limits
     async checkRateLimit(providerName, organizationId, estimatedTokens = 0) {
         const credential = await APICredentials.findActiveCredential(providerName, organizationId);
         
@@ -202,12 +149,7 @@ class AIProviderFactory {
         this.providerCache.clear();
     }
 
-    /**
-     * Register a new provider class (for extensibility)
-     * 
-     * @param {string} providerName - Provider name
-     * @param {class} ProviderClass - Provider class
-     */
+    // Register custom provider class
     registerProvider(providerName, ProviderClass) {
         this.providerClasses[providerName] = ProviderClass;
         console.log(`✅ Registered new provider: ${providerName}`);

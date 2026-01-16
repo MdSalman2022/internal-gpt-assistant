@@ -6,12 +6,12 @@ import session from '@fastify/session';
 import multipart from '@fastify/multipart';
 import MongoStore from 'connect-mongo';
 import config from './config/index.js';
-import { authRoutes, documentRoutes, chatRoutes, analyticsRoutes, usersRoutes, auditRoutes, usageRoutes, departmentsRoutes, integrationsRoutes, subscriptionsRoutes, organizationsRoutes, superadminRoutes, demoRoutes, contactRoutes, inviteRoutes, credentialsRoutes } from './routes/index.js';
+import { authRoutes, documentRoutes, chatRoutes, analyticsRoutes, usersRoutes, auditRoutes, usageRoutes, departmentsRoutes, integrationsRoutes, subscriptionsRoutes, organizationsRoutes, superadminRoutes, contactRoutes, inviteRoutes, credentialsRoutes } from './routes/index.js';
 import { getLandingPageHtml, getHealthPageHtml } from './utils/statusPages.js';
 
 export async function buildApp() {
     const fastify = Fastify({
-        // Only log errors and warnings in development, full logging in production
+        // Selective logging based on environment
         logger: config.nodeEnv === 'development' ? {
             level: 'error', // Only show errors (not info/debug/request logs)
             transport: {
@@ -25,10 +25,7 @@ export async function buildApp() {
         } : true,
     });
 
-    // ============================================
-    // SECURITY: Allowed Origins Configuration
-    // Add your production frontend URL here
-    // ============================================
+    // Allowed Origins Configuration
     const ALLOWED_ORIGINS = [
         'http://localhost:3000',
         'http://localhost:3001',
@@ -43,9 +40,8 @@ export async function buildApp() {
     console.log('CORS Debug:', { nodeEnv: config.nodeEnv, frontendUrl: config.frontendUrl });
     await fastify.register(cors, {
         origin: (origin, cb) => {
-            // Allow requests with no origin (like mobile apps or curl)
-            // Allow any localhost for development
-            // Allow any vercel.app for production flexibility
+            // Allow no origin or development localhost
+            // Allow vercel.app for flexibility
             const isAllowed = !origin ||
                 origin.startsWith('http://localhost') ||
                 origin.endsWith('.vercel.app') ||
@@ -61,9 +57,7 @@ export async function buildApp() {
         credentials: true,
     });
 
-    // ============================================
-    // SECURITY: HTTP Security Headers (Helmet)
-    // ============================================
+    // HTTP Security Headers (Helmet)
     await fastify.register(helmet, {
         // Content Security Policy - controls what resources can be loaded
         contentSecurityPolicy: config.nodeEnv === 'production' ? {
@@ -172,7 +166,6 @@ export async function buildApp() {
     fastify.register(subscriptionsRoutes, { prefix: '/api/subscriptions' });
     fastify.register(organizationsRoutes, { prefix: '/api/organizations' });
     fastify.register(superadminRoutes, { prefix: '/api/superadmin' });
-    fastify.register(demoRoutes, { prefix: '/api/demo' });
     fastify.register(contactRoutes, { prefix: '/api/contact' });
     fastify.register(inviteRoutes, { prefix: '/api/invite' });
 

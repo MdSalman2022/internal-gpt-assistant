@@ -15,18 +15,14 @@ export default async function subscriptionsRoutes(fastify) {
         }
     });
 
-    /**
-     * GET /plans - Get all available plans from database
-     */
+    // Get available plans
     fastify.get('/plans', async (request, reply) => {
         // Fetch plans from database
         const plans = await Plan.find({ isActive: true }).sort({ displayOrder: 1 });
         return { plans };
     });
 
-    /**
-     * GET /current - Get current organization's subscription
-     */
+    // Get current subscription
     fastify.get('/current', async (request, reply) => {
         const user = await User.findById(request.session.userId);
         if (!user?.organizationId) {
@@ -67,9 +63,7 @@ export default async function subscriptionsRoutes(fastify) {
         };
     });
 
-    /**
-     * POST /create-checkout - Create Stripe checkout session
-     */
+    // Create Stripe checkout
     fastify.post('/create-checkout', async (request, reply) => {
         const { priceId, plan } = request.body;
         const user = await User.findById(request.session.userId);
@@ -115,9 +109,7 @@ export default async function subscriptionsRoutes(fastify) {
         return { sessionId: session.id, url: session.url };
     });
 
-    /**
-     * POST /create-embedded-checkout - Create EMBEDDED Stripe checkout session (UI stays on site)
-     */
+    // Create embedded checkout
     fastify.post('/create-embedded-checkout', async (request, reply) => {
         const { priceId, plan } = request.body;
         const user = await User.findById(request.session.userId);
@@ -161,9 +153,7 @@ export default async function subscriptionsRoutes(fastify) {
         return { clientSecret, sessionId };
     });
 
-    /**
-     * POST /create-payment-intent - Create Payment Intent for minimal PaymentElement
-     */
+    // Create payment intent
     fastify.post('/create-payment-intent', async (request, reply) => {
         const { priceId, plan } = request.body;
         const user = await User.findById(request.session.userId);
@@ -205,9 +195,7 @@ export default async function subscriptionsRoutes(fastify) {
         return { clientSecret, amount, currency };
     });
 
-    /**
-     * POST /finalize-payment-intent - Create subscription after payment succeeds
-     */
+    // Finalize payment intent
     fastify.post('/finalize-payment-intent', async (request, reply) => {
         const { paymentIntentId } = request.body;
         const user = await User.findById(request.session.userId);
@@ -230,9 +218,7 @@ export default async function subscriptionsRoutes(fastify) {
         return result;
     });
 
-    /**
-     * POST /upgrade - Upgrade/downgrade existing subscription
-     */
+    // Upgrade or downgrade subscription
     fastify.post('/upgrade', async (request, reply) => {
         const { newPriceId, newPlan } = request.body;
         const user = await User.findById(request.session.userId);
@@ -298,9 +284,7 @@ export default async function subscriptionsRoutes(fastify) {
         }
     });
 
-    /**
-     * POST /verify-session - Manually verify checkout session (for localhost)
-     */
+    // Verify checkout session
     fastify.post('/verify-session', async (request, reply) => {
         const { sessionId } = request.body;
         const user = await User.findById(request.session.userId);
@@ -328,7 +312,7 @@ export default async function subscriptionsRoutes(fastify) {
                 if (session.subscription) {
                     const subscription = await stripeService.retrieveSubscription(session.subscription);
 
-                    // CRITICAL: Ensure we have the metadata on the subscription object too
+                    // Ensure metadata is on subscription
                     subscription.metadata = { ...subscription.metadata, organizationId: user.organizationId.toString() };
 
                     await handleSubscriptionUpdate(subscription);
@@ -359,9 +343,7 @@ export default async function subscriptionsRoutes(fastify) {
         }
     });
 
-    /**
-     * POST /portal - Create Stripe billing portal session
-     */
+    // Create billing portal
     fastify.post('/portal', async (request, reply) => {
         const user = await User.findById(request.session.userId);
 
@@ -383,9 +365,7 @@ export default async function subscriptionsRoutes(fastify) {
         return { url: session.url };
     });
 
-    /**
-     * GET /invoices - Get invoice history from Payment collection
-     */
+    // List invoice history
     fastify.get('/invoices', async (request, reply) => {
         const user = await User.findById(request.session.userId);
 
@@ -432,9 +412,7 @@ export default async function subscriptionsRoutes(fastify) {
         };
     });
 
-    /**
-     * GET /check-refund-eligibility - Check if user is eligible for refund
-     */
+    // Check refund eligibility
     fastify.get('/check-refund-eligibility', async (request, reply) => {
         const user = await User.findById(request.session.userId);
 
@@ -490,9 +468,7 @@ export default async function subscriptionsRoutes(fastify) {
         };
     });
 
-    /**
-     * POST /cancel - Cancel subscription
-     */
+    // Cancel subscription
     fastify.post('/cancel', async (request, reply) => {
         const user = await User.findById(request.session.userId);
 
@@ -610,9 +586,7 @@ export default async function subscriptionsRoutes(fastify) {
         }
     });
 
-    /**
-     * POST /reactivate - Reactivate cancelled subscription
-     */
+    // Reactivate subscription
     fastify.post('/reactivate', async (request, reply) => {
         const user = await User.findById(request.session.userId);
 
@@ -639,9 +613,7 @@ export default async function subscriptionsRoutes(fastify) {
         return { success: true, message: 'Subscription reactivated' };
     });
 
-    /**
-     * POST /webhook - Stripe webhook handler (no auth required)
-     */
+    // Stripe webhook handler
     fastify.post('/webhook', {
         config: {
             rawBody: true,

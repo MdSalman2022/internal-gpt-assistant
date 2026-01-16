@@ -15,8 +15,7 @@ const config = {
     collection: process.env.QDRANT_COLLECTION || "documents",
   },
 
-  // ==================== AI PROVIDERS ====================
-  // Gemini (Google) - Default provider, also used for embeddings
+  // AI Providers
   gemini: {
     apiKey: process.env.GEMINI_API_KEY,
     model: process.env.GEMINI_MODEL,
