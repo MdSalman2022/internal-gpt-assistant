@@ -50,10 +50,10 @@ export const chatApi = {
         fetcher(`/api/chat/conversations/${id}`),
 
     // Send message and get AI response
-    sendMessage: (conversationId, content, provider = null, fileIds = []) =>
+    sendMessage: (conversationId, content, provider = null, fileIds = [], useWebSearch = false) =>
         fetcher(`/api/chat/conversations/${conversationId}/messages`, {
             method: 'POST',
-            body: JSON.stringify({ content, provider, fileIds }),
+            body: JSON.stringify({ content, provider, fileIds, useWebSearch }),
         }),
 
     // Delete conversation

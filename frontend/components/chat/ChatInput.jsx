@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, forwardRef, useImperativeHandle, useRef } from 'react';
-import { Send, Paperclip, Square, ArrowUp, X, FileText, Loader2, File } from 'lucide-react';
+import { Send, Paperclip, Square, ArrowUp, X, FileText, Loader2, File, Globe } from 'lucide-react';
 import { useAuth } from '@/lib/auth-context';
 import { documentsApi } from '@/lib/api';
 
@@ -18,6 +18,7 @@ const ChatInput = forwardRef(function ChatInput({
     const [message, setMessage] = useState('');
     const [attachedFiles, setAttachedFiles] = useState([]);
     const [uploading, setUploading] = useState(false);
+    const [useWebSearch, setUseWebSearch] = useState(false);
 
     // Mention state
     const [showSuggestions, setShowSuggestions] = useState(false);
@@ -63,7 +64,7 @@ const ChatInput = forwardRef(function ChatInput({
         if ((!message.trim() && attachedFiles.length === 0) || disabled) return;
 
         // Send message with full file objects (parent will handle ID extraction)
-        await onSend(message.trim(), attachedFiles);
+        await onSend(message.trim(), attachedFiles, useWebSearch);
 
         setMessage('');
         setAttachedFiles([]);
@@ -334,6 +335,21 @@ const ChatInput = forwardRef(function ChatInput({
                                  disabled:opacity-50 disabled:cursor-not-allowed"
                         style={{ minHeight: '44px', maxHeight: '200px' }}
                     />
+
+                    {/* Web Search Toggle */}
+                    <button
+                        type="button"
+                        onClick={() => setUseWebSearch(!useWebSearch)}
+                        className={`
+                            p-2 rounded-lg transition-all flex items-center gap-1.5
+                            ${useWebSearch 
+                                ? 'bg-primary/10 text-primary hover:bg-primary/20' 
+                                : 'text-muted-foreground hover:text-foreground hover:bg-secondary'}
+                        `}
+                        title={useWebSearch ? "Web Search Enabled (1 credit)" : "Enable Web Search"}
+                    >
+                        <Globe className={`w-5 h-5 ${useWebSearch ? 'animate-pulse-slow' : ''}`} />
+                    </button>
 
                     {/* Send button */}
                     {isTyping ? (

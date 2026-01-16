@@ -73,8 +73,33 @@ export default function APICredentialsSettings() {
         }
     };
 
+    const handleToggleActive = async (id, currentStatus) => {
+        setProcessingId(id);
+        try {
+            const res = await fetch(`${API_URL}/api/credentials/${id}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                credentials: 'include',
+                body: JSON.stringify({ isActive: !currentStatus })
+            });
+            
+            if (res.ok) {
+                toast.success(currentStatus ? 'Key deactivated' : 'Key activated');
+                setCredentials(credentials.map(c => 
+                    c._id === id ? { ...c, isActive: !currentStatus } : c
+                ));
+            } else {
+                toast.error('Failed to update key status');
+            }
+        } catch (error) {
+            toast.error('Error updating key');
+        } finally {
+            setProcessingId(null);
+        }
+    };
+
     const handleDelete = async (id) => {
-        if (!confirm('Are you sure you want to deactivate this key?')) return;
+        if (!confirm('Are you sure you want to PERMANENTLY delete this key? This action cannot be undone.')) return;
         
         setProcessingId(id);
         try {
@@ -84,10 +109,10 @@ export default function APICredentialsSettings() {
             });
             
             if (res.ok) {
-                toast.success('Key deactivated');
+                toast.success('Key deleted permanently');
                 setCredentials(credentials.filter(c => c._id !== id));
             } else {
-                toast.error('Failed to deactivate key');
+                toast.error('Failed to delete key');
             }
         } catch (error) {
             toast.error('Error removing key');
@@ -217,7 +242,7 @@ export default function APICredentialsSettings() {
                     </div>
                 ) : (
                     credentials.map(cred => (
-                        <div key={cred._id} className="p-4 md:p-6 flex flex-col md:flex-row md:items-center justify-between gap-6 hover:bg-muted/30 transition-colors">
+                        <div key={cred._id} className={`p-4 md:p-6 flex flex-col md:flex-row md:items-center justify-between gap-6 hover:bg-muted/30 transition-colors ${!cred.isActive ? 'opacity-60 bg-muted/10' : ''}`}>
                             
                             <div className="flex items-start gap-4">
                                 <div className="p-3 bg-muted rounded-xl border border-border shrink-0">
@@ -226,9 +251,15 @@ export default function APICredentialsSettings() {
                                 <div>
                                     <div className="flex items-center gap-3">
                                         <h4 className="font-semibold text-foreground text-base">{cred.label || cred.provider}</h4>
-                                        <span className="px-2 py-0.5 rounded text-[10px] uppercase font-bold bg-green-500/10 text-green-600 border border-green-500/20 tracking-wider">
-                                            Active
-                                        </span>
+                                        {cred.isActive ? (
+                                            <span className="px-2 py-0.5 rounded text-[10px] uppercase font-bold bg-green-500/10 text-green-600 border border-green-500/20 tracking-wider">
+                                                Active
+                                            </span>
+                                        ) : (
+                                            <span className="px-2 py-0.5 rounded text-[10px] uppercase font-bold bg-slate-500/10 text-slate-500 border border-slate-500/20 tracking-wider">
+                                                Inactive
+                                            </span>
+                                        )}
                                     </div>
                                     <div className="flex items-center gap-3 mt-1.5 text-xs text-muted-foreground font-mono">
                                         <span className="bg-muted/50 px-2 py-1 rounded border border-border">
@@ -253,14 +284,27 @@ export default function APICredentialsSettings() {
                                     </div>
                                 </div>
 
-                                <button 
-                                    onClick={() => handleDelete(cred._id)}
-                                    disabled={processingId === cred._id}
-                                    className="p-2.5 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-xl transition-all"
-                                    title="Deactivate Key"
-                                >
-                                    {processingId === cred._id ? <Loader2 className="w-5 h-5 animate-spin" /> : <Trash2 className="w-5 h-5" />}
-                                </button>
+                                <div className="flex items-center gap-2">
+                                    {/* Enable/Disable Switch */}
+                                    <button 
+                                        onClick={() => handleToggleActive(cred._id, cred.isActive)}
+                                        disabled={processingId === cred._id}
+                                        className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-primary/20 ${cred.isActive ? 'bg-primary' : 'bg-muted'}`}
+                                        title={cred.isActive ? "Deactivate Key" : "Activate Key"}
+                                    >
+                                        <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${cred.isActive ? 'translate-x-6' : 'translate-x-1'}`} />
+                                    </button>
+
+                                    {/* Hard Delete */}
+                                    <button 
+                                        onClick={() => handleDelete(cred._id)}
+                                        disabled={processingId === cred._id}
+                                        className="p-2.5 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-xl transition-all"
+                                        title="Permanently Delete Key"
+                                    >
+                                        {processingId === cred._id ? <Loader2 className="w-5 h-5 animate-spin" /> : <Trash2 className="w-5 h-5" />}
+                                    </button>
+                                </div>
                             </div>
                         </div>
                     ))

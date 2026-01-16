@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { useAuth } from '@/lib/auth-context';
+import { useChat } from '@/lib/chat-context';
 import { chatApi } from '@/lib/api';
 import ChatWindow from '@/components/chat/ChatWindow';
 import ChatInput from '@/components/chat/ChatInput';
@@ -10,6 +11,7 @@ import { AlertTriangle, X } from 'lucide-react';
 
 export default function ConversationPage() {
     const { user } = useAuth();
+    const { refreshChats } = useChat();
     const router = useRouter();
     const params = useParams();
     const conversationId = params.conversationId;
@@ -42,8 +44,11 @@ export default function ConversationPage() {
         }
     };
 
-    const handleSendMessage = async (content, files = []) => {
+    const handleSendMessage = async (content, files = [], useWebSearch = false) => {
         if (!content.trim() && files.length === 0) return;
+        // Attach useWebSearch to files array or pass differently? 
+        // Simplest is to attach it to the files array object for internal passing since simple prop drilling
+        files.useWebSearch = useWebSearch; 
         await sendMessage(conversationId, content, files);
     };
 
@@ -74,7 +79,13 @@ export default function ConversationPage() {
         setIsTyping(true);
 
         try {
-            const data = await chatApi.sendMessage(convId, content, null, apiPayload);
+            const data = await chatApi.sendMessage(
+                convId, 
+                content, 
+                null, 
+                apiPayload, 
+                files.useWebSearch || false // Pass toggled state
+            );
 
             setMessages(prev => {
                 const filtered = prev.filter(m =>
@@ -85,11 +96,18 @@ export default function ConversationPage() {
             });
 
             if (data.assistantMessage) {
+                // Check if it's likely the first message/new conversation to refresh sidebar
+                const isNewConversation = !activeConversation || activeConversation.title === 'New Conversation' || messages.length === 0;
+
                 setActiveConversation(prev => ({
                     ...prev,
                     title: prev?.title === 'New Conversation' ? (content || 'Attachment').substring(0, 50) : prev?.title,
                     messageCount: (prev?.messageCount || 0) + 2
                 }));
+
+                if (isNewConversation) {
+                    refreshChats();
+                }
             }
         } catch (error) {
             console.error('Failed to send message:', error);

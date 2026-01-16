@@ -38,8 +38,12 @@ const getSettingsTabs = (isAdminOrVisitor) => [
     { href: '/settings/integrations', label: 'Integrations', icon: Database },
 ];
 
+import { useChat } from '@/lib/chat-context';
+// ... imports
+
 function DashboardLayoutInner({ children }) {
     const { user, logout, loading, hasPermission, isAdmin, isVisitor, isEmployee, isAdminOrVisitor } = useAuth();
+    const { recentChats, setRecentChats, refreshChats } = useChat(); // Use Context
     const pathname = usePathname();
     const router = useRouter();
     // Extract conversation ID from pathname for route-based URLs
@@ -47,7 +51,7 @@ function DashboardLayoutInner({ children }) {
 
     const [sidebarOpen, setSidebarOpen] = useState(true);
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-    const [recentChats, setRecentChats] = useState([]);
+    // const [recentChats, setRecentChats] = useState([]); // REMOVED local state
     const [editingChatId, setEditingChatId] = useState(null);
     const [editTitle, setEditTitle] = useState('');
     const [hoveredChatId, setHoveredChatId] = useState(null);
@@ -59,25 +63,7 @@ function DashboardLayoutInner({ children }) {
         !item.permission || hasPermission(item.permission)
     );
 
-    // Load recent conversations
-    useEffect(() => {
-        if (user) {
-            loadRecentChats();
-        }
-    }, [user]);
-
-    const loadRecentChats = async () => {
-        try {
-            console.log('📂 Loading recent chats...');
-            const data = await chatApi.getConversations();
-            console.log('📂 Conversations loaded:', data);
-            // Filter out empty conversations (no messages)
-            const nonEmptyChats = (data.conversations || []).filter(c => c.messageCount > 0);
-            setRecentChats(nonEmptyChats.slice(0, 10));
-        } catch (error) {
-            console.error('❌ Failed to load recent chats:', error);
-        }
-    };
+    // REMOVED local loadRecentChats effect and function (handled in Context)
 
     // Redirect to login if not authenticated
     useEffect(() => {

@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/lib/auth-context';
+import { useChat } from '@/lib/chat-context';
 import { chatApi } from '@/lib/api';
 import ChatInput from '@/components/chat/ChatInput';
 import { Zap, BookOpen, Code, Lightbulb } from 'lucide-react';
@@ -17,6 +18,7 @@ const QUICK_PROMPTS = [
 
 export default function NewChatPage() {
     const { user } = useAuth();
+    const { refreshChats } = useChat();
     const router = useRouter();
     const inputRef = useRef(null);
     const [isCreating, setIsCreating] = useState(false);
@@ -40,6 +42,9 @@ export default function NewChatPage() {
 
             // Send the first message
             await chatApi.sendMessage(conversationId, content, null, fileIds);
+
+            // Refresh sidebar to show new conversation
+            refreshChats();
 
             // Navigate to the conversation route
             router.push(`/chat/${conversationId}`);
