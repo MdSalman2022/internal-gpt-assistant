@@ -92,6 +92,9 @@ const organizationSchema = new mongoose.Schema({
         openaiApiKey: { type: String, default: null },
         anthropicApiKey: { type: String, default: null },
         groqApiKey: { type: String, default: null },
+        // Tavily Web Search Configuration
+        tavilyEnabled: { type: Boolean, default: false },
+        tavilyApiKey: { type: String, default: null },
     },
 
     // Signup Tracking

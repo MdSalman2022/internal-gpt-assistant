@@ -287,7 +287,7 @@ export default function BillingPage() {
     }
 
     return (
-        <div className="space-y-6">
+        <div className="p-6 w-full space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
             <UpgradePlanModal
                 isOpen={showUpgradeModal}
                 onClose={() => setShowUpgradeModal(false)}
@@ -301,7 +301,7 @@ export default function BillingPage() {
             />
 
             {/* Current Plan */}
-            <div className="bg-card border border-border rounded-xl p-6 m-4">
+            <div className="bg-card border border-border rounded-xl p-6">
                 <div className="flex flex-col md:flex-row md:items-start justify-between mb-6 gap-4">
                     <div>
                         <h2 className="text-xl font-semibold text-foreground mb-1">Current Plan</h2>
@@ -574,7 +574,7 @@ export default function BillingPage() {
 
             {/* Invoice History */}
             {invoices.length > 0 && (
-                <div className="bg-card border border-border rounded-xl p-6 m-4">
+                <div className="bg-card border border-border rounded-xl p-6">
                     <h2 className="text-xl font-semibold text-foreground mb-4">Invoice History</h2>
                     <div className="overflow-x-auto">
                         <table className="w-full">

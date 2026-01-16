@@ -144,7 +144,7 @@ export default function ProfilePage() {
 
     return (
         <div className="h-full overflow-y-auto">
-            <div className="p-6 pb-12 max-w-2xl mx-auto space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+            <div className="p-6 pb-12 max-w-5xl space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
                 <h2 className="text-xl font-semibold text-foreground">Profile Settings</h2>
 
                 {/* Avatar Section */}

@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/lib/auth-context';
-import { API_URL } from '@/lib/api';
+import { API_URL, organizationsApi } from '@/lib/api';
 import APICredentialsSettings from './APICredentialsSettings';
-import { Settings, Check, AlertCircle, ExternalLink, Sparkles, Bot, Brain, Zap, TrendingUp, RefreshCw, BarChart3, Database } from 'lucide-react';
+import TavilySettings from './TavilySettings';
+import { Settings, Check, AlertCircle, ExternalLink, Sparkles, Bot, Brain, Zap, TrendingUp, RefreshCw, BarChart3, Database, ChevronDown } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 export default function AIModelsSettings() {
@@ -13,6 +14,8 @@ export default function AIModelsSettings() {
     const [availableProviders, setAvailableProviders] = useState({});
     const [loading, setLoading] = useState(true);
     const [selectedModel, setSelectedModel] = useState('');
+    const [organization, setOrganization] = useState(null);
+    const [expandedProvider, setExpandedProvider] = useState(null);
 
     useEffect(() => {
         if (isAdmin) loadData();
@@ -20,16 +23,18 @@ export default function AIModelsSettings() {
 
     const loadData = async () => {
         try {
-            const [settingsRes, pricingRes, costRes, availableRes] = await Promise.all([
+            const [settingsRes, pricingRes, costRes, availableRes, orgRes] = await Promise.all([
                 fetch(`${API_URL}/api/usage/admin/settings`, { credentials: 'include' }).then(r => r.json()),
                 fetch(`${API_URL}/api/usage/admin/pricing`, { credentials: 'include' }).then(r => r.json()),
                 fetch(`${API_URL}/api/usage/admin/cost-summary`, { credentials: 'include' }).then(r => r.json()),
-                fetch(`${API_URL}/api/credentials/available/providers`, { credentials: 'include' }).then(r => r.json())
+                fetch(`${API_URL}/api/credentials/available/providers`, { credentials: 'include' }).then(r => r.json()),
+                organizationsApi.getCurrent()
             ]);
             
             setSettings(settingsRes);
             setPricing(pricingRes);
             setCostSummary(costRes);
+            setOrganization(orgRes.organization);
             
             if (availableRes.success && availableRes.providers) {
                 const availMap = {};
@@ -89,12 +94,12 @@ export default function AIModelsSettings() {
     }
 
     return (
-        <div className="p-6 md:p-8 space-y-10 max-w-7xl mx-auto animate-in fade-in slide-in-from-bottom-4 duration-700">
+        <div className="p-6 md:p-8 space-y-10 w-full animate-in fade-in slide-in-from-bottom-4 duration-700">
             {/* Header */}
             <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
                 <div>
-                    <h2 className="text-3xl font-bold tracking-tight text-foreground mb-2">AI Control Center</h2>
-                    <p className="text-muted-foreground max-w-2xl">
+                    <h2 className="text-2xl md:text-3xl font-bold tracking-tight text-foreground mb-2">AI Control Center</h2>
+                    <p className="text-muted-foreground max-w-2xl text-sm md:text-base">
                         Manage your AI infrastructure, monitor costs, and configure API providers. 
                         System intelligently routes requests based on your credentials.
                     </p>
@@ -121,11 +126,11 @@ export default function AIModelsSettings() {
                                 </div>
                                 <div>
                                     <h3 className="text-lg font-medium text-muted-foreground mb-1">Estimated Cost</h3>
-                                    <div className="flex items-baseline gap-2">
-                                        <span className="text-4xl md:text-5xl font-bold text-foreground tracking-tight">
-                                            ${costSummary.totalCostUSD}
+                                    <div className="flex flex-wrap items-baseline gap-x-2 gap-y-1">
+                                        <span className="text-3xl sm:text-4xl md:text-5xl font-bold text-foreground tracking-tight break-all">
+                                            ${(costSummary.totalCostCents / 100).toFixed(5)}
                                         </span>
-                                        <span className="text-sm font-medium text-primary bg-primary/10 px-2 py-0.5 rounded-full border border-primary/10">
+                                        <span className="text-xs sm:text-sm font-medium text-primary bg-primary/10 px-2 py-0.5 rounded-full border border-primary/10 whitespace-nowrap">
                                             Last 30 Days
                                         </span>
                                     </div>
@@ -167,7 +172,14 @@ export default function AIModelsSettings() {
                     <span className="w-1 h-6 bg-primary rounded-full block"></span>
                     API Credentials
                 </h3>
-                <APICredentialsSettings />
+                <div className="space-y-6">
+                    <APICredentialsSettings />
+                    
+                    {/* Web Search Integration */}
+                    {organization && (
+                        <TavilySettings organizationId={organization._id} />
+                    )}
+                </div>
             </div>
 
             {/* Models Configuration */}
@@ -185,101 +197,117 @@ export default function AIModelsSettings() {
                         </div>
                     </div>
 
-                    <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
+                    <div className="space-y-4">
                         {Object.entries(pricing.providers).map(([providerId, provider]) => {
                             const config = providerConfig[providerId] || { icon: Settings, color: 'text-muted-foreground' };
                             const Icon = config.icon;
                             const isAvailable = !!availableProviders[providerId];
+                            
+                            // Auto-expand if the selected model belongs to this provider
+                            const hasSelectedModel = provider.models.some(m => m.id === selectedModel);
+                            const isExpanded = expandedProvider === providerId || (expandedProvider === null && hasSelectedModel);
 
                             return (
                                 <div 
                                     key={providerId} 
-                                    className={`group relative flex flex-col bg-card border rounded-3xl overflow-hidden transition-all duration-300 ${isAvailable ? 'border-border hover:border-primary/50' : 'border-border opacity-80'}`}
+                                    className={`group relative flex flex-col bg-card border rounded-2xl overflow-hidden transition-all duration-300 ${isExpanded ? 'border-primary ring-1 ring-primary/10 shadow-lg' : 'border-border hover:border-primary/50'}`}
                                 >
-                                    {/* Provider Header */}
-                                    <div className={`p-6 border-b border-border ${isAvailable ? 'bg-muted/20' : 'bg-muted/50'}`}>
-                                        <div className="flex items-center justify-between mb-4">
-                                            <div className="flex items-center gap-3">
-                                                <div className={`p-2.5 rounded-xl ${config.bg} border ${config.border}`}>
-                                                    <Icon className={`w-6 h-6 ${config.color}`} />
-                                                </div>
-                                                <div>
-                                                    <h4 className="text-lg font-bold text-foreground">{provider.name}</h4>
-                                                    <div className="flex items-center gap-2 mt-0.5">
-                                                        <span className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md text-[10px] font-medium tracking-wide uppercase ${isAvailable ? 'bg-green-500/10 text-green-600 border border-green-500/20' : 'bg-muted text-muted-foreground border border-border'}`}>
-                                                            {isAvailable ? (
-                                                                <><Check className="w-3 h-3" /> Connected</>
-                                                            ) : (
-                                                                'Not Configured'
-                                                            )}
-                                                        </span>
-                                                    </div>
-                                                </div>
+                                    {/* Provider Header (Clickable for Accordion) */}
+                                    <div 
+                                        onClick={() => setExpandedProvider(isExpanded ? null : providerId)}
+                                        className={`p-5 flex items-center justify-between cursor-pointer transition-colors ${isExpanded ? 'bg-primary/5' : 'bg-transparent hover:bg-muted/30'}`}
+                                    >
+                                        <div className="flex items-center gap-4">
+                                            <div className={`p-2.5 rounded-xl ${config.bg} border ${config.border} transition-transform duration-300 ${isExpanded ? 'scale-110' : ''}`}>
+                                                <Icon className={`w-6 h-6 ${config.color}`} />
                                             </div>
+                                            <div>
+                                                <h4 className="text-lg font-bold text-foreground flex items-center gap-2">
+                                                    {provider.name}
+                                                    {isAvailable && (
+                                                        <span className="flex items-center gap-1 text-[10px] uppercase font-bold tracking-wider text-green-600 bg-green-500/10 px-2 py-0.5 rounded-full border border-green-500/20">
+                                                            <Check className="w-3 h-3" /> Connected
+                                                        </span>
+                                                    )}
+                                                </h4>
+                                                <p className="text-sm text-muted-foreground mt-0.5">
+                                                    {provider.models.length} optimized models available
+                                                </p>
+                                            </div>
+                                        </div>
+
+                                        <div className="flex items-center gap-4">
                                             <a 
                                                 href={`https://${providerId === 'openai' ? 'platform.openai' : providerId === 'anthropic' ? 'console.anthropic' : providerId === 'groq' ? 'console.groq' : 'aistudio.google'}.com`}
                                                 target="_blank"
                                                 rel="noreferrer"
-                                                className="text-xs text-muted-foreground hover:text-primary transition-colors flex items-center gap-1"
+                                                onClick={(e) => e.stopPropagation()}
+                                                className="text-xs font-medium text-muted-foreground hover:text-primary transition-colors flex items-center gap-1 px-3 py-1.5 rounded-lg border border-transparent hover:border-border hover:bg-background"
                                             >
-                                                API Key <ExternalLink className="w-3 h-3" />
+                                                Get API Key <ExternalLink className="w-3 h-3" />
                                             </a>
+                                            <div className={`w-8 h-8 rounded-full flex items-center justify-center bg-background border border-border transition-transform duration-300 ${isExpanded ? 'rotate-180' : ''}`}>
+                                                <ChevronDown className="w-4 h-4 text-muted-foreground" />
+                                            </div>
                                         </div>
                                     </div>
 
-                                    {/* Models List */}
-                                    <div className="p-4 space-y-3 flex-grow bg-muted/10">
-                                        {provider.models.map((model) => {
-                                            const isSelected = selectedModel === model.id;
-                                            
-                                            return (
-                                                <div 
-                                                    key={model.id}
-                                                    onClick={() => isAvailable && handleModelSelect(model.id)}
-                                                    className={`
-                                                        relative p-4 rounded-2xl border transition-all duration-200 cursor-pointer
-                                                        ${isSelected 
-                                                            ? 'bg-primary/5 border-primary shadow-sm' 
-                                                            : isAvailable
-                                                                ? 'bg-card border-border hover:border-input'
-                                                                : 'bg-muted/20 border-transparent opacity-50 cursor-not-allowed'
-                                                        }
-                                                    `}
-                                                >
-                                                    <div className="flex justify-between items-start gap-4">
-                                                        <div>
-                                                            <div className="flex items-center gap-2 mb-1">
-                                                                <span className={`font-semibold text-sm ${isSelected ? 'text-primary' : 'text-foreground'}`}>
-                                                                    {model.name}
-                                                                </span>
+                                    {/* Accordion Content */}
+                                    <div 
+                                        className={`transition-all duration-300 ease-in-out overflow-hidden ${isExpanded ? 'max-h-[800px] opacity-100 border-t border-border/50' : 'max-h-0 opacity-0'}`}
+                                    >
+                                        <div className="p-5 bg-muted/5">
+                                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                                                {provider.models.map((model) => {
+                                                    const isSelected = selectedModel === model.id;
+                                                    
+                                                    return (
+                                                        <div 
+                                                            key={model.id}
+                                                            onClick={() => isAvailable && handleModelSelect(model.id)}
+                                                            className={`
+                                                                relative p-4 rounded-xl border transition-all duration-200 cursor-pointer flex flex-col justify-between group/card
+                                                                ${isSelected 
+                                                                    ? 'bg-primary/10 border-primary shadow-sm ring-1 ring-primary/20' 
+                                                                    : isAvailable
+                                                                        ? 'bg-card border-border hover:border-primary/40 hover:shadow-md hover:-translate-y-0.5'
+                                                                        : 'bg-muted/40 border-transparent opacity-60 cursor-not-allowed'
+                                                                }
+                                                            `}
+                                                        >
+                                                            <div>
+                                                                <div className="flex justify-between items-start gap-2 mb-2">
+                                                                    <span className={`font-bold text-sm transition-colors ${isSelected ? 'text-primary' : 'text-foreground'}`}>
+                                                                        {model.name}
+                                                                    </span>
+                                                                    {isSelected && (
+                                                                        <div className="flex-shrink-0 w-5 h-5 bg-primary rounded-full flex items-center justify-center shadow-sm animate-in zoom-in duration-200">
+                                                                            <Check className="w-3 h-3 text-primary-foreground" />
+                                                                        </div>
+                                                                    )}
+                                                                </div>
+                                                                <p className="text-xs text-muted-foreground line-clamp-2 leading-relaxed h-9 mb-3">
+                                                                    {model.description}
+                                                                </p>
+                                                            </div>
+                                                            
+                                                            <div className="flex items-center justify-between pt-3 border-t border-border/50 group-hover/card:border-border transition-colors">
+                                                                <div className="flex items-center gap-2 text-[10px] uppercase tracking-wider font-semibold text-muted-foreground">
+                                                                    <span>In: ${model.inputPer1M}</span>
+                                                                    <span className="text-border">|</span>
+                                                                    <span>Out: ${model.outputPer1M}</span>
+                                                                </div>
                                                                 {model.freeTier && (
-                                                                    <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-green-500/20 text-green-600 border border-green-500/20">
+                                                                    <span className="px-1.5 py-0.5 rounded text-[9px] font-bold bg-green-500/10 text-green-600 border border-green-500/20">
                                                                         FREE
                                                                     </span>
                                                                 )}
                                                             </div>
-                                                            <p className="text-xs text-muted-foreground line-clamp-2 leading-relaxed">
-                                                                {model.description}
-                                                            </p>
                                                         </div>
-                                                        <div className="flex flex-col items-end gap-2">
-                                                            {isSelected && (
-                                                                <div className="w-5 h-5 bg-primary rounded-full flex items-center justify-center shadow-lg shadow-primary/20">
-                                                                    <Check className="w-3 h-3 text-primary-foreground" />
-                                                                </div>
-                                                            )}
-                                                        </div>
-                                                    </div>
-                                                    
-                                                    {/* Pricing Mini-Bar */}
-                                                    <div className="mt-3 flex items-center gap-3 text-[10px] uppercase tracking-wider font-medium text-muted-foreground border-t border-border pt-2">
-                                                        <span>In: <span className="text-foreground ml-0.5">${model.inputPer1M}</span></span>
-                                                        <span className="w-0.5 h-2 bg-border"></span>
-                                                        <span>Out: <span className="text-foreground ml-0.5">${model.outputPer1M}</span></span>
-                                                    </div>
-                                                </div>
-                                            );
-                                        })}
+                                                    );
+                                                })}
+                                            </div>
+                                        </div>
                                     </div>
                                 </div>
                             );

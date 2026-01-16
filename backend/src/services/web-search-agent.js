@@ -3,14 +3,16 @@ import { tavily } from '@tavily/core';
 import config from '../config/index.js';
 
 class WebSearchAgent {
-    constructor() {
-        if (!config.tavily?.apiKey) {
+    constructor(apiKey = null) {
+        this.apiKey = apiKey || config.tavily?.apiKey;
+        
+        if (!this.apiKey) {
             console.warn('⚠️  Tavily API key not configured. Web search disabled.');
             this.enabled = false;
             return;
         }
 
-        this.client = tavily({ apiKey: config.tavily.apiKey });
+        this.client = tavily({ apiKey: this.apiKey });
         this.enabled = true;
         
         // Credit-conscious cache (5 minute TTL)
@@ -20,10 +22,28 @@ class WebSearchAgent {
         console.log('🌐 Web Search Agent initialized');
     }
 
+    // Factory method to create instance for organization
+    static createForOrganization(organization) {
+        if (!organization) {
+            return new WebSearchAgent();
+        }
+
+        // Check if organization has web search enabled
+        if (!organization.aiSettings?.tavilyEnabled) {
+            const agent = new WebSearchAgent(null);
+            agent.enabled = false;
+            return agent;
+        }
+
+        // Use organization's API key
+        const apiKey = organization.aiSettings?.tavilyApiKey;
+        return new WebSearchAgent(apiKey);
+    }
+
     // Basic search (1 credit per query)
     async search(query, options = {}) {
         if (!this.enabled) {
-            throw new Error('Web search is not configured. Please add TAVILY_API_KEY to .env');
+            throw new Error('Web search is not enabled for this organization. Please configure Tavily API key in organization settings.');
         }
 
         const { 
@@ -131,6 +151,6 @@ class WebSearchAgent {
     }
 }
 
-// Singleton
-const webSearchAgent = new WebSearchAgent();
-export default webSearchAgent;
+// Export class (not singleton)
+export default WebSearchAgent;
+

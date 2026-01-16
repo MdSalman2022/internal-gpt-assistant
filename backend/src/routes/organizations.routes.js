@@ -288,6 +288,73 @@ export default async function organizationsRoutes(fastify) {
     // Verify invitation token
 
 
+    // Get organization Tavily settings
+    fastify.get('/:id/settings/tavily', async (request, reply) => {
+        const { id } = request.params;
+        const user = await User.findById(request.session.userId);
+
+        if (user.organizationId?.toString() !== id) {
+            return reply.status(403).send({ error: 'Access denied' });
+        }
+
+        const organization = await Organization.findById(id);
+        if (!organization) {
+            return reply.status(404).send({ error: 'Organization not found' });
+        }
+
+        return {
+            enabled: organization.aiSettings?.tavilyEnabled || false,
+            hasApiKey: !!organization.aiSettings?.tavilyApiKey,
+            freeMonthlyQuota: 1000 // Inform about free tier
+        };
+    });
+
+    // Update organization Tavily settings
+    fastify.put('/:id/settings/tavily', async (request, reply) => {
+        const { id } = request.params;
+        const { enabled, apiKey } = request.body;
+        const user = await User.findById(request.session.userId);
+
+        if (user.organizationId?.toString() !== id) {
+            return reply.status(403).send({ error: 'Access denied' });
+        }
+
+        if (!['owner', 'admin'].includes(user.orgRole)) {
+            return reply.status(403).send({ error: 'Only owners and admins can update Tavily settings' });
+        }
+
+        const organization = await Organization.findById(id);
+        if (!organization) {
+            return reply.status(404).send({ error: 'Organization not found' });
+        }
+
+        if (!organization.aiSettings) {
+            organization.aiSettings = {};
+        }
+
+        if (typeof enabled === 'boolean') {
+            organization.aiSettings.tavilyEnabled = enabled;
+        }
+
+        if (apiKey !== undefined) {
+            organization.aiSettings.tavilyApiKey = apiKey || null;
+        }
+
+        organization.markModified('aiSettings');
+        await organization.save();
+
+        auditService.log(request, 'TAVILY_SETTINGS_UPDATED', { type: 'organization', id: organization._id.toString() }, {
+            enabled: organization.aiSettings.tavilyEnabled,
+            hasApiKey: !!organization.aiSettings.tavilyApiKey
+        });
+
+        return {
+            success: true,
+            enabled: organization.aiSettings.tavilyEnabled,
+            hasApiKey: !!organization.aiSettings.tavilyApiKey
+        };
+    });
+
     // Check if slug is available
     fastify.get('/check-slug/:slug', async (request, reply) => {
         const { slug } = request.params;

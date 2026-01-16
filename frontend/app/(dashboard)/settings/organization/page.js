@@ -39,7 +39,7 @@ export default function OrganizationPage() {
             setLoading(true);
             const [deptData, requestsData] = await Promise.all([
                 departmentsApi.getDepartments(),
-                isAdmin ? departmentsApi.getAccessRequests() : Promise.resolve({ requests: [] })
+                isAdmin ? departmentsApi.getAccessRequests() : Promise.resolve({ requests: [] }),
             ]);
             setDepartments(deptData.departments || []);
             setAccessRequests(requestsData.requests || []);
@@ -141,7 +141,7 @@ export default function OrganizationPage() {
 
     return (
         <div className="h-full overflow-y-auto">
-            <div className="p-6 pb-12 max-w-4xl mx-auto space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+            <div className="p-6 pb-12 w-full space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
                 {/* Header */}
                 <div>
                     <h2 className="text-xl font-semibold text-foreground flex items-center gap-2">
@@ -194,6 +194,8 @@ export default function OrganizationPage() {
                                 </form>
                             </div>
                         )}
+
+
 
                         {/* Departments List */}
                         <div className="bg-card border border-border rounded-xl p-5 shadow-sm">
@@ -313,23 +315,23 @@ export default function OrganizationPage() {
                                     {accessRequests.map((req) => (
                                         <div
                                             key={req.id}
-                                            className="flex items-center justify-between p-3 bg-warning/5 border border-warning/20 rounded-lg transition-colors hover:bg-warning/10"
+                                            className="flex flex-col sm:flex-row sm:items-center justify-between p-3 bg-warning/5 border border-warning/20 rounded-lg transition-colors hover:bg-warning/10 gap-3"
                                         >
                                             <div className="flex items-center gap-3">
-                                                <div className="p-2 bg-warning/10 rounded-full">
+                                                <div className="p-2 bg-warning/10 rounded-full flex-shrink-0">
                                                     <Clock className="w-4 h-4 text-warning" />
                                                 </div>
-                                                <div>
-                                                    <p className="text-sm text-foreground">
+                                                <div className="min-w-0">
+                                                    <p className="text-sm text-foreground truncate">
                                                         <span className="font-medium">{req.userName}</span>
                                                         <span className="text-muted-foreground"> ({req.userEmail})</span>
                                                     </p>
-                                                    <p className="text-xs text-muted-foreground mt-0.5">
+                                                    <p className="text-xs text-muted-foreground mt-0.5 truncate">
                                                         Requesting {req.type}: <span className="text-warning font-medium">{req.resource}</span>
                                                     </p>
                                                 </div>
                                             </div>
-                                            <div className="flex gap-2">
+                                            <div className="flex gap-2 self-end sm:self-auto">
                                                 <button
                                                     onClick={() => handleApproveRequest(req)}
                                                     className="p-1.5 bg-green-500/10 text-green-600 dark:text-green-400 hover:bg-green-500/20 rounded-lg transition-colors border border-green-500/20"

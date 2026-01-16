@@ -102,7 +102,7 @@ export default function IntegrationsPage() {
     };
 
     return (
-        <div className="p-8 max-w-3xl">
+        <div className="p-6 w-full">
             <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
                 <div>
                     <h2 className="text-xl font-bold text-foreground">Integrations</h2>
@@ -114,9 +114,9 @@ export default function IntegrationsPage() {
                 {/* Google Calendar Integration Card */}
                 <div className="bg-card border border-border rounded-2xl overflow-hidden">
                     {/* Header */}
-                    <div className="flex items-center justify-between p-5 border-b border-border">
+                    <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between p-5 border-b border-border gap-4">
                         <div className="flex items-center gap-4">
-                            <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center shadow-lg shadow-blue-500/20">
+                            <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center shadow-lg shadow-blue-500/20 flex-shrink-0">
                                 <Calendar className="w-6 h-6 text-white" />
                             </div>
                             <div>

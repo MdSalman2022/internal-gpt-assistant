@@ -1,5 +1,6 @@
-import { Conversation, Message, Document, User } from '../models/index.js';
-import { ragService, aiService, geminiService, documentService, auditService, guardrailService, usageService, webSearchAgent } from '../services/index.js';
+import { Conversation, Message, Document, User, Organization } from '../models/index.js';
+import { ragService, aiService, geminiService, documentService, auditService, guardrailService, usageService } from '../services/index.js';
+import WebSearchAgent from '../services/web-search-agent.js';
 import { requirePermission } from '../middleware/rbac.middleware.js';
 import { requireUsageLimit } from '../middleware/usage-limit.middleware.js';
 import { requireTenant, requireOrganization, requireActiveSubscription } from '../middleware/tenant.middleware.js';
@@ -258,30 +259,38 @@ export default async function chatRoutes(fastify) {
             // Web search integration (opt-in via useWebSearch param)
             const { useWebSearch = false } = request.body;
             
-            if (useWebSearch && webSearchAgent.isAvailable()) {
+            if (useWebSearch) {
                 try {
-                    console.log(`🌐 Web search enabled, fetching live results...`);
-                    const webResults = await webSearchAgent.search(content, { maxResults: 3 });
+                    // Load organization data for web search configuration
+                    const organization = await Organization.findById(request.organizationId);
+                    const orgWebSearchAgent = WebSearchAgent.createForOrganization(organization);
                     
-                    if (webResults && webResults.results && webResults.results.length > 0) {
-                        console.log(`✅ Found ${webResults.results.length} web results`);
-                        
-                        // Check if RAG has good internal results
-                        const topRelevance = response.citations?.[0]?.relevanceScore || 0;
-                        
-                        if (topRelevance > 0.5) {
-                            // COMBINE: Good internal docs + web results
-                            response.answer = `${response.answer}\n\n---\n\n**🌐 Additional Web Sources:**\n\n${webResults.summary}\n\n**Sources:**\n${webResults.results.map((r, i) => `${i + 1}. [${r.title}](${r.url})`).join('\n')}`;
-                            response.webSearch = { used: true, resultsCount: webResults.results.length, mode: 'combined' };
+                    if (orgWebSearchAgent.isAvailable()) {
+                        console.log(`🌐 Web search enabled for organization, fetching live results...`);
+                        const webResults = await orgWebSearchAgent.search(content, { maxResults: 3 });
+                    
+                        if (webResults && webResults.results && webResults.results.length > 0) {
+                            console.log(`✅ Found ${webResults.results.length} web results`);
+                            
+                            // Check if RAG has good internal results
+                            const topRelevance = response.citations?.[0]?.relevanceScore || 0;
+                            
+                            if (topRelevance > 0.5) {
+                                // COMBINE: Good internal docs + web results
+                                response.answer = `${response.answer}\n\n---\n\n**🌐 Additional Web Sources:**\n\n${webResults.summary}\n\n**Sources:**\n${webResults.results.map((r, i) => `${i + 1}. [${r.title}](${r.url})`).join('\n')}`;
+                                response.webSearch = { used: true, resultsCount: webResults.results.length, mode: 'combined' };
+                            } else {
+                                // REPLACE: Poor internal docs, use web only
+                                response.answer = `**🌐 Web Search Results:**\n\n${webResults.summary}\n\n**Sources:**\n${webResults.results.map((r, i) => `${i + 1}. [${r.title}](${r.url})`).join('\n')}`;
+                                response.confidence = 0.85;
+                                response.citations = [];
+                                response.webSearch = { used: true, resultsCount: webResults.results.length, mode: 'primary' };
+                            }
                         } else {
-                            // REPLACE: Poor internal docs, use web only
-                            response.answer = `**🌐 Web Search Results:**\n\n${webResults.summary}\n\n**Sources:**\n${webResults.results.map((r, i) => `${i + 1}. [${r.title}](${r.url})`).join('\n')}`;
-                            response.confidence = 0.85;
-                            response.citations = [];
-                            response.webSearch = { used: true, resultsCount: webResults.results.length, mode: 'primary' };
+                            console.warn('⚠️ Web search returned no results');
                         }
                     } else {
-                        console.warn('⚠️ Web search returned no results');
+                        console.warn('⚠️ Web search is not enabled for this organization');
                     }
                 } catch (webError) {
                     console.error('❌ Web search failed:', webError.message);

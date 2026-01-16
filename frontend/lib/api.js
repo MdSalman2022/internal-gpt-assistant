@@ -344,3 +344,20 @@ export const integrationsApi = {
         getToday: () => fetcher('/api/integrations/google-calendar/today'),
     }
 };
+
+// Organizations API
+export const organizationsApi = {
+    // Get current organization
+    getCurrent: () => fetcher('/api/organizations'),
+
+    // Get organization Tavily settings
+    getTavilySettings: (orgId) => fetcher(`/api/organizations/${orgId}/settings/tavily`),
+
+    // Update organization Tavily settings
+    updateTavilySettings: (orgId, settings) =>
+        fetcher(`/api/organizations/${orgId}/settings/tavily`, {
+            method: 'PUT',
+            body: JSON.stringify(settings)
+        }),
+};
+

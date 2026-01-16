@@ -106,16 +106,16 @@ export default function AuditLogViewer() {
     return (
         <div className="flex flex-col h-full bg-transparent p-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
             {/* Toolbar */}
-            <div className="flex items-center justify-between mb-6">
+            <div className="flex flex-col md:flex-row md:items-center justify-between mb-6 gap-4">
                 <div>
                     <h2 className="text-lg font-medium text-foreground">Audit Logs</h2>
                     <p className="text-muted-foreground text-sm">Forensic records of all system events.</p>
                 </div>
 
-                <div className="flex items-center gap-4">
+                <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
                     {/* Filters */}
-                    <div className="flex items-center gap-2">
-                        <div className="relative">
+                    <div className="flex items-center gap-2 w-full sm:w-auto">
+                        <div className="relative flex-1 sm:flex-none">
                             <select
                                 value={filters.userId}
                                 onChange={(e) => setFilters(prev => ({ ...prev, userId: e.target.value }))}
@@ -156,16 +156,16 @@ export default function AuditLogViewer() {
             </div>
 
             {/* Logs Table */}
-            <div className="bg-card border border-border rounded-xl overflow-hidden shadow-sm">
+            <div className="bg-card border border-border rounded-xl overflow-hidden shadow-sm overflow-x-auto">
                 <table className="w-full text-left">
                     <thead>
                         <tr className="border-b border-border text-xs uppercase tracking-wider text-muted-foreground bg-muted/50">
                             <th className="px-6 py-4 w-6"></th>
-                            <th className="px-6 py-4 font-medium">Timestamp</th>
-                            <th className="px-6 py-4 font-medium">User</th>
-                            <th className="px-6 py-4 font-medium">Action</th>
-                            <th className="px-6 py-4 font-medium">Resource</th>
-                            <th className="px-6 py-4 font-medium">Status</th>
+                            <th className="px-6 py-4 font-medium whitespace-nowrap">Timestamp</th>
+                            <th className="px-6 py-4 font-medium whitespace-nowrap">User</th>
+                            <th className="px-6 py-4 font-medium whitespace-nowrap">Action</th>
+                            <th className="px-6 py-4 font-medium whitespace-nowrap">Resource</th>
+                            <th className="px-6 py-4 font-medium whitespace-nowrap">Status</th>
                         </tr>
                     </thead>
                     <tbody className="divide-y divide-border">
@@ -199,7 +199,7 @@ export default function AuditLogViewer() {
                                             {expandedLogId === log._id ? <ChevronDown className="w-4 h-4 text-muted-foreground" /> : <ChevronRight className="w-4 h-4 text-muted-foreground" />}
                                         </td>
                                         <td className="px-6 py-4">
-                                            <div className="flex items-center gap-2 text-sm text-foreground/80 font-mono">
+                                            <div className="flex items-center gap-2 text-sm text-foreground/80 font-mono whitespace-nowrap">
                                                 <Clock className="w-3.5 h-3.5 text-muted-foreground" />
                                                 {new Date(log.timestamp).toLocaleString()}
                                             </div>

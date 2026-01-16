@@ -98,7 +98,7 @@ export default function AnalyticsDashboard() {
 
     return (
         <div className="h-full overflow-y-auto">
-            <div className="p-6 pb-12 max-w-7xl mx-auto space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+            <div className="p-6 pb-12 w-full space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
                 {/* Header */}
                 <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
                     <div>

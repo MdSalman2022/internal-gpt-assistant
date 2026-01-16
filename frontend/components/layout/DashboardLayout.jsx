@@ -200,8 +200,8 @@ function DashboardLayoutInner({ children }) {
                         onClick={handleNewChat}
                         className={`
                             flex items-center gap-3 w-full px-4 py-3 rounded-xl
-                            bg-primary hover:bg-primary/90 text-primary-foreground font-medium
-                            border border-primary/20 hover:border-primary/40
+                            bg-primary text-primary-foreground font-medium
+                            border border-primary/20 hover:opacity-90
                             transition-all
                             ${!sidebarOpen ? 'justify-center px-3' : ''}
                         `}
