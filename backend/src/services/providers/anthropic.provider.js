@@ -71,13 +71,27 @@ class AnthropicProvider {
         if (!this.client) throw new Error('Anthropic not configured');
 
         return this._withRetry(async () => {
+            // Build messages array with history and current message
+            const messages = [];
+
+            // Add conversation history
+            if (options.history && options.history.length > 0) {
+                for (const msg of options.history) {
+                    messages.push({
+                        role: msg.role === 'assistant' ? 'assistant' : 'user',
+                        content: msg.content
+                    });
+                }
+            }
+
+            // Add current user message
+            messages.push({ role: 'user', content: userMessage });
+
             const response = await this.client.messages.create({
                 model: options.model || this.chatModel,
                 max_tokens: options.maxTokens || 2048,
                 system: systemPrompt,
-                messages: [
-                    { role: 'user', content: userMessage },
-                ],
+                messages,
             });
 
             const content = response.content[0]?.text || '';

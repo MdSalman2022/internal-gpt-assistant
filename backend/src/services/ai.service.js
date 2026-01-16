@@ -165,7 +165,8 @@ ${contextText}`;
             provider: providerName = this.defaultProvider,
             organizationId = null,
             temperature,
-            maxTokens
+            maxTokens,
+            history = []
         } = options;
 
         const provider = await this.getProviderForOrg(providerName, organizationId);
@@ -174,7 +175,8 @@ ${contextText}`;
 
         const result = await provider.generateResponse(systemPrompt, userMessage, {
             temperature,
-            maxTokens
+            maxTokens,
+            history
         });
 
         // Record token usage stats
@@ -195,7 +197,7 @@ ${contextText}`;
 
     // Generate organization-specific RAG answer
     async generateAnswerForOrg(query, contextChunks, options = {}) {
-        const { provider: providerName = this.defaultProvider, organizationId = null } = options;
+        const { provider: providerName = this.defaultProvider, organizationId = null, history = [] } = options;
 
         // Build context from chunks
         const contextText = contextChunks
@@ -219,7 +221,8 @@ ${contextText}`;
             provider: providerName,
             organizationId,
             temperature: 0.3,
-            maxTokens: 2048
+            maxTokens: 2048,
+            history
         });
 
         // Parse confidence (simple heuristic)

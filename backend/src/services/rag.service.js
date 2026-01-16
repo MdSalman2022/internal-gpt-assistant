@@ -234,7 +234,8 @@ class RAGService {
             const response = await (organizationId 
                 ? aiService.generateAnswerForOrg(userQuery, validContextChunks, {
                     provider,
-                    organizationId
+                    organizationId,
+                    history: conversationHistory
                 })
                 : aiService.generateAnswer(userQuery, validContextChunks, {
                     provider,

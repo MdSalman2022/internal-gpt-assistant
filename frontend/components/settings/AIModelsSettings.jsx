@@ -80,6 +80,39 @@ export default function AIModelsSettings() {
         groq: { icon: Zap, color: 'text-orange-500', bg: 'bg-orange-500/10', border: 'border-orange-500/20' }
     };
 
+    // Auto-switch model if current provider becomes unavailable
+    useEffect(() => {
+        if (!selectedModel || !pricing || Object.keys(availableProviders).length === 0) return;
+
+        // Find which provider the selected model belongs to
+        let currentProviderId = null;
+        for (const [pid, p] of Object.entries(pricing.providers)) {
+            if (p.models.some(m => m.id === selectedModel)) {
+                currentProviderId = pid;
+                break;
+            }
+        }
+
+        // If current provider is NOT in availableProviders (meaning it was disabled/removed)
+        // We must switch to an available one.
+        if (currentProviderId && !availableProviders[currentProviderId]) {
+            console.log(`Current provider ${currentProviderId} disabled. Switching...`);
+            
+            // Find first available provider
+            const firstAvailableProviderId = Object.keys(availableProviders)[0];
+            if (firstAvailableProviderId && pricing.providers[firstAvailableProviderId]) {
+                const providerData = pricing.providers[firstAvailableProviderId];
+                // Pick recommended or first model
+                const defaultModel = providerData.models.find(m => m.recommended) || providerData.models[0];
+                
+                if (defaultModel) {
+                    console.log(`Auto-switching to ${defaultModel.id}`);
+                    handleModelSelect(defaultModel.id);
+                }
+            }
+        }
+    }, [availableProviders, selectedModel, pricing]);
+
     if (!isAdmin) return null;
 
     if (loading) {
@@ -173,7 +206,7 @@ export default function AIModelsSettings() {
                     API Credentials
                 </h3>
                 <div className="space-y-6">
-                    <APICredentialsSettings />
+                    <APICredentialsSettings onUpdate={loadData} />
                     
                     {/* Web Search Integration */}
                     {organization && (

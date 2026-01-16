@@ -78,12 +78,27 @@ class OpenAIProvider {
         if (!this.client) throw new Error('OpenAI not configured');
 
         return this._withRetry(async () => {
+            // Build messages array with system prompt, history, and current message
+            const messages = [
+                { role: 'system', content: systemPrompt }
+            ];
+
+            // Add conversation history
+            if (options.history && options.history.length > 0) {
+                for (const msg of options.history) {
+                    messages.push({
+                        role: msg.role === 'assistant' ? 'assistant' : 'user',
+                        content: msg.content
+                    });
+                }
+            }
+
+            // Add current user message
+            messages.push({ role: 'user', content: userMessage });
+
             const response = await this.client.chat.completions.create({
                 model: options.model || this.chatModel,
-                messages: [
-                    { role: 'system', content: systemPrompt },
-                    { role: 'user', content: userMessage },
-                ],
+                messages,
                 temperature: options.temperature || 0.3,
                 max_tokens: options.maxTokens || 2048,
             });

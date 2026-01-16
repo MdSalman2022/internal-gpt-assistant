@@ -88,8 +88,14 @@ class GeminiProvider {
         if (!this.client) throw new Error('Gemini not configured');
 
         return this._withRetry(async () => {
+            // Format conversation history for Gemini
+            const formattedHistory = (options.history || []).map(msg => ({
+                role: msg.role === 'assistant' ? 'model' : 'user',
+                parts: [{ text: msg.content }]
+            }));
+
             const chat = this.chatModel.startChat({
-                history: [],
+                history: formattedHistory,
                 generationConfig: {
                     temperature: options.temperature || 0.3,
                     maxOutputTokens: options.maxTokens || 2048,

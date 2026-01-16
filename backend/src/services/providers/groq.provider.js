@@ -43,11 +43,26 @@ class GroqProvider {
         if (!this.client) throw new Error('Groq not configured');
 
         try {
+            // Build messages array with system prompt, history, and current message
+            const messages = [
+                { role: 'system', content: systemPrompt }
+            ];
+
+            // Add conversation history
+            if (options.history && options.history.length > 0) {
+                for (const msg of options.history) {
+                    messages.push({
+                        role: msg.role === 'assistant' ? 'assistant' : 'user',
+                        content: msg.content
+                    });
+                }
+            }
+
+            // Add current user message
+            messages.push({ role: 'user', content: userMessage });
+
             const completion = await this.client.chat.completions.create({
-                messages: [
-                    { role: 'system', content: systemPrompt },
-                    { role: 'user', content: userMessage }
-                ],
+                messages,
                 model: options.model || this.model,
                 temperature: options.temperature || 0.3,
                 max_tokens: options.maxTokens || 2048,

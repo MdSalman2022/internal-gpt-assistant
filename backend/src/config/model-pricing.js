@@ -96,17 +96,6 @@ export const MODELS = {
         freeTier: false
     },
     // ========== GROQ ==========
-    // ========== GROQ ==========
-    'deepseek-r1-distill-llama-70b': {
-        id: 'deepseek-r1-distill-llama-70b',
-        name: 'DeepSeek R1 Distill 70B',
-        description: 'Advanced reasoning model (SOTA)',
-        provider: 'groq',
-        inputPer1M: 0.59,
-        outputPer1M: 0.79,
-        freeTier: true,
-        recommended: true
-    },
     'llama-3.3-70b-versatile': {
         id: 'llama-3.3-70b-versatile',
         name: 'Llama 3.3 70B',
@@ -171,22 +160,76 @@ export const MODELS = {
         outputPer1M: 0.50,
         freeTier: true
     },
-    'mixtral-8x7b-32768': {
-        id: 'mixtral-8x7b-32768',
-        name: 'Mixtral 8x7B',
-        description: 'Classic high-performance MoE',
-        provider: 'groq',
-        inputPer1M: 0.27,
-        outputPer1M: 0.27,
-        freeTier: true
-    },
-    'gemma2-9b-it': {
-        id: 'gemma2-9b-it',
-        name: 'Gemma 2 9B',
-        description: 'Google efficient open model',
+    'allam-2-7b': {
+        id: 'allam-2-7b',
+        name: 'Allam 2 7B',
+        description: 'Efficient Arabic/English model',
         provider: 'groq',
         inputPer1M: 0.10,
         outputPer1M: 0.10,
+        freeTier: true
+    },
+    'groq/compound': {
+        id: 'groq/compound',
+        name: 'Groq Compound',
+        description: 'Advanced reasoning capabilities',
+        provider: 'groq',
+        inputPer1M: 0.30,
+        outputPer1M: 0.30,
+        freeTier: true
+    },
+    'groq/compound-mini': {
+        id: 'groq/compound-mini',
+        name: 'Groq Compound Mini',
+        description: 'Compact reasoning model',
+        provider: 'groq',
+        inputPer1M: 0.20,
+        outputPer1M: 0.20,
+        freeTier: true
+    },
+    'moonshotai/kimi-k2-instruct-0905': {
+        id: 'moonshotai/kimi-k2-instruct-0905',
+        name: 'Moonshot Kimi K2 (Sept)',
+        description: 'Latest Kimi K2 variant',
+        provider: 'groq',
+        inputPer1M: 0.30,
+        outputPer1M: 0.30,
+        freeTier: true
+    },
+    'openai/gpt-oss-20b': {
+        id: 'openai/gpt-oss-20b',
+        name: 'GPT-OSS 20B',
+        description: 'Open-weights 20B model',
+        provider: 'groq',
+        inputPer1M: 0.40,
+        outputPer1M: 0.40,
+        freeTier: true
+    },
+    'openai/gpt-oss-safeguard-20b': {
+        id: 'openai/gpt-oss-safeguard-20b',
+        name: 'GPT-OSS Safeguard 20B',
+        description: 'Safety-focused 20B model',
+        provider: 'groq',
+        inputPer1M: 0.40,
+        outputPer1M: 0.40,
+        freeTier: true
+    },
+    'whisper-large-v3': {
+        id: 'whisper-large-v3',
+        name: 'Whisper Large v3',
+        description: 'State-of-the-art audio transcription',
+        provider: 'groq',
+        inputPer1M: 0.00,
+        outputPer1M: 0.00,
+        freeTier: true
+    },
+    'whisper-large-v3-turbo': {
+        id: 'whisper-large-v3-turbo',
+        name: 'Whisper Large v3 Turbo',
+        description: 'Fastest audio transcription',
+        provider: 'groq',
+        inputPer1M: 0.00,
+        outputPer1M: 0.00,
         freeTier: true
     },
 };

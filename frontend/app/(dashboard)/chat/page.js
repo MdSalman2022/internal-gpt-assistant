@@ -4,7 +4,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/lib/auth-context';
 import { useChat } from '@/lib/chat-context';
-import { chatApi } from '@/lib/api';
+import { chatApi, organizationsApi } from '@/lib/api';
 import ChatInput from '@/components/chat/ChatInput';
 import { Zap, BookOpen, Code, Lightbulb } from 'lucide-react';
 
@@ -22,15 +22,29 @@ export default function NewChatPage() {
     const router = useRouter();
     const inputRef = useRef(null);
     const [isCreating, setIsCreating] = useState(false);
+    const [webSearchAllowed, setWebSearchAllowed] = useState(false);
 
     // Focus input on mount
     useEffect(() => {
         if (inputRef.current) {
             setTimeout(() => inputRef.current?.focus(), 100);
         }
+        checkWebSearch();
     }, []);
 
-    const handleSendMessage = async (content, fileIds = []) => {
+    const checkWebSearch = async () => {
+        try {
+            const orgData = await organizationsApi.getCurrent();
+            if (orgData?.organization?._id) {
+                const settings = await organizationsApi.getTavilySettings(orgData.organization._id);
+                setWebSearchAllowed(settings.enabled && settings.hasApiKey);
+            }
+        } catch (error) {
+            console.error('Failed to check web search availability:', error);
+        }
+    };
+
+    const handleSendMessage = async (content, fileIds = [], useWebSearch = false) => {
         if (!content.trim() && fileIds.length === 0) return;
         if (isCreating) return;
 
@@ -41,7 +55,7 @@ export default function NewChatPage() {
             const conversationId = data.conversation._id;
 
             // Send the first message
-            await chatApi.sendMessage(conversationId, content, null, fileIds);
+            await chatApi.sendMessage(conversationId, content, null, fileIds, useWebSearch);
 
             // Refresh sidebar to show new conversation
             refreshChats();
@@ -113,6 +127,7 @@ export default function NewChatPage() {
                 isTyping={isCreating}
                 placeholder="Message InsightAI..."
                 centered
+                allowWebSearch={webSearchAllowed}
             />
         </div>
     );

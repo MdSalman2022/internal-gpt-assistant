@@ -161,7 +161,22 @@ export default async function credentialsRoutes(fastify) {
         // Update fields
         if (label) credential.label = label;
         if (rateLimit) credential.rateLimit = rateLimit;
-        if (typeof request.body.isActive === 'boolean') credential.isActive = request.body.isActive;
+        
+        // Handle activation with mutual exclusivity
+        if (typeof request.body.isActive === 'boolean') {
+            if (request.body.isActive === true) {
+                // Deactivate all other credentials in the same scope (Global Exclusivity)
+                await APICredentials.updateMany(
+                    {
+                        organizationId: credential.organizationId,
+                        _id: { $ne: credential._id }
+                    },
+                    { $set: { isActive: false } }
+                );
+            }
+            credential.isActive = request.body.isActive;
+        }
+        
         credential.updatedBy = user._id;
 
         await credential.save();

@@ -4,7 +4,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { useAuth } from '@/lib/auth-context';
 import { useChat } from '@/lib/chat-context';
-import { chatApi } from '@/lib/api';
+import { chatApi, organizationsApi } from '@/lib/api';
 import ChatWindow from '@/components/chat/ChatWindow';
 import ChatInput from '@/components/chat/ChatInput';
 import { AlertTriangle, X } from 'lucide-react';
@@ -22,13 +22,27 @@ export default function ConversationPage() {
     const [isTyping, setIsTyping] = useState(false);
     const [loading, setLoading] = useState(true);
     const [toast, setToast] = useState(null);
+    const [webSearchAllowed, setWebSearchAllowed] = useState(false);
 
     // Load conversation on mount
     useEffect(() => {
         if (conversationId && user) {
             loadConversation(conversationId);
+            checkWebSearch();
         }
     }, [conversationId, user]);
+
+    const checkWebSearch = async () => {
+        try {
+            const orgData = await organizationsApi.getCurrent();
+            if (orgData?.organization?._id) {
+                const settings = await organizationsApi.getTavilySettings(orgData.organization._id);
+                setWebSearchAllowed(settings.enabled && settings.hasApiKey);
+            }
+        } catch (error) {
+            console.error('Failed to check web search availability:', error);
+        }
+    };
 
     const loadConversation = async (id) => {
         try {
@@ -196,6 +210,7 @@ export default function ConversationPage() {
                 disabled={isTyping}
                 isTyping={isTyping}
                 centered
+                allowWebSearch={webSearchAllowed}
             />
 
             {/* Toast Notification */}

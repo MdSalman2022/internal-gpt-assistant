@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, forwardRef, useImperativeHandle, useRef } from 'react';
+import { useState, forwardRef, useImperativeHandle, useRef, useEffect } from 'react';
 import { Send, Paperclip, Square, ArrowUp, X, FileText, Loader2, File, Globe } from 'lucide-react';
 import { useAuth } from '@/lib/auth-context';
 import { documentsApi } from '@/lib/api';
@@ -12,7 +12,8 @@ const ChatInput = forwardRef(function ChatInput({
     isTyping,
     placeholder = "Message InsightAI...",
     centered = false,
-    conversationId = null
+    conversationId = null,
+    allowWebSearch = false
 }, ref) {
     const { hasPermission } = useAuth();
     const [message, setMessage] = useState('');
@@ -36,6 +37,13 @@ const ChatInput = forwardRef(function ChatInput({
     useImperativeHandle(ref, () => ({
         focus: () => textareaRef.current?.focus(),
     }));
+
+    // Reset web search if disabled/not allowed
+    useEffect(() => {
+        if (!allowWebSearch && useWebSearch) {
+            setUseWebSearch(false);
+        }
+    }, [allowWebSearch, useWebSearch]);
 
     const selectSuggestion = (doc) => {
         // Add file if not already attached
@@ -336,19 +344,21 @@ const ChatInput = forwardRef(function ChatInput({
                     />
 
                     {/* Web Search Toggle */}
-                    <button
-                        type="button"
-                        onClick={() => setUseWebSearch(!useWebSearch)}
-                        className={`
-                            p-2 rounded-lg transition-all flex items-center gap-1.5
-                            ${useWebSearch 
-                                ? 'bg-primary/10 text-primary hover:bg-primary/20' 
-                                : 'text-muted-foreground hover:text-foreground hover:bg-secondary'}
-                        `}
-                        title={useWebSearch ? "Web Search Enabled (1 credit)" : "Enable Web Search"}
-                    >
-                        <Globe className={`w-5 h-5 ${useWebSearch ? 'animate-pulse-slow' : ''}`} />
-                    </button>
+                    {allowWebSearch && (
+                        <button
+                            type="button"
+                            onClick={() => setUseWebSearch(!useWebSearch)}
+                            className={`
+                                p-2 rounded-lg transition-all flex items-center gap-1.5
+                                ${useWebSearch 
+                                    ? 'bg-primary/10 text-primary hover:bg-primary/20' 
+                                    : 'text-muted-foreground hover:text-foreground hover:bg-secondary'}
+                            `}
+                            title={useWebSearch ? "Web Search Enabled (1 credit)" : "Enable Web Search"}
+                        >
+                            <Globe className={`w-5 h-5 ${useWebSearch ? 'animate-pulse-slow' : ''}`} />
+                        </button>
+                    )}
 
                     {/* Send button */}
                     {isTyping ? (

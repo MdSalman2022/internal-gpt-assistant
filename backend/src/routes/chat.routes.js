@@ -259,7 +259,16 @@ export default async function chatRoutes(fastify) {
             // Web search integration (opt-in via useWebSearch param)
             const { useWebSearch = false } = request.body;
             
-            if (useWebSearch) {
+            // Check if the IMMEDIATELY previous message was an assistant web search response
+            // If so, this is likely a follow-up question - skip new web search
+            // history is [oldest -> newest] after reverse, so history[length-1] is the current user msg we just saved
+            // and history[length-2] is the previous message (should be assistant if it exists)
+            const previousMessage = history.length >= 2 ? history[history.length - 2] : null;
+            const previousWasWebSearch = previousMessage?.role === 'assistant' && 
+                (previousMessage?.content?.includes('Web Search Results:') || 
+                 previousMessage?.content?.includes('Additional Web Sources:'));
+            
+            if (useWebSearch && !previousWasWebSearch) {
                 try {
                     // Load organization data for web search configuration
                     const organization = await Organization.findById(request.organizationId);
@@ -295,6 +304,8 @@ export default async function chatRoutes(fastify) {
                 } catch (webError) {
                     console.error('❌ Web search failed:', webError.message);
                 }
+            } else if (useWebSearch && previousWasWebSearch) {
+                console.log('🔄 Skipping new web search - previous message was a web search response (follow-up question detected)');
             }
         } catch (error) {
             console.error('❌ RAG Service Error:', error);
