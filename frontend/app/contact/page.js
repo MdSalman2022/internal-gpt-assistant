@@ -30,12 +30,6 @@ function ContactFormContent() {
   const [error, setError] = useState("");
 
   const typeConfig = {
-    demo: {
-      title: "Schedule a Demo",
-      subtitle: "See InsightAI in action with a personalized walkthrough",
-      placeholder:
-        "Tell us about your use case, team size, and what you'd like to see in the demo...",
-    },
     sales: {
       title: "Contact Sales",
       subtitle: "Get custom pricing for your enterprise needs",

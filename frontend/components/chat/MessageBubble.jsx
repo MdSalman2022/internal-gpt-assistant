@@ -21,7 +21,7 @@ function useTypingEffect(text, speed = 15, enabled = true) {
 
         const timer = setInterval(() => {
             if (index < text.length) {
-                // Add multiple characters at once for faster typing
+                // Add characters in batches for speed
                 const charsToAdd = Math.min(3, text.length - index);
                 setDisplayedText(text.slice(0, index + charsToAdd));
                 index += charsToAdd;
@@ -63,8 +63,7 @@ export default function MessageBubble({ message, onFeedback, onViewDocument, isN
         setTimeout(() => setCopied(false), 2000);
     };
 
-    // Pre-process content to handle citations as links for ReactMarkdown
-    // Converts [Source 1, 2] to [1, 2](#citation-1-2) which is a valid URL
+    // Convert citations to markdown links
     const processedContent = contentToShow?.replace(/\[Source (\d+(?:,\s*\d+)*)\]/g, (match, nums) => {
         // Create a safe ID string: "1, 2" -> "1-2"
         const safeId = nums.replace(/[\s,]+/g, '-');
@@ -100,7 +99,7 @@ export default function MessageBubble({ message, onFeedback, onViewDocument, isN
                                         // Custom link handler for citations
                                         a: ({ node, href, children, ...props }) => {
                                             if (href?.includes('citation-')) {
-                                                // Extract IDs from format "citation-1-2"
+                                                // Extract IDs from citation link
                                                 const nums = href.split('citation-')[1].split('-');
                                                 return (
                                                     <span className="inline-flex gap-1 mx-1 align-baseline">
@@ -222,12 +221,12 @@ export default function MessageBubble({ message, onFeedback, onViewDocument, isN
                     </div>
 
 
-                    {/* Sources for assistant messages - only show after typing complete */}
+                    {/* Show sources after typing completes */}
                     {!isUser && isComplete && message.citations?.length > 0 && (
                         <div className="mt-3">
                             <p className="text-xs text-muted-foreground mb-2">📎 Sources ({message.citations.length})</p>
                             <div className="flex flex-wrap gap-2">
-                                {/* Deduplicate citations by documentId for the buttons list */}
+                                {/* Deduplicate citations by documentId */}
                                 {(() => {
                                     const uniqueDocs = new Map();
                                     message.citations.forEach((citation, i) => {
@@ -259,7 +258,7 @@ export default function MessageBubble({ message, onFeedback, onViewDocument, isN
                         </div>
                     )}
 
-                    {/* Actions for assistant messages - only show after typing complete */}
+                    {/* Show actions after typing completes */}
                     {!isUser && isComplete && (
                         <div className={`flex items-center gap-2 px-1 ${message.citations?.length > 0 ? 'mt-3 pt-2 border-t border-border/50' : 'mt-2'}`}>
                             <button

@@ -123,12 +123,6 @@ export default function AboutPage() {
                         >
                             Start Free Trial
                         </Link>
-                        <Link
-                            href="/careers"
-                            className="px-8 py-4 border border-zinc-200 text-zinc-900 font-medium rounded-full hover:bg-zinc-50 transition-all"
-                        >
-                            View Open Positions
-                        </Link>
                     </div>
                 </div>
             </section>

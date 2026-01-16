@@ -22,7 +22,7 @@ export default function ChatWindow({ messages, isTyping, onFeedback, onQuickProm
             return;
         }
 
-        // Only animate if exactly one new message was added (not bulk load)
+        // Only animate if one new message added
         if (messages.length === prevMessagesLengthRef.current + 1) {
             const lastMessage = messages[messages.length - 1];
             if (lastMessage?.role === 'assistant') {
@@ -40,7 +40,7 @@ export default function ChatWindow({ messages, isTyping, onFeedback, onQuickProm
         bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
     }, [messages, isTyping]);
 
-    // Handle opening a document from citation (triggers download)
+    // Handle document download from citation
     const handleViewDocument = (documentId) => {
         if (documentId) {
             window.location.href = documentsApi.getDownloadUrl(documentId);
@@ -57,7 +57,7 @@ export default function ChatWindow({ messages, isTyping, onFeedback, onQuickProm
                     How can I help you today?
                 </h2>
                 <p className="text-muted-foreground max-w-md mb-8">
-                    Ask me anything about your company documents. I'll find the answers and show you exactly where they came from.
+                    // Answer from company documents with citations.
                 </p>
 
                 {/* Quick prompts */}

@@ -9,15 +9,12 @@ export default function Footer() {
                 { name: 'Features', href: '/#features' },
                 { name: 'Pricing', href: '/#pricing' },
                 { name: 'Security', href: '/#security' },
-                { name: 'Schedule Demo', href: '/contact?type=demo' },
             ]
         },
         {
             title: 'Company',
             links: [
                 { name: 'About', href: '/about' },
-                { name: 'Blog', href: '/blog' },
-                { name: 'Careers', href: '/careers' },
                 { name: 'Contact', href: '/contact' },
             ]
         },

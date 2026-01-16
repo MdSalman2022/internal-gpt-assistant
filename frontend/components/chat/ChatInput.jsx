@@ -114,8 +114,7 @@ const ChatInput = forwardRef(function ChatInput({
         if (match) {
             const query = match[1];
             setMentionQuery(query);
-            // Don't show immediately empty, wait for search results unless query is empty (show recent?)
-            // We'll show loading or allow empty search
+            // Wait for search results
             setMentionIndex(0);
 
             // Debounce search
