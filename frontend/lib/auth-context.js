@@ -173,16 +173,22 @@ export function AuthProvider({ children }) {
     }, []);
 
     const checkAuth = async () => {
+        console.log('🔐 AuthProvider: checkAuth started');
         try {
             // Load both in parallel
+            console.log('🔐 AuthProvider: Fetching /me and /permissions...');
             const [meRes, permRes] = await Promise.all([
                 fetch(`${API_URL}/api/auth/me`, { credentials: 'include' }),
                 fetch(`${API_URL}/api/auth/permissions`, { credentials: 'include' })
             ]);
+            console.log('🔐 AuthProvider: Responses received', { meStatus: meRes.status, permStatus: permRes.status });
 
             if (meRes.ok) {
                 const data = await meRes.json();
+                console.log('🔐 AuthProvider: User set', data.user?.email);
                 setUser(data.user);
+            } else {
+                console.warn('🔐 AuthProvider: /me failed', meRes.status);
             }
 
             if (permRes.ok) {
@@ -190,8 +196,9 @@ export function AuthProvider({ children }) {
                 setPermissionsConfig(config);
             }
         } catch (error) {
-            console.error('Auth/Permissions initialization failed:', error);
+            console.error('🔐 AuthProvider: Auth/Permissions validation failed:', error);
         } finally {
+            console.log('🔐 AuthProvider: Setting loading = false');
             setLoading(false);
         }
     };

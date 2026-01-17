@@ -23,7 +23,6 @@ const navItems = [
     { href: '/dashboard/organizations', label: 'Organizations', icon: Building2 },
     { href: '/dashboard/subscriptions', label: 'Subscriptions', icon: CreditCard },
     { href: '/dashboard/users', label: 'Users', icon: Users },
-    { href: '/dashboard/demos', label: 'Demo Requests', icon: MessageSquareMore },
     { href: '/dashboard/analytics', label: 'Analytics', icon: TrendingUp },
 ];
 

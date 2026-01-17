@@ -34,10 +34,10 @@ export default function LoginPage() {
 
         try {
             await login(formData.email, formData.password);
-            router.push('/chat');
+            // Force full reload to ensure cookies are set
+            window.location.href = '/chat';
         } catch (err) {
             setError(err.message || 'Authentication failed');
-        } finally {
             setLoading(false);
         }
     };

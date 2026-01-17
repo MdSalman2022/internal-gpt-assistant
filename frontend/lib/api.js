@@ -28,6 +28,16 @@ async function fetcher(endpoint, options = {}) {
     return data;
 }
 
+
+// Generic API client
+export const api = {
+    get: (url) => fetcher(url),
+    post: (url, body = {}) => fetcher(url, { method: 'POST', body: JSON.stringify(body) }),
+    put: (url, body = {}) => fetcher(url, { method: 'PUT', body: JSON.stringify(body) }),
+    patch: (url, body = {}) => fetcher(url, { method: 'PATCH', body: JSON.stringify(body) }),
+    delete: (url) => fetcher(url, { method: 'DELETE' }),
+};
+
 // Chat API
 export const chatApi = {
     // Get available AI providers
@@ -261,6 +271,25 @@ export const profileApi = {
             method: 'POST',
             body: JSON.stringify(preferences)
         }),
+};
+
+// Upload API
+export const uploadApi = {
+    // Upload file
+    uploadFile: async (file) => {
+        const formData = new FormData();
+        formData.append('file', file);
+
+        const res = await fetch(`${API_URL}/api/upload`, {
+            method: 'POST',
+            credentials: 'include',
+            body: formData,
+        });
+
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'Upload failed');
+        return data;
+    },
 };
 
 // Departments API

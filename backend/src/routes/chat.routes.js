@@ -15,7 +15,7 @@ export default async function chatRoutes(fastify) {
 
     // Get available AI providers
     fastify.get('/providers', async (request, reply) => {
-        const providers = aiService.getAvailableProviders();
+        const providers = await aiService.getAvailableProviders();
         return { providers };
     });
 
@@ -272,7 +272,7 @@ export default async function chatRoutes(fastify) {
                 try {
                     // Load organization data for web search configuration
                     const organization = await Organization.findById(request.organizationId);
-                    const orgWebSearchAgent = WebSearchAgent.createForOrganization(organization);
+                    const orgWebSearchAgent = await WebSearchAgent.createForOrganization(organization);
                     
                     if (orgWebSearchAgent.isAvailable()) {
                         console.log(`🌐 Web search enabled for organization, fetching live results...`);

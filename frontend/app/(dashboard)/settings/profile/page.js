@@ -1,18 +1,22 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
+import VerifiedBadge from '@/components/ui/VerifiedBadge';
 import { useAuth } from '@/lib/auth-context';
-import { profileApi, departmentsApi } from '@/lib/api';
-import { Save, Loader2, CheckCircle, Clock, XCircle, Building2, Users2, Plus, X } from 'lucide-react';
+import { profileApi, departmentsApi, uploadApi, api } from '@/lib/api';
+import { Save, Loader2, CheckCircle, Clock, XCircle, Building2, Users2, Plus, X, Camera, Shield } from 'lucide-react';
 
 export default function ProfilePage() {
     const { user, checkAuth } = useAuth();
+    const fileInputRef = useRef(null);
 
     const [profile, setProfile] = useState({
         name: '',
         email: '',
+        avatar: '',
     });
     const [saving, setSaving] = useState(false);
+    const [uploading, setUploading] = useState(false);
     const [saved, setSaved] = useState(false);
     const [error, setError] = useState(null);
 
@@ -21,7 +25,12 @@ export default function ProfilePage() {
     const [allTeams, setAllTeams] = useState([]);
     const [selectedDept, setSelectedDept] = useState('');
     const [selectedTeam, setSelectedTeam] = useState('');
+
     const [requesting, setRequesting] = useState(false);
+    
+    // Email Verification
+    const [verificationLoading, setVerificationLoading] = useState(false);
+    const [verificationSent, setVerificationSent] = useState(false);
 
     // Initialize form with user data
     useEffect(() => {
@@ -29,6 +38,7 @@ export default function ProfilePage() {
             setProfile({
                 name: user.name || '',
                 email: user.email || '',
+                avatar: user.avatar || '',
             });
         }
     }, [user]);
@@ -63,6 +73,8 @@ export default function ProfilePage() {
         try {
             await profileApi.updateProfile({
                 name: profile.name,
+                // Avatar is updated immediately upon upload, so we don't strictly need to send it here
+                // unless we want to allow "reverting" changes before save (not implemented here)
             });
 
             await checkAuth();
@@ -73,6 +85,47 @@ export default function ProfilePage() {
             setError(err.message || 'Failed to save profile');
         } finally {
             setSaving(false);
+        }
+    };
+
+    const handleAvatarUpload = async (e) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+
+        // Basic validation
+        if (file.size > 5 * 1024 * 1024) {
+            setError('Image must be less than 5MB');
+            return;
+        }
+
+        if (!file.type.startsWith('image/')) {
+            setError('File must be an image');
+            return;
+        }
+
+        setUploading(true);
+        setError(null);
+
+        try {
+            // 1. Upload file
+            const uploadResult = await uploadApi.uploadFile(file);
+            
+            // 2. Update user profile with new URL
+            await profileApi.updateProfile({
+                avatar: uploadResult.url
+            });
+
+            // 3. Refresh auth context and local state
+            await checkAuth();
+            setProfile(prev => ({ ...prev, avatar: uploadResult.url }));
+            
+        } catch (err) {
+            console.error('Failed to upload avatar:', err);
+            setError(err.message || 'Failed to upload image');
+        } finally {
+            setUploading(false);
+            // Reset input
+            if (fileInputRef.current) fileInputRef.current.value = '';
         }
     };
 
@@ -105,6 +158,19 @@ export default function ProfilePage() {
             setError(err.message);
         } finally {
             setRequesting(false);
+        }
+    };
+
+    const handleVerifyEmail = async () => {
+        setVerificationLoading(true);
+        setError(null);
+        try {
+            await api.post('/api/auth/verify-email/request');
+            setVerificationSent(true);
+        } catch (err) {
+            setError(err.message || 'Failed to send verification email');
+        } finally {
+            setVerificationLoading(false);
         }
     };
 
@@ -149,10 +215,42 @@ export default function ProfilePage() {
 
                 {/* Avatar Section */}
                 <div className="flex items-center gap-4">
-                    <div className="w-16 h-16 rounded-full bg-primary flex items-center justify-center shadow-lg shadow-primary/20">
-                        <span className="text-2xl font-bold text-primary-foreground">
-                            {profile.name?.charAt(0)?.toUpperCase() || user?.name?.charAt(0)?.toUpperCase() || 'U'}
-                        </span>
+                    <div className="relative group">
+                        <div className="w-16 h-16 rounded-full bg-primary flex items-center justify-center shadow-lg shadow-primary/20 overflow-hidden">
+                            {profile.avatar ? (
+                                <img 
+                                    src={profile.avatar} 
+                                    alt={profile.name} 
+                                    className="w-full h-full object-cover"
+                                />
+                            ) : (
+                                <span className="text-2xl font-bold text-primary-foreground">
+                                    {profile.name?.charAt(0)?.toUpperCase() || user?.name?.charAt(0)?.toUpperCase() || 'U'}
+                                </span>
+                            )}
+                        </div>
+                        
+                        {/* Upload Overlay */}
+                        <div 
+                            className="absolute inset-0 bg-black/40 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer"
+                            onClick={() => fileInputRef.current?.click()}
+                        >
+                            {uploading ? (
+                                <Loader2 className="w-6 h-6 text-white animate-spin" />
+                            ) : (
+                                <Camera className="w-6 h-6 text-white" />
+                            )}
+                        </div>
+                        
+                        {/* Hidden Input */}
+                        <input 
+                            type="file" 
+                            ref={fileInputRef}
+                            className="hidden" 
+                            accept="image/*"
+                            onChange={handleAvatarUpload}
+                            disabled={uploading}
+                        />
                     </div>
                     <div>
                         <p className="text-foreground font-medium">{profile.name || user?.name}</p>
@@ -181,6 +279,32 @@ export default function ProfilePage() {
                             className="input bg-secondary/30 opacity-70 cursor-not-allowed"
                         />
                         <p className="text-xs text-muted-foreground/60 mt-1">Email cannot be changed</p>
+                        
+                        {!user?.isVerified && (
+                            <div className="mt-2">
+                                {verificationSent ? (
+                                    <div className="flex items-center gap-2 text-sm text-green-500 bg-green-500/10 px-3 py-2 rounded-lg border border-green-500/20">
+                                        <CheckCircle className="w-4 h-4" />
+                                        Verification link sent! Check your inbox.
+                                    </div>
+                                ) : (
+                                    <button
+                                        onClick={handleVerifyEmail}
+                                        disabled={verificationLoading}
+                                        className="text-sm text-primary hover:underline flex items-center gap-1.5"
+                                    >
+                                        {verificationLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Shield className="w-3.5 h-3.5" />}
+                                        Verify Email
+                                    </button>
+                                )}
+                            </div>
+                        )}
+                         {user?.isVerified && (
+                            <div className="flex items-center gap-1.5 mt-2 text-sm text-blue-500">
+                                <VerifiedBadge className="w-4 h-4 text-blue-500" />
+                                <span className="font-medium">Verified Account</span>
+                            </div>
+                        )}
                     </div>
 
                     <button

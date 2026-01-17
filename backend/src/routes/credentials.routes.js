@@ -84,7 +84,7 @@ export default async function credentialsRoutes(fastify) {
         }
 
         // Validate provider
-        const validProviders = ['gemini', 'openai', 'anthropic', 'groq'];
+        const validProviders = ['gemini', 'openai', 'anthropic', 'groq', 'tavily'];
         if (!validProviders.includes(provider)) {
             return reply.status(400).send({ 
                 error: `Invalid provider. Must be one of: ${validProviders.join(', ')}` 

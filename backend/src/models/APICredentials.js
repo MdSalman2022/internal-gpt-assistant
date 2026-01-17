@@ -46,7 +46,7 @@ const apiCredentialSchema = new mongoose.Schema({
     // Provider Configuration
     provider: {
         type: String,
-        enum: ['gemini', 'openai', 'anthropic', 'groq'],
+        enum: ['gemini', 'openai', 'anthropic', 'groq', 'tavily'],
         required: true,
         index: true
     },

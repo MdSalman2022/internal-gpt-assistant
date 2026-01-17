@@ -211,17 +211,19 @@ export default async function superadminRoutes(fastify) {
             case '90d':
                 startDate = new Date(Date.now() - 90 * 24 * 60 * 60 * 1000);
                 break;
+            case 'all':
+                startDate = new Date(0); // Beginning of time
+                break;
             default:
                 startDate = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
         }
 
         // Get all payments in the period
-        const subscriptions = await Subscription.find({
-            'payments.paidAt': { $gte: startDate },
-        });
+        const dateFilter = period === 'all' ? {} : { 'payments.paidAt': { $gte: startDate } };
+        const subscriptions = await Subscription.find(dateFilter);
 
         const payments = subscriptions.flatMap(sub =>
-            sub.payments.filter(p => p.paidAt >= startDate && p.status === 'succeeded')
+            sub.payments.filter(p => period === 'all' || p.paidAt >= startDate && p.status === 'succeeded')
         );
 
         const totalRevenue = payments.reduce((sum, p) => sum + p.amount, 0);

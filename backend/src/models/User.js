@@ -82,6 +82,13 @@ const userSchema = new mongoose.Schema({
         type: Boolean,
         default: true,
     },
+    // Email Verification
+    isVerified: {
+        type: Boolean,
+        default: false,
+    },
+    verificationToken: String,
+    verificationTokenExpires: Date,
     lastLogin: {
         type: Date,
         default: null,
@@ -162,12 +169,22 @@ userSchema.methods.generateResetToken = function () {
     return token;
 };
 
+// Generate verification token
+userSchema.methods.generateVerificationToken = function () {
+    const token = crypto.randomBytes(32).toString('hex');
+    this.verificationToken = crypto.createHash('sha256').update(token).digest('hex');
+    this.verificationTokenExpires = Date.now() + 24 * 60 * 60 * 1000; // 24 hours
+    return token;
+};
+
 // Remove sensitive data when converting to JSON
 userSchema.methods.toJSON = function () {
     const user = this.toObject();
     delete user.password;
     delete user.resetPasswordToken;
     delete user.resetPasswordExpires;
+    delete user.verificationToken;
+    delete user.verificationTokenExpires;
     return user;
 };
 

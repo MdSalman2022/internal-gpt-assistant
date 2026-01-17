@@ -18,7 +18,6 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL;
 export default function AdminDashboardPage() {
     const [stats, setStats] = useState(null);
     const [recentOrgs, setRecentOrgs] = useState([]);
-    const [recentDemos, setRecentDemos] = useState([]);
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
@@ -27,10 +26,9 @@ export default function AdminDashboardPage() {
 
     const fetchDashboardData = async () => {
         try {
-            const [dashboardRes, orgsRes, demosRes] = await Promise.all([
+            const [dashboardRes, orgsRes] = await Promise.all([
                 fetch(`${API_URL}/api/superadmin/dashboard`, { credentials: 'include' }),
                 fetch(`${API_URL}/api/superadmin/organizations?limit=5`, { credentials: 'include' }),
-                fetch(`${API_URL}/api/superadmin/demo-requests?status=pending&limit=5`, { credentials: 'include' }),
             ]);
 
             if (dashboardRes.ok) {
@@ -40,10 +38,6 @@ export default function AdminDashboardPage() {
             if (orgsRes.ok) {
                 const data = await orgsRes.json();
                 setRecentOrgs(data.organizations || []);
-            }
-            if (demosRes.ok) {
-                const data = await demosRes.json();
-                setRecentDemos(data.requests || []);
             }
         } catch (error) {
             console.error('Error fetching dashboard:', error);
@@ -100,14 +94,6 @@ export default function AdminDashboardPage() {
             icon: DollarSign,
             color: 'emerald',
         },
-        {
-            label: 'Pending Demos',
-            value: stats?.pendingDemos || 0,
-            change: `${stats?.trialOrganizations || 0} on trial`,
-            changeType: 'warning',
-            icon: Calendar,
-            color: 'amber',
-        },
     ];
 
     const colorClasses = {
@@ -162,98 +148,7 @@ export default function AdminDashboardPage() {
                 ))}
             </div>
 
-            {/* Two Column Layout */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                {/* Recent Organizations */}
-                <div className="bg-[#12121a] border border-gray-800 rounded-2xl">
-                    <div className="flex items-center justify-between p-5 border-b border-gray-800">
-                        <h2 className="text-lg font-semibold text-white">Recent Organizations</h2>
-                        <a
-                            href="/dashboard/organizations"
-                            className="text-violet-400 hover:text-violet-300 text-sm flex items-center gap-1"
-                        >
-                            View all <ChevronRight className="w-4 h-4" />
-                        </a>
-                    </div>
-                    <div className="divide-y divide-gray-800">
-                        {recentOrgs.length === 0 ? (
-                            <div className="p-8 text-center text-gray-500">
-                                No organizations yet
-                            </div>
-                        ) : (
-                            recentOrgs.map((org) => (
-                                <div key={org._id} className="p-4 flex items-center justify-between hover:bg-gray-800/30 transition-colors">
-                                    <div className="flex items-center gap-3">
-                                        <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-violet-500/20 to-cyan-500/20 flex items-center justify-center text-violet-400 font-semibold">
-                                            {org.name?.charAt(0)?.toUpperCase()}
-                                        </div>
-                                        <div>
-                                            <p className="text-white font-medium">{org.name}</p>
-                                            <p className="text-gray-500 text-sm">{org.email}</p>
-                                        </div>
-                                    </div>
-                                    <div className="text-right">
-                                        <span className={`px-2.5 py-1 rounded-full text-xs font-medium ${org.planStatus === 'active' ? 'bg-emerald-500/20 text-emerald-400' :
-                                                org.planStatus === 'trialing' ? 'bg-cyan-500/20 text-cyan-400' :
-                                                    'bg-gray-500/20 text-gray-400'
-                                            }`}>
-                                            {org.plan}
-                                        </span>
-                                        <p className="text-gray-600 text-xs mt-1">
-                                            {org.memberCount || 0} members
-                                        </p>
-                                    </div>
-                                </div>
-                            ))
-                        )}
-                    </div>
-                </div>
-
-                {/* Pending Demo Requests */}
-                <div className="bg-[#12121a] border border-gray-800 rounded-2xl">
-                    <div className="flex items-center justify-between p-5 border-b border-gray-800">
-                        <h2 className="text-lg font-semibold text-white">Pending Demos</h2>
-                        <a
-                            href="/dashboard/demos"
-                            className="text-violet-400 hover:text-violet-300 text-sm flex items-center gap-1"
-                        >
-                            View all <ChevronRight className="w-4 h-4" />
-                        </a>
-                    </div>
-                    <div className="divide-y divide-gray-800">
-                        {recentDemos.length === 0 ? (
-                            <div className="p-8 text-center text-gray-500">
-                                No pending demo requests
-                            </div>
-                        ) : (
-                            recentDemos.map((demo) => (
-                                <div key={demo._id} className="p-4 flex items-center justify-between hover:bg-gray-800/30 transition-colors">
-                                    <div className="flex items-center gap-3">
-                                        <div className="w-10 h-10 rounded-xl bg-amber-500/20 flex items-center justify-center text-amber-400">
-                                            <Calendar className="w-5 h-5" />
-                                        </div>
-                                        <div>
-                                            <p className="text-white font-medium">{demo.companyName}</p>
-                                            <p className="text-gray-500 text-sm">{demo.contactName}</p>
-                                        </div>
-                                    </div>
-                                    <div className="text-right">
-                                        <span className={`px-2.5 py-1 rounded-full text-xs font-medium ${demo.priority === 'high' ? 'bg-red-500/20 text-red-400' :
-                                                demo.priority === 'medium' ? 'bg-amber-500/20 text-amber-400' :
-                                                    'bg-gray-500/20 text-gray-400'
-                                            }`}>
-                                            {demo.priority}
-                                        </span>
-                                        <p className="text-gray-600 text-xs mt-1">
-                                            {formatDate(demo.createdAt)}
-                                        </p>
-                                    </div>
-                                </div>
-                            ))
-                        )}
-                    </div>
-                </div>
-            </div>
+            {/* Recent Organizations Section Removed for Cleanliness or add back if needed */}
         </div>
     );
 }

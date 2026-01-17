@@ -43,7 +43,7 @@ import { Toaster } from 'react-hot-toast';
 
 export default function RootLayout({ children }) {
   return (
-    <html lang="en" className={`${inter.variable} dark`}>
+    <html lang="en" className={`${inter.variable} dark`} suppressHydrationWarning>
       <body className={`${inter.className} min-h-screen`}>
         <AuthProvider>
           {children}

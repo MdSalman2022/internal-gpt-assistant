@@ -2,6 +2,9 @@
 
 import { ThumbsUp, ThumbsDown, Copy, Check, FileText, Clock, Sparkles, X, ExternalLink, Database } from 'lucide-react';
 import { useState, useEffect, useRef } from 'react';
+import { useAuth } from '@/lib/auth-context';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 
 // Typing animation hook
 function useTypingEffect(text, speed = 15, enabled = true) {
@@ -37,12 +40,8 @@ function useTypingEffect(text, speed = 15, enabled = true) {
     return { displayedText, isComplete };
 }
 
-import ReactMarkdown from 'react-markdown';
-import remarkGfm from 'remark-gfm';
-
-// ... (useTypingEffect remains same)
-
 export default function MessageBubble({ message, onFeedback, onViewDocument, isNew = false }) {
+    const { user } = useAuth();
     const [copied, setCopied] = useState(false);
     const [selectedCitation, setSelectedCitation] = useState(null);
     const isUser = message.role === 'user';
@@ -317,8 +316,18 @@ export default function MessageBubble({ message, onFeedback, onViewDocument, isN
 
                 {/* Avatar for user */}
                 {isUser && (
-                    <div className="flex-shrink-0 w-9 h-9 rounded-xl bg-secondary flex items-center justify-center border border-border">
-                        <span className="text-muted-foreground text-sm font-semibold">U</span>
+                    <div className="flex-shrink-0 w-9 h-9 rounded-xl bg-secondary flex items-center justify-center border border-border overflow-hidden">
+                        {user?.avatar ? (
+                            <img 
+                                src={user.avatar} 
+                                alt="User" 
+                                className="w-full h-full object-cover"
+                            />
+                        ) : (
+                            <span className="text-muted-foreground text-sm font-semibold">
+                                {user?.name?.charAt(0)?.toUpperCase() || 'U'}
+                            </span>
+                        )}
                     </div>
                 )}
             </div>

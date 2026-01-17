@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import VerifiedBadge from '../ui/VerifiedBadge';
 import { usersApi } from '@/lib/api';
 import {
     X, Shield, AlertTriangle, FileText, Clock, User as UserIcon,
@@ -82,13 +83,26 @@ export default function UserProfileModal({ userId, onClose }) {
                             {/* User Info Header */}
                             <div className="p-5 bg-secondary/30 border-b border-border">
                                 <div className="flex items-center gap-4">
-                                    <div className="w-16 h-16 rounded-full bg-primary flex items-center justify-center border border-border">
-                                        <span className="text-2xl font-bold text-primary-foreground">
-                                            {profile.user.name?.charAt(0).toUpperCase() || 'U'}
-                                        </span>
+                                    <div className="w-16 h-16 rounded-full bg-primary flex items-center justify-center border border-border overflow-hidden">
+                                        {profile.user.avatar ? (
+                                            <img 
+                                                src={profile.user.avatar} 
+                                                alt={profile.user.name} 
+                                                className="w-full h-full object-cover"
+                                            />
+                                        ) : (
+                                            <span className="text-2xl font-bold text-primary-foreground">
+                                                {profile.user.name?.charAt(0).toUpperCase() || 'U'}
+                                            </span>
+                                        )}
                                     </div>
                                     <div>
-                                        <h3 className="text-xl font-semibold text-foreground">{profile.user.name}</h3>
+                                        <div className="flex items-center gap-2">
+                                            <h3 className="text-xl font-semibold text-foreground">{profile.user.name}</h3>
+                                            {profile.user.isVerified && (
+                                                <VerifiedBadge className="w-5 h-5 text-blue-500" />
+                                            )}
+                                        </div>
                                         <div className="flex items-center gap-3 mt-1">
                                             <span className="text-sm text-muted-foreground flex items-center gap-1">
                                                 <Mail className="w-3 h-3" /> {profile.user.email}

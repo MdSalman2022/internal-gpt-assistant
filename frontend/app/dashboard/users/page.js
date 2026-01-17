@@ -18,18 +18,27 @@ export default function UsersPage() {
     const [users, setUsers] = useState([]);
     const [loading, setLoading] = useState(true);
     const [searchQuery, setSearchQuery] = useState('');
+    const [roleFilter, setRoleFilter] = useState('all');
     const [page, setPage] = useState(1);
     const [totalPages, setTotalPages] = useState(1);
 
     useEffect(() => {
         fetchUsers();
-    }, [page]);
+    }, [page, roleFilter]);
 
     const fetchUsers = async () => {
         setLoading(true);
         try {
-            // Using the existing users API or create a superadmin endpoint
-            const res = await fetch(`${API_URL}/api/users?page=${page}&limit=15`, {
+            // Using the existing users API with added filtering
+            let url = `${API_URL}/api/users?page=${page}&limit=15`;
+            if (roleFilter !== 'all') {
+                url += `&role=${roleFilter}`;
+            }
+            if (searchQuery) {
+                url += `&search=${encodeURIComponent(searchQuery)}`;
+            }
+
+            const res = await fetch(url, {
                 credentials: 'include'
             });
             const data = await res.json();
@@ -42,10 +51,8 @@ export default function UsersPage() {
         }
     };
 
-    const filteredUsers = users.filter(user =>
-        user.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        user.email?.toLowerCase().includes(searchQuery.toLowerCase())
-    );
+    // Server-side filtered
+    const filteredUsers = users;
 
     const formatDate = (date) => {
         if (!date) return 'Never';
@@ -88,17 +95,35 @@ export default function UsersPage() {
                 <p className="text-gray-500 mt-1">View and manage all users across the platform</p>
             </div>
 
-            {/* Search */}
-            <div className="relative max-w-md">
+            {/* Search and Filters */}
+            <div className="flex flex-col sm:flex-row gap-4">
+                <div className="relative flex-1 max-w-md">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-500" />
                 <input
                     type="text"
                     placeholder="Search users..."
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
+                    onKeyDown={(e) => e.key === 'Enter' && fetchUsers()}
                     className="w-full pl-10 pr-4 py-2.5 bg-[#12121a] border border-gray-800 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent"
                 />
             </div>
+            
+            <div className="flex items-center gap-2">
+                 <select
+                    value={roleFilter}
+                    onChange={(e) => {
+                        setRoleFilter(e.target.value);
+                        setPage(1); // Reset to page 1 on filter change
+                    }}
+                    className="px-4 py-2.5 bg-[#12121a] border border-gray-800 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-violet-500"
+                >
+                    <option value="all">All Roles</option>
+                    <option value="superadmin">Superadmin</option>
+                    <option value="user">Regular User</option>
+                </select>
+            </div>
+        </div>
 
             {/* Table */}
             <div className="bg-[#12121a] border border-gray-800 rounded-2xl overflow-hidden">

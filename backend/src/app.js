@@ -6,7 +6,7 @@ import session from '@fastify/session';
 import multipart from '@fastify/multipart';
 import MongoStore from 'connect-mongo';
 import config from './config/index.js';
-import { authRoutes, documentRoutes, chatRoutes, analyticsRoutes, usersRoutes, auditRoutes, usageRoutes, departmentsRoutes, integrationsRoutes, subscriptionsRoutes, organizationsRoutes, superadminRoutes, contactRoutes, inviteRoutes, credentialsRoutes } from './routes/index.js';
+import { authRoutes, documentRoutes, chatRoutes, analyticsRoutes, usersRoutes, auditRoutes, usageRoutes, departmentsRoutes, integrationsRoutes, subscriptionsRoutes, organizationsRoutes, superadminRoutes, contactRoutes, inviteRoutes, credentialsRoutes, uploadRoutes } from './routes/index.js';
 import { getLandingPageHtml, getHealthPageHtml } from './utils/statusPages.js';
 
 export async function buildApp() {
@@ -161,6 +161,7 @@ export async function buildApp() {
     fastify.register(credentialsRoutes, { prefix: '/api/credentials' });
     fastify.register(departmentsRoutes, { prefix: '/api/departments' });
     fastify.register(integrationsRoutes, { prefix: '/api/integrations' });
+    fastify.register(uploadRoutes, { prefix: '/api/upload' });
 
     // Multi-tenant SaaS routes
     fastify.register(subscriptionsRoutes, { prefix: '/api/subscriptions' });

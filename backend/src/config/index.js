@@ -91,10 +91,14 @@ const config = {
     apiKey: process.env.TAVILY_API_KEY,
   },
 
-  // Resend (Email)
-  resend: {
-    apiKey: process.env.RESEND_API_KEY,
-    fromEmail: process.env.RESEND_MAIL || "noreply@yourdomain.com",
+  // SMTP (Gmail)
+  smtp: {
+    host: process.env.SMTP_HOST || "smtp.gmail.com",
+    port: process.env.SMTP_PORT || 587,
+    secure: process.env.SMTP_SECURE === "true", // true for 465, false for 587
+    user: process.env.SMTP_USER,
+    pass: process.env.SMTP_PASS,
+    from: process.env.SMTP_FROM,
   },
 };
 

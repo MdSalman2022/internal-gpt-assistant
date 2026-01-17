@@ -1,69 +1,50 @@
 // Unified AI Service for various providers
 
 import config from '../config/index.js';
-import { GeminiProvider, OpenAIProvider, AnthropicProvider, GroqProvider } from './providers/index.js';
+import { GeminiProvider } from './providers/index.js';
 import aiProviderFactory from './ai-provider-factory.js';
 
 class AIService {
     constructor() {
-        // Initialize static providers from environment
-        this.providers = {
-            gemini: new GeminiProvider(config.gemini?.apiKey),
-            openai: new OpenAIProvider(config.openai?.apiKey),
-            anthropic: new AnthropicProvider(config.anthropic?.apiKey),
-            groq: new GroqProvider(config.groq?.apiKey),
-        };
-
         // Default provider for chat
         this.defaultProvider = 'gemini';
 
         // Set default embedding provider
         this.embeddingProvider = 'gemini';
 
+        // Initialize legacy provider for embeddings (Env Var Fallback)
+        this.legacyEmbeddingProvider = new GeminiProvider(config.gemini?.apiKey);
+
         console.log('🤖 AI Service initialized');
-        console.log('   📦 Legacy Providers (.env):');
-        console.log(`      ├─ Gemini: ${this.providers.gemini.isConfigured ? '✅' : '❌'}`);
-        console.log(`      ├─ OpenAI: ${this.providers.openai.isConfigured ? '✅' : '❌'}`);
-        console.log(`      ├─ Claude: ${this.providers.anthropic.isConfigured ? '✅' : '❌'}`);
-        console.log(`      └─ Groq:   ${this.providers.groq.isConfigured ? '✅' : '❌'}`);
-        // Ready for dynamic providers
+        console.log(`   📦 Embedding Fallback (.env): ${this.legacyEmbeddingProvider.isConfigured ? '✅ (Enabled)' : '❌ (Disabled)'}`);
     }
 
-    // Legacy methods
-
-    // List providers
-    getAvailableProviders() {
-        return Object.entries(this.providers)
-            .filter(([_, provider]) => provider.isConfigured)
-            .map(([name, provider]) => ({
-                id: name,
-                name: provider.displayName,
-                isDefault: name === this.defaultProvider,
-            }));
+    // List available providers (Platform level)
+    async getAvailableProviders() {
+        return aiProviderFactory.getAvailableProviders(null);
     }
 
-    // Get specific provider from config
-    getProvider(providerName) {
-        const provider = this.providers[providerName];
-        if (!provider || !provider.isConfigured) {
-            throw new Error(`Provider '${providerName}' is not available`);
-        }
-        return provider;
+    // Get specific provider instance (Platform level)
+    async getProvider(providerName) {
+        return aiProviderFactory.getProvider(providerName, null);
     }
 
-    // Generate text embedding using legacy config
+    // Generate text embedding (Platform level)
     async generateEmbedding(text) {
-        const provider = this.providers[this.embeddingProvider];
-        if (!provider?.isConfigured) {
-            throw new Error('Embedding provider (Gemini) not configured');
+        // 1. Try Env Var Fallback first
+        if (this.legacyEmbeddingProvider.isConfigured) {
+            return this.legacyEmbeddingProvider.generateEmbedding(text);
         }
+
+        // 2. Try Database
+        const provider = await this.getProvider(this.embeddingProvider);
         return provider.generateEmbedding(text);
     }
 
     // Generate chat response with specified provider
     async generateResponse(systemPrompt, userMessage, options = {}) {
         const providerName = options.provider || this.defaultProvider;
-        const provider = this.getProvider(providerName);
+        const provider = await this.getProvider(providerName);
 
         console.log(`🤖 Generating response with: ${provider.displayName}`);
 
@@ -80,14 +61,18 @@ class AIService {
 
     // Generate tags for text content
     async generateTags(text, providerName = this.defaultProvider) {
-        const provider = this.providers[providerName];
-        if (!provider?.isConfigured) {
+        try {
+            const provider = await this.getProvider(providerName);
+            return provider.generateTags(text);
+        } catch (error) {
+            console.warn(`Generte tags failed with ${providerName}, trying fallback...`);
             // Fallback to any available provider
-            const available = this.getAvailableProviders()[0];
-            if (!available) return [];
-            return this.providers[available.id].generateTags(text);
+            const available = await this.getAvailableProviders();
+            if (available.length === 0) return [];
+            
+            const fallbackProvider = await this.getProvider(available[0].provider);
+            return fallbackProvider.generateTags(text);
         }
-        return provider.generateTags(text);
     }
 
     // Generate RAG answer from context
@@ -102,15 +87,12 @@ class AIService {
         const systemPrompt = `You are a helpful AI assistant that answers questions based on the provided context from company documents.
 
 INSTRUCTIONS:
-INSTRUCTIONS:
 - Primary Goal: Answer the user's question using the provided context.
 - General Conversation: If the user asks a general question (e.g., "Hello", "How are you", "Tell me about yourself") or a question unrelated to the documents, answer naturally and politely using your general knowledge. Do not complain about missing context for greetings.
 - Specific Questions: If the user asks a specific question that should be in the documents but the context is missing or irrelevant, state clearly that you couldn't find the information in the provided documents.
 - Cite Sources: When you DO use the context to answer, cite your sources using [Source N] format.
 - Formatting: Use markdown for readability.
-- Cite your sources using [Source N] format when referencing specific information
 - Be concise but thorough
-- Use markdown formatting for better readability
 
 CONTEXT:
 ${contextText}`;

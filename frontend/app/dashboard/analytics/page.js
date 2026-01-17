@@ -22,7 +22,7 @@ export default function AnalyticsPage() {
 
     const fetchAnalytics = async () => {
         try {
-            const res = await fetch(`${API_URL}/api/superadmin/revenue-analytics`, {
+            const res = await fetch(`${API_URL}/api/superadmin/analytics/revenue?period=all`, {
                 credentials: 'include'
             });
             if (res.ok) {

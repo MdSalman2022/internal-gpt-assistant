@@ -13,7 +13,7 @@ export default async function usersRoutes(fastify) {
 
         // Scope to Organization if not superadmin
         let filter = {};
-        if (user.role !== 'superadmin') {
+        if (user.platformRole !== 'superadmin') {
             if (!user.organizationId) return { departments: [], teams: [] };
             filter.organizationId = user.organizationId;
         }
@@ -50,13 +50,18 @@ export default async function usersRoutes(fastify) {
 
         // Scope to Organization if not superadmin
         let query = {};
-        if (user.role !== 'superadmin') {
+        if (user.platformRole !== 'superadmin') {
             if (!user.organizationId) {
                 // If user has no org and is not superadmin, they shouldn't see anyone (or maybe just themselves?)
                 // For safety returning empty list or error.
                 return { users: [] };
             }
             query.organizationId = user.organizationId;
+        } else {
+            // Superadmin filtering capabilities
+            const { role, platformRole } = request.query;
+            if (role) query.platformRole = role; // Support query param 'role' mapping to 'platformRole'
+            if (platformRole) query.platformRole = platformRole;
         }
 
         const users = await User.find(query)

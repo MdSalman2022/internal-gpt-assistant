@@ -1,4 +1,4 @@
-import { authService, auditService } from '../services/index.js';
+import { authService, auditService, emailService } from '../services/index.js';
 import config from '../config/index.js';
 import { User } from '../models/index.js';
 import crypto from 'crypto';
@@ -353,6 +353,73 @@ export default async function authRoutes(fastify) {
         console.log(`✅ Password reset successful for: ${user.email}`);
 
         return { success: true, message: 'Password has been reset successfully' };
+    });
+
+    // Email Verification Flow
+
+    // Request verification email
+    fastify.post('/verify-email/request', async (request, reply) => {
+        if (!request.session.userId) {
+            return reply.status(401).send({ error: 'Not authenticated' });
+        }
+
+        const user = await User.findById(request.session.userId);
+        if (!user) {
+            return reply.status(404).send({ error: 'User not found' });
+        }
+
+        if (user.isVerified) {
+            return reply.status(400).send({ error: 'Email is already verified' });
+        }
+
+        // Generate token
+        const token = user.generateVerificationToken();
+        await user.save();
+
+        const verifyUrl = `${config.frontendUrl}/verify-email?token=${token}`;
+        console.log(`📧 Verification link for ${user.email}: ${verifyUrl}`);
+
+        try {
+            await emailService.sendVerificationEmail(user.email, verifyUrl);
+            return { success: true, message: 'Verification email sent' };
+        } catch (error) {
+            console.error('Failed to send verification email:', error);
+            // Return success anyway to prevent enumeration/panic, but log error
+            // In dev mode we printed the link which is enough
+            return { success: true, message: 'Verification email sent (check console in dev)' };
+        }
+    });
+
+    // Confirm verification
+    fastify.post('/verify-email/confirm', async (request, reply) => {
+        const { token } = request.body;
+
+        if (!token) {
+            return reply.status(400).send({ error: 'Token is required' });
+        }
+
+        const hashedToken = crypto.createHash('sha256').update(token).digest('hex');
+
+        const user = await User.findOne({
+            verificationToken: hashedToken,
+            verificationTokenExpires: { $gt: Date.now() },
+        });
+
+        if (!user) {
+            return reply.status(400).send({ error: 'Invalid or expired verification token' });
+        }
+
+        user.isVerified = true;
+        user.verificationToken = undefined;
+        user.verificationTokenExpires = undefined;
+        await user.save();
+
+        // Update session if logged in as this user
+        if (request.session.userId === user._id.toString()) {
+            request.session.user = user.toJSON();
+        }
+
+        return { success: true, message: 'Email verified successfully' };
     });
 
     // Google OAuth flow

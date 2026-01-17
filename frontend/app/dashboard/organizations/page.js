@@ -31,7 +31,7 @@ export default function OrganizationsPage() {
         try {
             let url = `${API_URL}/api/superadmin/organizations?page=${page}&limit=10`;
             if (statusFilter !== 'all') {
-                url += `&planStatus=${statusFilter}`;
+                url += `&status=${statusFilter}`;
             }
 
             const res = await fetch(url, { credentials: 'include' });
